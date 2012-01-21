@@ -1,0 +1,27 @@
+## Process this file with automake to produce Makefile.in
+
+libvicaredir		= $(pkglibdir)/vicare
+
+EXTRA_DIST		= compile-all.sps			\
+			  vicare/expat/constants.sls.in
+
+dist_libvicare_DATA	= vicare/expat.sls
+
+## --------------------------------------------------------------------
+
+VICARE_FLAGS	= -b $(VICARE_BOOT) $(user_flags)
+
+VICARE		= @VICARE@
+VICARE_ENV	= VICARE_LIBRARY_PATH=$(builddir):$(srcdir)	\
+		  LD_LIBRARY_PATH=$(builddir)/../src/.libs
+VICARE_RUN	= $(VICARE_ENV) $(VICARE) $(VICARE_FLAGS)
+
+.PHONY: vfasl vfasl-installed
+
+vfasl:
+	$(VICARE_RUN) --compile-dependencies $(srcdir)/compile-all.sps
+
+vfasl-installed:
+	$(VICARE_INST_RUN) --compile-dependencies $(srcdir)/compile-all.sps
+
+### end of file

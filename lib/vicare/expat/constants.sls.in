@@ -1,0 +1,238 @@
+;;;
+;;;Part of: Vicare Expat
+;;;Contents: expat constants
+;;;Date: Sat Jan 21, 2012
+;;;
+;;;Abstract
+;;;
+;;;	Export an identifier syntax for each Expat constant.
+;;;
+;;;Copyright (C) 2012 Marco Maggi <marco.maggi-ipsu@poste.it>
+;;;
+;;;This program is free software:  you can redistribute it and/or modify
+;;;it under the terms of the  GNU General Public License as published by
+;;;the Free Software Foundation, either version 3 of the License, or (at
+;;;your option) any later version.
+;;;
+;;;This program is  distributed in the hope that it  will be useful, but
+;;;WITHOUT  ANY   WARRANTY;  without   even  the  implied   warranty  of
+;;;MERCHANTABILITY  or FITNESS FOR  A PARTICULAR  PURPOSE.  See  the GNU
+;;;General Public License for more details.
+;;;
+;;;You should  have received  a copy of  the GNU General  Public License
+;;;along with this program.  If not, see <http://www.gnu.org/licenses/>.
+;;;
+
+
+(library (vicare expat constants)
+  (export
+    ;; Preprocessor symbols: XML_Bool
+    XML_TRUE
+    XML_FALSE
+
+    ;; enum XML_Status
+    XML_STATUS_ERROR
+    XML_STATUS_OK
+    XML_STATUS_SUSPENDED
+
+    ;; enum XML_Error
+    XML_ERROR_NONE
+    XML_ERROR_NO_MEMORY
+    XML_ERROR_SYNTAX
+    XML_ERROR_NO_ELEMENTS
+    XML_ERROR_INVALID_TOKEN
+    XML_ERROR_UNCLOSED_TOKEN
+    XML_ERROR_PARTIAL_CHAR
+    XML_ERROR_TAG_MISMATCH
+    XML_ERROR_DUPLICATE_ATTRIBUTE
+    XML_ERROR_JUNK_AFTER_DOC_ELEMENT
+    XML_ERROR_PARAM_ENTITY_REF
+    XML_ERROR_UNDEFINED_ENTITY
+    XML_ERROR_RECURSIVE_ENTITY_REF
+    XML_ERROR_ASYNC_ENTITY
+    XML_ERROR_BAD_CHAR_REF
+    XML_ERROR_BINARY_ENTITY_REF
+    XML_ERROR_ATTRIBUTE_EXTERNAL_ENTITY_REF
+    XML_ERROR_MISPLACED_XML_PI
+    XML_ERROR_UNKNOWN_ENCODING
+    XML_ERROR_INCORRECT_ENCODING
+    XML_ERROR_UNCLOSED_CDATA_SECTION
+    XML_ERROR_EXTERNAL_ENTITY_HANDLING
+    XML_ERROR_NOT_STANDALONE
+    XML_ERROR_UNEXPECTED_STATE
+    XML_ERROR_ENTITY_DECLARED_IN_PE
+    XML_ERROR_FEATURE_REQUIRES_XML_DTD
+    XML_ERROR_CANT_CHANGE_FEATURE_ONCE_PARSING
+    XML_ERROR_UNBOUND_PREFIX
+    XML_ERROR_UNDECLARING_PREFIX
+    XML_ERROR_INCOMPLETE_PE
+    XML_ERROR_XML_DECL
+    XML_ERROR_TEXT_DECL
+    XML_ERROR_PUBLICID
+    XML_ERROR_SUSPENDED
+    XML_ERROR_NOT_SUSPENDED
+    XML_ERROR_ABORTED
+    XML_ERROR_FINISHED
+    XML_ERROR_SUSPEND_PE
+    XML_ERROR_RESERVED_PREFIX_XML
+    XML_ERROR_RESERVED_PREFIX_XMLNS
+    XML_ERROR_RESERVED_NAMESPACE_URI
+
+    ;; enum XML_Content_Type
+    XML_CTYPE_EMPTY
+    XML_CTYPE_ANY
+    XML_CTYPE_MIXED
+    XML_CTYPE_NAME
+    XML_CTYPE_CHOICE
+    XML_CTYPE_SEQ
+
+    ;; enum XML_Content_Quant
+    XML_CQUANT_NONE
+    XML_CQUANT_OPT
+    XML_CQUANT_REP
+    XML_CQUANT_PLUS
+
+    ;; enum XML_Parsing
+    XML_INITIALIZED
+    XML_PARSING
+    XML_FINISHED
+    XML_SUSPENDED
+
+    ;; enum XML_ParamEntityParsing
+    XML_PARAM_ENTITY_PARSING_NEVER
+    XML_PARAM_ENTITY_PARSING_UNLESS_STANDALONE
+    XML_PARAM_ENTITY_PARSING_ALWAYS
+
+    ;; Preprocessor symbols: version numbers
+    XML_MAJOR_VERSION
+    XML_MINOR_VERSION
+    XML_MICRO_VERSION
+
+    ;; enum XML_FeatureEnum
+    XML_FEATURE_END
+    XML_FEATURE_UNICODE
+    XML_FEATURE_UNICODE_WCHAR_T
+    XML_FEATURE_DTD
+    XML_FEATURE_CONTEXT_BYTES
+    XML_FEATURE_MIN_SIZE
+    XML_FEATURE_SIZEOF_XML_CHAR
+    XML_FEATURE_SIZEOF_XML_LCHAR
+    XML_FEATURE_NS
+    XML_FEATURE_LARGE_SIZE)
+  (import (only (vicare syntactic-extensions)
+		define-inline-constant))
+
+
+;;;; constants
+
+;;; Preprocessor symbols: XML_Bool
+(define-inline-constant XML_TRUE		@XML_TRUE@)
+(define-inline-constant XML_FALSE		@XML_FALSE@)
+
+;;; enum XML_Status
+(define-inline-constant XML_STATUS_ERROR	@XML_STATUS_ERROR@)
+(define-inline-constant XML_STATUS_OK		@XML_STATUS_OK@)
+(define-inline-constant XML_STATUS_SUSPENDED	@XML_STATUS_SUSPENDED@)
+
+;;; enum XML_Error
+(define-inline-constant XML_ERROR_NONE			@XML_ERROR_NONE@)
+(define-inline-constant XML_ERROR_NO_MEMORY		@XML_ERROR_NO_MEMORY@)
+(define-inline-constant XML_ERROR_SYNTAX		@XML_ERROR_SYNTAX@)
+(define-inline-constant XML_ERROR_NO_ELEMENTS		@XML_ERROR_NO_ELEMENTS@)
+(define-inline-constant XML_ERROR_INVALID_TOKEN		@XML_ERROR_INVALID_TOKEN@)
+(define-inline-constant XML_ERROR_UNCLOSED_TOKEN	@XML_ERROR_UNCLOSED_TOKEN@)
+(define-inline-constant XML_ERROR_PARTIAL_CHAR		@XML_ERROR_PARTIAL_CHAR@)
+(define-inline-constant XML_ERROR_TAG_MISMATCH		@XML_ERROR_TAG_MISMATCH@)
+(define-inline-constant XML_ERROR_DUPLICATE_ATTRIBUTE	@XML_ERROR_DUPLICATE_ATTRIBUTE@)
+(define-inline-constant XML_ERROR_JUNK_AFTER_DOC_ELEMENT @XML_ERROR_JUNK_AFTER_DOC_ELEMENT@)
+(define-inline-constant XML_ERROR_PARAM_ENTITY_REF	@XML_ERROR_PARAM_ENTITY_REF@)
+(define-inline-constant XML_ERROR_UNDEFINED_ENTITY	@XML_ERROR_UNDEFINED_ENTITY@)
+(define-inline-constant XML_ERROR_RECURSIVE_ENTITY_REF	@XML_ERROR_RECURSIVE_ENTITY_REF@)
+(define-inline-constant XML_ERROR_ASYNC_ENTITY		@XML_ERROR_ASYNC_ENTITY@)
+(define-inline-constant XML_ERROR_BAD_CHAR_REF		@XML_ERROR_BAD_CHAR_REF@)
+(define-inline-constant XML_ERROR_BINARY_ENTITY_REF	@XML_ERROR_BINARY_ENTITY_REF@)
+(define-inline-constant XML_ERROR_ATTRIBUTE_EXTERNAL_ENTITY_REF
+  @XML_ERROR_ATTRIBUTE_EXTERNAL_ENTITY_REF@)
+(define-inline-constant XML_ERROR_MISPLACED_XML_PI	@XML_ERROR_MISPLACED_XML_PI@)
+(define-inline-constant XML_ERROR_UNKNOWN_ENCODING	@XML_ERROR_UNKNOWN_ENCODING@)
+(define-inline-constant XML_ERROR_INCORRECT_ENCODING	@XML_ERROR_INCORRECT_ENCODING@)
+(define-inline-constant XML_ERROR_UNCLOSED_CDATA_SECTION @XML_ERROR_UNCLOSED_CDATA_SECTION@)
+(define-inline-constant XML_ERROR_EXTERNAL_ENTITY_HANDLING
+  @XML_ERROR_EXTERNAL_ENTITY_HANDLING@)
+(define-inline-constant XML_ERROR_NOT_STANDALONE	@XML_ERROR_NOT_STANDALONE@)
+(define-inline-constant XML_ERROR_UNEXPECTED_STATE	@XML_ERROR_UNEXPECTED_STATE@)
+(define-inline-constant XML_ERROR_ENTITY_DECLARED_IN_PE	@XML_ERROR_ENTITY_DECLARED_IN_PE@)
+(define-inline-constant XML_ERROR_FEATURE_REQUIRES_XML_DTD
+  @XML_ERROR_FEATURE_REQUIRES_XML_DTD@)
+(define-inline-constant XML_ERROR_CANT_CHANGE_FEATURE_ONCE_PARSING
+  @XML_ERROR_CANT_CHANGE_FEATURE_ONCE_PARSING@)
+(define-inline-constant XML_ERROR_UNBOUND_PREFIX	@XML_ERROR_UNBOUND_PREFIX@)
+(define-inline-constant XML_ERROR_UNDECLARING_PREFIX	@XML_ERROR_UNDECLARING_PREFIX@)
+(define-inline-constant XML_ERROR_INCOMPLETE_PE		@XML_ERROR_INCOMPLETE_PE@)
+(define-inline-constant XML_ERROR_XML_DECL		@XML_ERROR_XML_DECL@)
+(define-inline-constant XML_ERROR_TEXT_DECL		@XML_ERROR_TEXT_DECL@)
+(define-inline-constant XML_ERROR_PUBLICID		@XML_ERROR_PUBLICID@)
+(define-inline-constant XML_ERROR_SUSPENDED		@XML_ERROR_SUSPENDED@)
+(define-inline-constant XML_ERROR_NOT_SUSPENDED		@XML_ERROR_NOT_SUSPENDED@)
+(define-inline-constant XML_ERROR_ABORTED		@XML_ERROR_ABORTED@)
+(define-inline-constant XML_ERROR_FINISHED		@XML_ERROR_FINISHED@)
+(define-inline-constant XML_ERROR_SUSPEND_PE		@XML_ERROR_SUSPEND_PE@)
+(define-inline-constant XML_ERROR_RESERVED_PREFIX_XML	@XML_ERROR_RESERVED_PREFIX_XML@)
+(define-inline-constant XML_ERROR_RESERVED_PREFIX_XMLNS	@XML_ERROR_RESERVED_PREFIX_XMLNS@)
+(define-inline-constant XML_ERROR_RESERVED_NAMESPACE_URI
+  @XML_ERROR_RESERVED_NAMESPACE_URI@)
+
+;;; enum XML_Content_Type
+(define-inline-constant XML_CTYPE_EMPTY		@XML_CTYPE_EMPTY@)
+(define-inline-constant XML_CTYPE_ANY		@XML_CTYPE_ANY@)
+(define-inline-constant XML_CTYPE_MIXED		@XML_CTYPE_MIXED@)
+(define-inline-constant XML_CTYPE_NAME		@XML_CTYPE_NAME@)
+(define-inline-constant XML_CTYPE_CHOICE	@XML_CTYPE_CHOICE@)
+(define-inline-constant XML_CTYPE_SEQ		@XML_CTYPE_SEQ@)
+
+;;; enum XML_Content_Quant
+(define-inline-constant XML_CQUANT_NONE		@XML_CQUANT_NONE@)
+(define-inline-constant XML_CQUANT_OPT		@XML_CQUANT_OPT@)
+(define-inline-constant XML_CQUANT_REP		@XML_CQUANT_REP@)
+(define-inline-constant XML_CQUANT_PLUS		@XML_CQUANT_PLUS@)
+
+;;; enum XML_Parsing
+(define-inline-constant XML_INITIALIZED		@XML_INITIALIZED@)
+(define-inline-constant XML_PARSING		@XML_PARSING@)
+(define-inline-constant XML_FINISHED		@XML_FINISHED@)
+(define-inline-constant XML_SUSPENDED		@XML_SUSPENDED@)
+
+;;; enum XML_ParamEntityParsing
+(define-inline-constant XML_PARAM_ENTITY_PARSING_NEVER
+  @XML_PARAM_ENTITY_PARSING_NEVER@)
+(define-inline-constant XML_PARAM_ENTITY_PARSING_UNLESS_STANDALONE
+  @XML_PARAM_ENTITY_PARSING_UNLESS_STANDALONE@)
+(define-inline-constant XML_PARAM_ENTITY_PARSING_ALWAYS
+  @XML_PARAM_ENTITY_PARSING_ALWAYS@)
+
+;;; Preprocessor symbols: version numbers
+(define-inline-constant XML_MAJOR_VERSION		@XML_MAJOR_VERSION@)
+(define-inline-constant XML_MINOR_VERSION		@XML_MINOR_VERSION@)
+(define-inline-constant XML_MICRO_VERSION		@XML_MICRO_VERSION@)
+
+;;; enum XML_FeatureEnum
+(define-inline-constant XML_FEATURE_END			@XML_FEATURE_END@)
+(define-inline-constant XML_FEATURE_UNICODE		@XML_FEATURE_UNICODE@)
+(define-inline-constant XML_FEATURE_UNICODE_WCHAR_T	@XML_FEATURE_UNICODE_WCHAR_T@)
+(define-inline-constant XML_FEATURE_DTD			@XML_FEATURE_DTD@)
+(define-inline-constant XML_FEATURE_CONTEXT_BYTES	@XML_FEATURE_CONTEXT_BYTES@)
+(define-inline-constant XML_FEATURE_MIN_SIZE		@XML_FEATURE_MIN_SIZE@)
+(define-inline-constant XML_FEATURE_SIZEOF_XML_CHAR	@XML_FEATURE_SIZEOF_XML_CHAR@)
+(define-inline-constant XML_FEATURE_SIZEOF_XML_LCHAR	@XML_FEATURE_SIZEOF_XML_LCHAR@)
+(define-inline-constant XML_FEATURE_NS			@XML_FEATURE_NS@)
+(define-inline-constant XML_FEATURE_LARGE_SIZE		@XML_FEATURE_LARGE_SIZE@)
+
+
+;;;; done
+
+)
+
+;;; end of file
+;; Local Variables:
+;; mode: scheme
+;; End:
