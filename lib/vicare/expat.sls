@@ -25,7 +25,8 @@
 ;;;
 
 
-#!r6rs
+#!vicare
+#!(load-shared-library "vicare-expat")
 (library (vicare expat)
   (export
     XML_SetElementDeclHandler

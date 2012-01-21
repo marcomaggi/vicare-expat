@@ -133,8 +133,8 @@ This ...
 @c Appendices.
 @c ------------------------------------------------------------
 
-@include gpl-3.0.texiinc
-@include fdl-1.3.texiinc
+@include gpl-3.0.texi
+@include fdl-1.3.texi
 
 @c page
 @node references

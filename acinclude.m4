@@ -2,6 +2,12 @@
 
 m4_define([VICARE_INCLUDES],[
 AC_INCLUDES_DEFAULT
+#ifdef HAVE_VICARE_H
+#  include <vicare.h>
+#endif
+#ifdef HAVE_EXPAT_H
+#  include <expat.h>
+#endif
 ])
 
 AC_DEFUN([VICARE_VALUEOF_TEST],[

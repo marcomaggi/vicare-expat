@@ -9,7 +9,7 @@ dist_libvicare_DATA	= vicare/expat.sls
 
 ## --------------------------------------------------------------------
 
-VICARE_FLAGS	= -b $(VICARE_BOOT) $(user_flags)
+VICARE_FLAGS	= $(user_flags)
 
 VICARE		= @VICARE@
 VICARE_ENV	= VICARE_LIBRARY_PATH=$(builddir):$(srcdir)	\
