@@ -7,6 +7,6 @@ vicare_expat_VERSION	= $(vicare_expat_CURRENT):$(vicare_expat_REVISION):$(vicare
 
 lib_LTLIBRARIES			= libvicare-expat.la
 libvicare_expat_la_LDFLAGS	= -version-info $(vicare_expat_VERSION)
-libvicare_expat_la_SOURCES	= vicare.c
+libvicare_expat_la_SOURCES	= vicare-expat.c
 
 ### end of file
