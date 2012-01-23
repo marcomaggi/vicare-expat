@@ -34,7 +34,7 @@
 #include <vicare.h>
 #include <expat.h>
 
-#define EX_PARSER(PARSER)	IK_POINTER_DATA_VOIDP(PARSER)
+#define EX_PARSER(PARSER)	IK_POINTER_DATA_VOIDP(IK_FIELD(PARSER, 0))
 #define EX_CALLBACK(CALLBACK)	IK_POINTER_DATA_VOIDP(CALLBACK)
 
 
@@ -108,11 +108,21 @@ ik_expat_set_unknown_encoding_handler (ikptr s_parser, ikptr s_callback, ikptr s
 
 ikptr
 ik_expat_parser_create (ikptr s_encoding, ikpcb * pcb)
+/* Allocate and return a new parser  object; return a pointer to the new
+   parser or  false if allocation  failed.  S_ENCODING must be  a fixnum
+   representing the character encoding in use by the document. */
 {
-  const XML_Char *	encoding = IK_BYTEVECTOR_DATA_VOIDP(s_encoding);
+  const XML_Char *	encoding;
   XML_Parser		parser;
+  switch (IK_UNFIX(s_encoding)) {
+  case 0: encoding = NULL;		break;
+  case 1: encoding = "UTF-8";		break;
+  case 2: encoding = "UTF-16";		break;
+  case 3: encoding = "ISO-8859-1";	break;
+  default: encoding = NULL;
+  }
   parser = XML_ParserCreate(encoding);
-  return ika_pointer_alloc(pcb, (ik_ulong)parser);
+  return (parser)? ika_pointer_alloc(pcb, (ik_ulong)parser) : false_object;
 }
 ikptr
 ik_expat_parser_create_ns (ikptr s_encoding, ikptr s_namespace_separator, ikpcb * pcb)
@@ -355,7 +365,11 @@ ik_expat_free_content_model (ikptr s_parser, ikptr s_model)
 ikptr
 ik_expat_parser_free (ikptr s_parser)
 {
-  XML_ParserFree(EX_PARSER(s_parser));
+  XML_Parser	parser;
+  if (parser) {
+    XML_ParserFree(EX_PARSER(s_parser));
+    IK_POINTER_SET_NULL(IK_FIELD(s_parser, 0));
+  }
   return void_object;
 }
 
