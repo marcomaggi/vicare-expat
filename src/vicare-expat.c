@@ -322,7 +322,42 @@ ik_expat_get_current_byte_count (ikptr s_parser, ikpcb * pcb)
   rv = XML_GetCurrentByteCount(EX_PARSER(s_parser));
   return ika_integer_from_int(pcb, rv);
 }
+ikptr
+ik_expat_get_input_context (ikptr s_parser, ikpcb * pcb)
+/* Return a  vector describing the  current input buffer:  pointer, byte
+   offset, byte size. */
+{
+  const char *	buffer;
+  int		offset;
+  int		size;
+  ikptr		s_vec;
+  buffer = XML_GetInputContext(EX_PARSER(s_parser), &offset, &size);
+  s_vec  = ika_vector_alloc_and_init(pcb, 3);
+  pcb->root0 = &s_vec;
+  {
+    IK_ITEM(s_vec, 0) = ika_pointer_alloc(pcb, (ik_ulong)buffer);
+    IK_ITEM(s_vec, 1) = ika_integer_from_int(pcb, offset);
+    IK_ITEM(s_vec, 2) = ika_integer_from_int(pcb, size);
+  }
+  pcb->root0 = NULL;
+  return s_vec;
+}
 
+/* ------------------------------------------------------------------ */
+
+ikptr
+ik_expat_free_content_model (ikptr s_parser, ikptr s_model)
+{
+  XML_Content *	model = IK_POINTER_DATA_VOIDP(s_model);
+  XML_FreeContentModel(EX_PARSER(s_parser), model);
+  return void_object;
+}
+ikptr
+ik_expat_parser_free (ikptr s_parser)
+{
+  XML_ParserFree(EX_PARSER(s_parser));
+  return void_object;
+}
 
 
 
@@ -345,5 +380,81 @@ ik_expat_get_id_attribute_index (ikptr s_parser, ikpcb * pcb)
   return ika_integer_from_int(pcb, (int)rv);
 }
 
+
+/** --------------------------------------------------------------------
+ ** Error reporting.
+ ** ----------------------------------------------------------------- */
+
+ikptr
+ik_expat_error_string (ikptr s_code, ikpcb * pcb)
+{
+  enum XML_Error	code = (enum XML_Error)ik_integer_to_int(s_code);
+  const XML_LChar *	rv;
+  rv = XML_ErrorString(code);
+  return ika_bytevector_from_cstring(pcb, rv);
+}
+
+
+/** --------------------------------------------------------------------
+ ** Miscellaneous functions.
+ ** ----------------------------------------------------------------- */
+
+ikptr
+ik_expat_version (ikpcb * pcb)
+{
+  const XML_LChar *	rv;
+  rv = XML_ExpatVersion();
+  return ika_bytevector_from_cstring(pcb, rv);
+}
+ikptr
+ik_expat_version_info (ikpcb * pcb)
+{
+  XML_Expat_Version	info;
+  ikptr			s_vec;
+  info = XML_ExpatVersionInfo();
+  s_vec  = ika_vector_alloc_and_init(pcb, 3);
+  pcb->root0 = &s_vec;
+  {
+    IK_ASS(IK_ITEM(s_vec, 0), ika_integer_from_int(pcb, info.major));
+    IK_ASS(IK_ITEM(s_vec, 1), ika_integer_from_int(pcb, info.minor));
+    IK_ASS(IK_ITEM(s_vec, 2), ika_integer_from_int(pcb, info.micro));
+  }
+  pcb->root0 = NULL;
+  return s_vec;
+}
+ikptr
+ik_expat_get_feature_list (ikpcb * pcb)
+{
+  const XML_Feature *	feats;
+  int			number_of_feats;
+  ikptr			s_feats;
+  feats = XML_GetFeatureList();
+  /* First acquire the number of features. */
+  for (number_of_feats=0; XML_FEATURE_END != feats[number_of_feats].feature; ++number_of_feats);
+  s_feats = ika_vector_alloc_and_init(pcb, number_of_feats);
+  pcb->root0 = &s_feats;
+  {
+    int		i;
+    for (i=0; i<number_of_feats; ++i) {
+      IK_ASS(IK_ITEM(s_feats, i), ika_vector_alloc_and_init(pcb, 3));
+      IK_ASS(IK_ITEM(IK_ITEM(s_feats, i), 0),
+	     ika_integer_from_int(pcb, feats[i].feature));
+      IK_ASS(IK_ITEM(IK_ITEM(s_feats, i), 1),
+	     ika_bytevector_from_cstring(pcb, feats[i].name));
+      switch (feats[i].feature) {
+      case XML_FEATURE_SIZEOF_XML_CHAR:
+      case XML_FEATURE_SIZEOF_XML_LCHAR:
+      case XML_FEATURE_CONTEXT_BYTES:
+	IK_ASS(IK_ITEM(IK_ITEM(s_feats, i), 2),
+	       ika_integer_from_long(pcb, feats[i].value));
+	break;
+      default:
+	IK_ITEM(IK_ITEM(s_feats, i), 2) = false_object;
+      }
+    }
+  }
+  pcb->root0 = NULL;
+  return s_feats;
+}
 
 /* end of file */
