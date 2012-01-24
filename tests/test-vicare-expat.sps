@@ -59,30 +59,28 @@
     (ffi.make-c-callback-maker 'void '(pointer pointer)))
 
   (check
-      (let ((result '()))
-
-	(define (start-callback data element attributes)
-(check-pretty-print (list 'start data element attributes))
-	  (let ((element    (ffi.cstring->string element))
-		#;(attributes (ffi.argv->strings attributes)))
-	    (set! result (cons (list 'start data element attributes) result))))
-
-	(define (end-callback data element)
-(check-pretty-print (list 'end data element))
-	  (let ((element (ffi.cstring->string element)))
-	    (set! result (cons (list 'end element data) result))))
-
-	(let ((parser	(XML_ParserCreate 'UTF-8))
-	      (start	(make-start-cb start-callback))
-	      (end	(make-end-cb   end-callback)))
-	  (XML_SetElementHandler parser start end)
-	  (let* ((buffer	(string->utf8 xml-1))
-		 (finished?	#t)
-		 (rv		(XML_Parse parser buffer #f finished?)))
-	    (ffi.free-c-callback start)
-	    (ffi.free-c-callback end)
-	    (cons rv result))))
-    => (list XML_STATUS_OK))
+      (with-result
+       (define (start-callback data element attributes)
+	 (let ((element    (ffi.cstring->string element))
+	       #;(attributes (ffi.argv->strings attributes)))
+	   (add-result (list 'start element attributes)))
+	 (void))
+       (define (end-callback data element)
+	 (let ((element (ffi.cstring->string element)))
+	   (add-result (list 'end element data)))
+	 (void))
+       (let ((parser	(XML_ParserCreate 'UTF-8))
+	     (start	(make-start-cb start-callback))
+	     (end	(make-end-cb   end-callback)))
+	 (XML_SetElementHandler parser start end)
+	 (let* ((buffer	(string->utf8 xml-1))
+		(finished?	#t)
+		(rv		(XML_Parse parser buffer #f finished?)))
+	   (ffi.free-c-callback start)
+	   (ffi.free-c-callback end)
+	   rv)))
+    => (list XML_STATUS_OK
+	     '()))
 
   #t)
 
