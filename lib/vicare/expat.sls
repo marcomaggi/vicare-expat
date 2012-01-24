@@ -34,7 +34,7 @@
     XML_SetXmlDeclHandler
     XML_ParserCreate
     XML_ParserCreateNS
-    XML_ParserCreate_MM
+;;;XML_ParserCreate_MM
     XML_ParserReset
     XML_SetEntityDeclHandler
     XML_SetElementHandler
@@ -86,9 +86,6 @@
     XML_GetCurrentByteCount
     XML_GetInputContext
     XML_FreeContentModel
-    XML_MemMalloc
-    XML_MemRealloc
-    XML_MemFree
     XML_ParserFree
     XML_ErrorString
     XML_ExpatVersion
@@ -99,6 +96,7 @@
     parsing-status-parsing		parsing-status-final-buffer?
     )
   (import (vicare)
+    (vicare expat constants)
     (vicare syntactic-extensions)
     (prefix (vicare ffi) ffi.)
     (prefix (vicare words) words.))
@@ -139,6 +137,10 @@
 (define-argument-validation (false/encoding-symbol who obj)
   (or (not obj) (memq obj '(UTF-8 UTF-16 ISO-8859-1)))
   (assertion-violation who "expected false or Expat encoding symbol as argument" obj))
+
+(define-argument-validation (signed-int who obj)
+  (words.signed-int? obj)
+  (assertion-violation who "expected signed int as argument" obj))
 
 (define-argument-validation (false/non-negative-signed-int who obj)
   (or (not obj) (and (words.signed-int? obj) (<= 0 obj)))
@@ -224,28 +226,28 @@
 			       ((parser		parser)
 				(callback	callback))
 			     (foreign-call ?func parser callback)))))))
-  (declare "set_element_decl_handler"		XML_SetElementDeclHandler)
-  (declare "set_attlist_decl_handler"		XML_SetAttlistDeclHandler)
-  (declare "set_xml_decl_handler"		XML_SetXmlDeclHandler)
-  (declare "set_entity_decl_handler"		XML_SetEntityDeclHandler)
-  (declare "set_start_element_handler"		XML_SetStartElementHandler)
-  (declare "set_end_element_handler"		XML_SetEndElementHandler)
-  (declare "set_character_data_handler"		XML_SetCharacterDataHandler)
-  (declare "set_processing_instruction_handler" XML_SetProcessingInstructionHandler)
-  (declare "set_comment_handler"		XML_SetCommentHandler)
-  (declare "set_start_cdata_section_handler"	XML_SetStartCdataSectionHandler)
-  (declare "set_end_cdata_section_handler"	XML_SetEndCdataSectionHandler)
-  (declare "set_default_handler"		XML_SetDefaultHandler)
-  (declare "set_default_handler_expand"		XML_SetDefaultHandlerExpand)
-  (declare "set_start_doctype_decl_handler"	XML_SetStartDoctypeDeclHandler)
-  (declare "set_end_doctype_decl_handler"	XML_SetEndDoctypeDeclHandler)
-  (declare "set_unparsed_entity_decl_handler"	XML_SetUnparsedEntityDeclHandler)
-  (declare "set_notation_decl_handler"		XML_SetNotationDeclHandler)
-  (declare "set_start_namespace_decl_handler"	XML_SetStartNamespaceDeclHandler)
-  (declare "set_end_namespace_decl_handler"	XML_SetEndNamespaceDeclHandler)
-  (declare "set_not_standalone_handler"		XML_SetNotStandaloneHandler)
-  (declare "set_external_entity_ref_handler"	XML_SetExternalEntityRefHandler)
-  (declare "set_skipped_entity_handler"		XML_SetSkippedEntityHandler))
+  (declare "ik_expat_set_element_decl_handler"		XML_SetElementDeclHandler)
+  (declare "ik_expat_set_attlist_decl_handler"		XML_SetAttlistDeclHandler)
+  (declare "ik_expat_set_xml_decl_handler"		XML_SetXmlDeclHandler)
+  (declare "ik_expat_set_entity_decl_handler"		XML_SetEntityDeclHandler)
+  (declare "ik_expat_set_start_element_handler"		XML_SetStartElementHandler)
+  (declare "ik_expat_set_end_element_handler"		XML_SetEndElementHandler)
+  (declare "ik_expat_set_character_data_handler"	XML_SetCharacterDataHandler)
+  (declare "ik_expat_set_processing_instruction_handler" XML_SetProcessingInstructionHandler)
+  (declare "ik_expat_set_comment_handler"		XML_SetCommentHandler)
+  (declare "ik_expat_set_start_cdata_section_handler"	XML_SetStartCdataSectionHandler)
+  (declare "ik_expat_set_end_cdata_section_handler"	XML_SetEndCdataSectionHandler)
+  (declare "ik_expat_set_default_handler"		XML_SetDefaultHandler)
+  (declare "ik_expat_set_default_handler_expand"	XML_SetDefaultHandlerExpand)
+  (declare "ik_expat_set_start_doctype_decl_handler"	XML_SetStartDoctypeDeclHandler)
+  (declare "ik_expat_set_end_doctype_decl_handler"	XML_SetEndDoctypeDeclHandler)
+  (declare "ik_expat_set_unparsed_entity_decl_handler"	XML_SetUnparsedEntityDeclHandler)
+  (declare "ik_expat_set_notation_decl_handler"		XML_SetNotationDeclHandler)
+  (declare "ik_expat_set_start_namespace_decl_handler"	XML_SetStartNamespaceDeclHandler)
+  (declare "ik_expat_set_end_namespace_decl_handler"	XML_SetEndNamespaceDeclHandler)
+  (declare "ik_expat_set_not_standalone_handler"	XML_SetNotStandaloneHandler)
+  (declare "ik_expat_set_external_entity_ref_handler"	XML_SetExternalEntityRefHandler)
+  (declare "ik_expat_set_skipped_entity_handler"	XML_SetSkippedEntityHandler))
 
 (let-syntax ((declare (syntax-rules ()
 			((_ ?func ?who)
@@ -256,10 +258,10 @@
 				(callback	start-callback)
 				(callback	end-callback))
 			     (foreign-call ?func parser start-callback end-callback)))))))
-  (declare "set_element_handler"		XML_SetElementHandler)
-  (declare "set_cdata_section_handler"		XML_SetCdataSectionHandler)
-  (declare "set_doctype_decl_handler"		XML_SetDoctypeDeclHandler)
-  (declare "set_namespace_decl_handler"		XML_SetNamespaceDeclHandler))
+  (declare "ik_expat_set_element_handler"		XML_SetElementHandler)
+  (declare "ik_expat_set_cdata_section_handler"		XML_SetCdataSectionHandler)
+  (declare "ik_expat_set_doctype_decl_handler"		XML_SetDoctypeDeclHandler)
+  (declare "ik_expat_set_namespace_decl_handler"	XML_SetNamespaceDeclHandler))
 
 ;;; --------------------------------------------------------------------
 
@@ -334,6 +336,18 @@
       ((parser	parser))
     (foreign-call "ik_expat_parser_free" parser)))
 
+(define (XML_ExternalEntityParserCreate parser context encoding)
+  (define who 'XML_ExternalEntityParserCreate)
+  (with-arguments-validation (who)
+      ((parser		parser)
+       (pointer		context)
+       (encoding-symbol	encoding))
+    (let ((rv (foreign-call "ik_expat_external_entity_parser_create" parser context
+			    (%document-encoding-symbol->fixnum encoding))))
+      (if rv
+	  (%parser-guardian (make-parser rv))
+	(error who "error allocating Expat entity parser" parser context encoding)))))
+
 ;;; --------------------------------------------------------------------
 
 (define (XML_SetEncoding parser encoding)
@@ -380,6 +394,13 @@
        (boolean	use-dtd?))
     (foreign-call "ik_expat_user_foreign_dtd" parser use-dtd?)))
 
+(define (XML_SetReturnNSTriplet parser do-nst?)
+  (define who 'XML_SetReturnNSTriplet)
+  (with-arguments-validation (who)
+      ((parser	parser)
+       (boolean	do-nst?))
+    (foreign-call "ik_expat_set_return_ns_triplet" parser do-nst?)))
+
 (define (XML_Parse parser buffer buflen final?)
   (define who 'XML_Parse)
   (with-arguments-validation (who)
@@ -399,10 +420,12 @@
 (define (XML_ParseBuffer parser buflen final?)
   (define who 'XML_ParseBuffer)
   (with-arguments-validation (who)
-      ((parser			parser)
-       (false/signed-int	buflen)
-       (boolean			final?))
+      ((parser				parser)
+       (false/non-negative-signed-int	buflen)
+       (boolean				final?))
     (foreign-call "ik_expat_parse_buffer" parser buflen final?)))
+
+;;; --------------------------------------------------------------------
 
 (define (XML_StopParser parser resumable?)
   (define who 'XML_StopParser)
@@ -417,6 +440,8 @@
       ((parser	parser))
     (foreign-call "ik_expat_resume_parser" parser)))
 
+;;; --------------------------------------------------------------------
+
 (define (XML_GetParsingStatus parser)
   (define who 'XML_GetParsingStatus)
   (with-arguments-validation (who)
@@ -424,6 +449,12 @@
     (let ((status (make-parsing-status #f #f)))
       (foreign-call "ik_expat_get_parsing_status" parser status)
       status)))
+
+(define (XML_GetInputContext parser)
+  (define who 'XML_GetInputContext)
+  (with-arguments-validation (who)
+      ((parser	parser))
+    (foreign-call "ik_expat_get_input_context" parser)))
 
 
 ;;;; elements
@@ -434,22 +465,12 @@
       ((parser	parser))
     (foreign-call "ik_expat_default_current" parser)))
 
-ik_expat_external_entity_parser_create (parser context encoding)
-
-ik_expat_set_param_entity_parsing (parser parsing)
-
-ik_expat_get_error_code (parser)
-
-ik_expat_get_current_line_number (parser)
-
-ik_expat_get_current_column_number (parser)
-
-ik_expat_get_current_byte_index (parser)
-
-ik_expat_get_current_byte_count (parser)
-
-ik_expat_get_input_context (parser)
-
+(define (XML_SetParamEntityParsing parser parsing)
+  (define who 'XML_SetParamEntityParsing)
+  (with-arguments-validation (who)
+      ((parser	parser)
+       (fixnum	parsing))
+    (foreign-call "ik_expat_set_param_entity_parsing" parser parsing)))
 
 
 ;;;; attributes
@@ -472,8 +493,38 @@ ik_expat_get_input_context (parser)
 (define (XML_ErrorString code)
   (define who 'XML_ErrorString)
   (with-arguments-validation (who)
-      ((words.signed-int	code))
+      ((signed-int	code))
     (foreign-call "ik_expat_error_string" code)))
+
+(define (XML_GetErrorCode parser)
+  (define who 'XML_GetErrorCode)
+  (with-arguments-validation (who)
+      ((parser	parser))
+    (foreign-call "ik_expat_get_error_code" parser)))
+
+(define (XML_GetCurrentLineNumber parser)
+  (define who 'XML_GetCurrentLineNumber)
+  (with-arguments-validation (who)
+      ((parser	parser))
+    (foreign-call "ik_expat_get_current_line_number" parser)))
+
+(define (XML_GetCurrentColumnNumber parser)
+  (define who 'XML_GetCurrentColumnNumber)
+  (with-arguments-validation (who)
+      ((parser	parser))
+    (foreign-call "ik_expat_get_current_column_number" parser)))
+
+(define (XML_GetCurrentByteIndex parser)
+  (define who 'XML_GetCurrentByteIndex)
+  (with-arguments-validation (who)
+      ((parser	parser))
+    (foreign-call "ik_expat_get_current_byte_index" parser)))
+
+(define (XML_GetCurrentByteCount parser)
+  (define who 'XML_GetCurrentByteCount)
+  (with-arguments-validation (who)
+      ((parser	parser))
+    (foreign-call "ik_expat_get_current_byte_count" parser)))
 
 
 ;;;; miscellaneous functions

@@ -126,28 +126,33 @@ ik_expat_use_parser_as_handler_arg (ikptr s_parser)
  ** Parser.
  ** ----------------------------------------------------------------- */
 
+static const XML_Char *
+fixnum_to_encoding (ikptr s_encoding)
+{
+  switch (IK_UNFIX(s_encoding)) {
+  case 0: return NULL;
+  case 1: return "UTF-8";
+  case 2: return "UTF-16";
+  case 3: return "ISO-8859-1";
+  default: return NULL;
+  }
+}
+
 ikptr
 ik_expat_parser_create (ikptr s_encoding, ikpcb * pcb)
 /* Allocate and return a new parser  object; return a pointer to the new
    parser or  false if allocation  failed.  S_ENCODING must be  a fixnum
    representing the character encoding in use by the document. */
 {
-  const XML_Char *	encoding;
+  const XML_Char *	encoding = fixnum_to_encoding(s_encoding);
   XML_Parser		parser;
-  switch (IK_UNFIX(s_encoding)) {
-  case 0: encoding = NULL;		break;
-  case 1: encoding = "UTF-8";		break;
-  case 2: encoding = "UTF-16";		break;
-  case 3: encoding = "ISO-8859-1";	break;
-  default: encoding = NULL;
-  }
   parser = XML_ParserCreate(encoding);
   return (parser)? ika_pointer_alloc(pcb, (ik_ulong)parser) : false_object;
 }
 ikptr
 ik_expat_parser_create_ns (ikptr s_encoding, ikptr s_namespace_separator, ikpcb * pcb)
 {
-  const XML_Char *	encoding  = IK_BYTEVECTOR_DATA_VOIDP(s_encoding);
+  const XML_Char *	encoding  = fixnum_to_encoding(s_encoding);
   XML_Char		separator = (XML_Char)ik_integer_to_int(s_namespace_separator);
   XML_Parser		parser;
   parser = XML_ParserCreateNS(encoding, separator);
@@ -157,7 +162,7 @@ ikptr
 ik_expat_parser_reset (ikptr s_parser, ikptr s_encoding)
 {
   XML_Parser		parser   = EX_PARSER(s_parser);
-  const XML_Char *	encoding = IK_BYTEVECTOR_DATA_VOIDP(s_encoding);
+  const XML_Char *	encoding = fixnum_to_encoding(s_encoding);
   XML_Bool		rv;
   rv = XML_ParserReset(parser, encoding);
   return rv? true_object : false_object;
@@ -172,13 +177,22 @@ ik_expat_parser_free (ikptr s_parser)
   }
   return void_object;
 }
+ikptr
+ik_expat_external_entity_parser_create (ikptr s_parser, ikptr s_context, ikptr s_encoding, ikpcb * pcb)
+{
+  const XML_Char *	context  = IK_POINTER_DATA_VOIDP(s_context);
+  const XML_Char *	encoding = fixnum_to_encoding(s_encoding);
+  XML_Parser		entity_parser;
+  entity_parser = XML_ExternalEntityParserCreate(EX_PARSER(s_parser), context, encoding);
+  return entity_parser? ika_pointer_alloc(pcb, (ik_ulong)entity_parser) : false_object;
+}
 
 /* ------------------------------------------------------------------ */
 
 ikptr
 ik_expat_set_encoding (ikptr s_parser, ikptr s_encoding)
 {
-  const XML_Char *	encoding = IK_BYTEVECTOR_DATA_VOIDP(s_encoding);
+  const XML_Char *	encoding = fixnum_to_encoding(s_encoding);
   enum XML_Status	rv;
   rv = XML_SetEncoding(EX_PARSER(s_parser), encoding);
   return IK_FIX(rv);
@@ -223,6 +237,13 @@ ik_expat_user_foreign_dtd (ikptr s_parser, ikptr s_use_dtd, ikpcb * pcb)
   enum XML_Error	rv;
   rv = XML_UseForeignDTD(EX_PARSER(s_parser), use_dtd);
   return ika_integer_from_int(pcb, (int)rv);
+}
+ikptr
+ik_expat_set_return_ns_triplet (ikptr s_parser, ikptr s_do_nst)
+{
+  int	do_nst = BOOLEAN_TO_INT(s_do_nst);
+  XML_SetReturnNSTriplet(EX_PARSER(s_parser), do_nst);
+  return void_object;
 }
 ikptr
 ik_expat_parse (ikptr s_parser, ikptr s_buffer, ikptr s_buflen, ikptr s_is_final)
@@ -290,90 +311,6 @@ ik_expat_get_parsing_status (ikptr s_parser, ikptr s_status)
   IK_FIELD(s_status, 1) = status.finalBuffer? true_object : false_object;
   return void_object;
 }
-
-/* ------------------------------------------------------------------ */
-
-#if 0 /* Excluded because, so far, I have  no idea about how to create a
-	 meaningful  memory  functions  suite.   (Marco Maggi;  Jan  21,
-	 2012) */
-ikptr
-ik_expat_parser_create_mm (ikptr s_encoding, ikptr s_namespace_separator, ikpcb * pcb)
-{
-  const XML_Char *	encoding = IK_BYTEVECTOR_DATA_VOIDP(s_encoding);
-  XML_Char		separator = (XML_Char)ik_integer_to_int(s_namespace_separator);
-  const XML_Memory_Handling_Suite * memsuite = NULL;
-  XML_Parser		parser;
-  parser = XML_ParserCreate_MM(encoding, memsuite, separator);
-  return ika_pointer_alloc(pcb, (ik_ulong)parser);
-}
-#endif
-
-
-/** --------------------------------------------------------------------
- ** Elements.
- ** ----------------------------------------------------------------- */
-
-ikptr
-ik_expat_default_current (ikptr s_parser)
-{
-  XML_DefaultCurrent(EX_PARSER(s_parser));
-  return void_object;
-}
-ikptr
-ik_expat_external_entity_parser_create (ikptr s_parser, ikptr s_context, ikptr s_encoding, ikpcb * pcb)
-{
-  const XML_Char *	context  = IK_POINTER_DATA_VOIDP(s_context);
-  const XML_Char *	encoding = IK_BYTEVECTOR_DATA_VOIDP(s_encoding);
-  XML_Parser		entity_parser;
-  entity_parser = XML_ExternalEntityParserCreate(EX_PARSER(s_parser), context, encoding);
-  return ika_pointer_alloc(pcb, (ik_ulong)entity_parser);
-}
-ikptr
-ik_expat_set_param_entity_parsing (ikptr s_parser, ikptr s_parsing, ikpcb * pcb)
-{
-  enum XML_ParamEntityParsing parsing = ik_integer_to_int(s_parsing);
-  int	rv;
-  rv = XML_SetParamEntityParsing(EX_PARSER(s_parser), parsing);
-  return ika_integer_from_int(pcb, rv);
-}
-ikptr
-ik_expat_get_error_code (ikptr s_parser, ikpcb * pcb)
-{
-  enum XML_Error	rv;
-  rv = XML_GetErrorCode(EX_PARSER(s_parser));
-  return ika_integer_from_int(pcb, rv);
-}
-
-/* ------------------------------------------------------------------ */
-
-ikptr
-ik_expat_get_current_line_number (ikptr s_parser, ikpcb * pcb)
-{
-  XML_Size	rv;
-  rv = XML_GetCurrentLineNumber(EX_PARSER(s_parser));
-  return ika_integer_from_ulong(pcb, (ik_ulong)rv);
-}
-ikptr
-ik_expat_get_current_column_number (ikptr s_parser, ikpcb * pcb)
-{
-  XML_Size	rv;
-  rv = XML_GetCurrentColumnNumber(EX_PARSER(s_parser));
-  return ika_integer_from_ulong(pcb, (ik_ulong)rv);
-}
-ikptr
-ik_expat_get_current_byte_index (ikptr s_parser, ikpcb * pcb)
-{
-  XML_Size	rv;
-  rv = XML_GetCurrentByteIndex(EX_PARSER(s_parser));
-  return ika_integer_from_ulong(pcb, (ik_ulong)rv);
-}
-ikptr
-ik_expat_get_current_byte_count (ikptr s_parser, ikpcb * pcb)
-{
-  int	rv;
-  rv = XML_GetCurrentByteCount(EX_PARSER(s_parser));
-  return ika_integer_from_int(pcb, rv);
-}
 ikptr
 ik_expat_get_input_context (ikptr s_parser, ikpcb * pcb)
 /* Return a  vector describing the  current input buffer:  pointer, byte
@@ -397,7 +334,40 @@ ik_expat_get_input_context (ikptr s_parser, ikpcb * pcb)
 
 /* ------------------------------------------------------------------ */
 
+#if 0 /* Excluded because, so far, I have  no idea about how to create a
+	 meaningful  memory  functions  suite.   (Marco Maggi;  Jan  21,
+	 2012) */
+ikptr
+ik_expat_parser_create_mm (ikptr s_encoding, ikptr s_namespace_separator, ikpcb * pcb)
+{
+  const XML_Char *	encoding  = fixnum_to_encoding(s_encoding);
+  XML_Char		separator = (XML_Char)ik_integer_to_int(s_namespace_separator);
+  const XML_Memory_Handling_Suite * memsuite = NULL;
+  XML_Parser		parser;
+  parser = XML_ParserCreate_MM(encoding, memsuite, separator);
+  return ika_pointer_alloc(pcb, (ik_ulong)parser);
+}
+#endif
 
+
+/** --------------------------------------------------------------------
+ ** Elements.
+ ** ----------------------------------------------------------------- */
+
+ikptr
+ik_expat_default_current (ikptr s_parser)
+{
+  XML_DefaultCurrent(EX_PARSER(s_parser));
+  return void_object;
+}
+ikptr
+ik_expat_set_param_entity_parsing (ikptr s_parser, ikptr s_parsing, ikpcb * pcb)
+{
+  enum XML_ParamEntityParsing parsing = IK_UNFIX(s_parsing);
+  int	rv;
+  rv = XML_SetParamEntityParsing(EX_PARSER(s_parser), parsing);
+  return ika_integer_from_int(pcb, rv);
+}
 
 
 /** --------------------------------------------------------------------
@@ -432,6 +402,45 @@ ik_expat_error_string (ikptr s_code, ikpcb * pcb)
   rv = XML_ErrorString(code);
   return ika_bytevector_from_cstring(pcb, rv);
 }
+ikptr
+ik_expat_get_error_code (ikptr s_parser)
+{
+  enum XML_Error	rv;
+  rv = XML_GetErrorCode(EX_PARSER(s_parser));
+  return IK_FIX(rv);
+}
+
+/* ------------------------------------------------------------------ */
+
+ikptr
+ik_expat_get_current_line_number (ikptr s_parser, ikpcb * pcb)
+{
+  XML_Size	rv;
+  rv = XML_GetCurrentLineNumber(EX_PARSER(s_parser));
+  return ika_integer_from_ulong(pcb, (ik_ulong)rv);
+}
+ikptr
+ik_expat_get_current_column_number (ikptr s_parser, ikpcb * pcb)
+{
+  XML_Size	rv;
+  rv = XML_GetCurrentColumnNumber(EX_PARSER(s_parser));
+  return ika_integer_from_ulong(pcb, (ik_ulong)rv);
+}
+ikptr
+ik_expat_get_current_byte_index (ikptr s_parser, ikpcb * pcb)
+{
+  XML_Size	rv;
+  rv = XML_GetCurrentByteIndex(EX_PARSER(s_parser));
+  return ika_integer_from_ulong(pcb, (ik_ulong)rv);
+}
+ikptr
+ik_expat_get_current_byte_count (ikptr s_parser, ikpcb * pcb)
+{
+  int	rv;
+  rv = XML_GetCurrentByteCount(EX_PARSER(s_parser));
+  return ika_integer_from_int(pcb, rv);
+}
+
 
 
 /** --------------------------------------------------------------------
