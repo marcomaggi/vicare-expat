@@ -40,17 +40,16 @@
 
 (parametrise ((check-test-name	'parsing-basic))
 
-  (define xml-1 "
-<stuff>
- <thing>
-  <alpha>one</alpha>
-  <beta>two</beta>
- </thing>
- <thing>
-  <alpha>123</alpha>
-  <beta>456</beta>
- </thing>
-</stuff>")
+  (define xml-1 "<stuff>\
+     <thing>\
+     <alpha>one</alpha>\
+     <beta>two</beta>\
+     </thing>\
+     <thing>\
+     <alpha>123</alpha>\
+     <beta>456</beta>\
+     </thing>\
+     </stuff>")
 
   (define make-start-cb
     (ffi.make-c-callback-maker 'void '(pointer pointer pointer)))
@@ -58,21 +57,29 @@
   (define make-end-cb
     (ffi.make-c-callback-maker 'void '(pointer pointer)))
 
+  (define make-cdata-cb
+    (ffi.make-c-callback-maker 'void '(pointer pointer signed-int)))
+
   (check
       (with-result
        (define (start-callback data element attributes)
 	 (let ((element    (ffi.cstring->string element))
-	       #;(attributes (ffi.argv->strings attributes)))
+	       (attributes (ffi.argv->strings attributes)))
 	   (add-result (list 'start element attributes)))
 	 (void))
        (define (end-callback data element)
 	 (let ((element (ffi.cstring->string element)))
-	   (add-result (list 'end element data)))
+	   (add-result (list 'end element)))
 	 (void))
+       (define (cdata-callback data buf.ptr buf.len)
+	 (let ((text (ffi.cstring->string buf.ptr buf.len)))
+	   (add-result (list 'cdata text))))
        (let ((parser	(XML_ParserCreate 'UTF-8))
 	     (start	(make-start-cb start-callback))
-	     (end	(make-end-cb   end-callback)))
+	     (end	(make-end-cb   end-callback))
+	     (cdata	(make-cdata-cb cdata-callback)))
 	 (XML_SetElementHandler parser start end)
+	 (XML_SetCharacterDataHandler parser cdata)
 	 (let* ((buffer	(string->utf8 xml-1))
 		(finished?	#t)
 		(rv		(XML_Parse parser buffer #f finished?)))
@@ -80,7 +87,16 @@
 	   (ffi.free-c-callback end)
 	   rv)))
     => (list XML_STATUS_OK
-	     '()))
+	     '((start "stuff" ())
+	       (start "thing" ())
+	       (start "alpha" ()) (cdata "one") (end "alpha")
+	       (start "beta" ()) (cdata "two")(end "beta")
+	       (end "thing")
+	       (start "thing" ())
+	       (start "alpha" ()) (cdata "123") (end "alpha")
+	       (start "beta" ()) (cdata "456") (end "beta")
+	       (end "thing")
+	       (end "stuff"))))
 
   #t)
 
