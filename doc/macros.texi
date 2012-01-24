@@ -113,6 +113,11 @@ Revised^6 Report on the algorithmic language Scheme
 @acronym{URL}
 @end macro
 
+@c Remember that @xml is already used by Texinfo.
+@macro axml{}
+@acronym{XML}
+@end macro
+
 @macro urldate{DATE}
 (@acronym{URL} last verified \DATE\)
 @end macro

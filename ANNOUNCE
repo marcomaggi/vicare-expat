@@ -1,0 +1,45 @@
+Subject: [announce] Vicare/Expat revision 0.1d0
+
+			      Vicare/Expat
+			      ============
+
+
+This  package is a  distribution of  C and  Scheme libraries  for Vicare
+Scheme, an  R6RS compliant  Scheme implementation; it  provides bindings
+for the  Expat C  language library, an  XML parser library.   While this
+package can  be used alone,  its purpose is  to provide a  backend Expat
+interface for Nausicaa/Expat: a higher level interface.
+
+  The last  time the  author bothered to  update this paragraph,  he had
+tested Expat version 2.0.1.
+
+  This package makes use of the GNU Autotools.
+
+  The latest version of this package can be downloaded from Github:
+
+	 <http://github.com/marcomaggi/vicare-expat/downloads>
+
+the home page of the Vicare project is at:
+
+               <http://marcomaggi.github.com/vicare.html>
+
+development takes place at:
+
+	      <http://github.com/marcomaggi/vicare-expat/>
+
+  The home page of Nausicaa is at:
+
+	      <http://marcomaggi.github.com/nausicaa.html>
+
+
+Notes for revision 0.1d0
+------------------------
+
+
+
+### end of file
+# Local Variables:
+# mode: text
+# fill-column: 72
+# paragraph-start: "*"
+# End:

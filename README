@@ -1,6 +1,6 @@
 
-		     C wrapper for re2
-		     =================
+			Vicare/Expat
+			============
 
 
 Topics
@@ -18,85 +18,65 @@ Topics
 1. Introduction
 ---------------
 
-The CRE2  distribution is a  C language wrapper for  the RE2
-library, which is implemented in  C++.  RE2 is a fast, safe,
-thread-friendly   alternative    to   backtracking   regular
-expression  engines  like  those  used in  PCRE,  Perl,  and
-Python.
+This package is a distribution of C and Scheme libraries for
+Vicare Scheme,  an R6RS compliant  Scheme implementation; it
+provides bindings  for the Expat C language  library, an XML
+parser library.
 
-  This distribution makes use of the GNU Autotools.
+  While this  package can be  used alone, its purpose  is to
+provide  a  backend Expat  interface  for Nausicaa/Expat:  a
+higher level interface.
+
+  The  last   time  the  author  bothered   to  update  this
+paragraph, he had tested Expat version 2.0.1.
+
+  This package makes use of the GNU Autotools.
 
 
 2. License
 ----------
 
 Copyright (c) 2012 Marco Maggi <marco.maggi-ipsu@poste.it>
-Copyright (c) 2011 Keegan McAllister
-All rights reserved.
 
-Redistribution and  use in source and binary  forms, with or
-without  modification,  are   permitted  provided  that  the
-following conditions are met:
+This  program  is free  software:  you  can redistribute  it
+and/or modify it  under the terms of the  GNU General Public
+License as published by the Free Software Foundation, either
+version  3 of  the License,  or (at  your option)  any later
+version.
 
-1.  Redistributions of  source  code must  retain the  above
-   copyright  notice,  this   list  of  conditions  and  the
-   following disclaimer.
+This  program is  distributed in  the hope  that it  will be
+useful, but  WITHOUT ANY WARRANTY; without  even the implied
+warranty  of  MERCHANTABILITY or  FITNESS  FOR A  PARTICULAR
+PURPOSE.   See  the  GNU  General Public  License  for  more
+details.
 
-2. Redistributions  in binary form must  reproduce the above
-   copyright  notice,  this   list  of  conditions  and  the
-   following  disclaimer in  the documentation  and/or other
-   materials provided with the distribution.
-
-3.  Neither the  name of  the author  nor the  names  of his
-   contributors may  be used to endorse  or promote products
-   derived from this software without specific prior written
-   permission.
-
-THIS  SOFTWARE  IS PROVIDED  BY  THE  COPYRIGHT HOLDERS  AND
-CONTRIBUTORS   ``AS  IS''   AND  ANY   EXPRESS   OR  IMPLIED
-WARRANTIES,  INCLUDING,  BUT  NOT  LIMITED TO,  THE  IMPLIED
-WARRANTIES OF  MERCHANTABILITY AND FITNESS  FOR A PARTICULAR
-PURPOSE ARE  DISCLAIMED.  IN NO  EVENT SHALL THE  AUTHORS OR
-CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
-SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT
-NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
-LOSS  OF USE,  DATA, OR  PROFITS; OR  BUSINESS INTERRUPTION)
-HOWEVER CAUSED  AND ON ANY  THEORY OF LIABILITY,  WHETHER IN
-CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR
-OTHERWISE)  ARISING  IN ANY  WAY  OUT  OF  THE USE  OF  THIS
-SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+You should  have received a  copy of the GNU  General Public
+License   along   with    this   program.    If   not,   see
+<http://www.gnu.org/licenses/>.
 
 
 3. Install
 ----------
 
-To install RE2 follow the instructions in the README file in
-RE2's.  To install CRE2 do this:
+Before installing Vicare/Expat make sure to have a correctly
+installed Expat library.  To install Vicare/Expat do this:
 
-    $ cd cre2-0.1.0
-    $ mkdir "=build"
-    $ cd "=build"
+   $ cd vicare-expat-0.1.0
+   $ mkdir "=build"
+   $ cd "=build"
+   $ ../configure
+   $ make
+   $ make check
+   $ make install
 
-to inspect the available configuration options:
+  To test what a rule will do use the "-n" option; example:
 
-    $ ../configure --help
+    $ make install -n
 
-then do it:
+  The "Makefile" supports the "DESTDIR" environment variable
+to install the files under a temporary location; example:
 
-    $ ../configure [options]
-    $ make
-    $ make check
-    $ make install
-
-  The Makefile supports  the DESTDIR environment variable to
-install files in a  temporary location, example: to see what
-will happen:
-
-    $ make -n install DESTDIR=/tmp/marco/cre2
-
-to really do it:
-
-    $ make install DESTDIR=/tmp/marco/cre2
+    $ make install DESTDIR=/tmp/marco/vicare-expat
 
 
 4. Usage
@@ -108,37 +88,54 @@ Read the documentation.
 A. Credits
 ----------
 
-RE2 is  a Google project.  CRE2  is based on  code by Keegan
-McAllister.  This distribution was assembled by Marco Maggi.
+Vicare/Expat was  written by Marco Maggi.   Vicare Scheme is
+an R6RS compliant fork  of Ikarus Scheme; originally created
+by Abdulaziz Ghuloum, it is now maintained by Marco Maggi.
+
+  Expat is the creation of  James Clark, who's also given us
+groff (an nroff look-alike),  Jade (an implemention of ISO's
+DSSSL stylesheet  language for SGML), XP (a  Java XML parser
+package),  XT  (a Java  XSL  engine).   James  was also  the
+technical lead on the XML Working Group at W3C that produced
+the XML specification.
 
 
 B. Bugs
 -------
 
-Bug reports  are appreciated.   Register issues at  the CRE2
-issue tracker:
+Bug  reports  are   appreciated.   Register  issues  at  the
+Vicare/Expat issue tracker:
 
-	 <http://github.com/marcomaggi/cre2/issues>
+     <http://github.com/marcomaggi/vicare-expat/issues>
 
 
 C. Resources
 ------------
 
-The GNU Project software can be found here:
+The documentation of Vicare/Expat is available online:
 
-		   <http://www.gnu.org/>
+   <http://marcomaggi.github.com/docs/vicare-expat.html>
 
-RE2 is available at:
+the latest version of this package can be downloaded from:
 
-	      <http://code.google.com/p/re2/>
+   <http://github.com/marcomaggi/vicare-expat/downloads>
 
-the last revision of this package is available from:
+development takes place at:
 
-	    <http://github.com/marcomaggi/cre2/>
+	<http://github.com/marcomaggi/vicare-expat/>
 
-the documentation is available online:
+the home page of the Vicare project is at:
 
-       <http://marcomaggi.github.com/docs/cre2.html>
+	 <http://marcomaggi.github.com/vicare.html>
+
+the home page of the Nausicaa project is at:
+
+	<http://marcomaggi.github.com/nausicaa.html>
+
+Expat can be found here:
+
+	      <http://expat.sourceforge.net/>
+
 
 ### end of file
 # Local Variables:

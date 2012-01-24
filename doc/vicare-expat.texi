@@ -42,13 +42,20 @@
 @c ------------------------------------------------------------
 
 @copying
-This document describes version @version{} of @value{PACKAGE}, an Expat
-backend for Vicare Scheme.
+This document describes version @version{} of @value{PACKAGE}, a
+distribution of C and Scheme libraries for Vicare Scheme, an @rnrs{6}
+compliant Scheme implementation; it provides bindings for the Expat C
+language library, an @axml{} parser library.
 
 The package is distributed under the terms of the @gnu{} General Public
 License (@gpl{}) and can be downloaded from:
 
 @center @url{http://github.com/marcomaggi/@value{PACKAGE_NICKNAME}}
+
+@noindent
+Expat is available at:
+
+@center @url{http://expat.sourceforge.net/}
 
 @noindent
 Copyright @copyright{} @value{COPYRIGHT_YEARS} by @value{AUTHOR} @value{AUTHOR_EMAIL}
@@ -125,8 +132,31 @@ Indexes
 @chapter Overview of the package
 
 
-This ...
+Vicare Scheme is an @rnrs{6} compliant Scheme language implementation in
+the form of a native compiler.  @value{PACKAGE} is a distribution of C
+language and Scheme language libraries for Vicare Scheme; it provides
+bindings for the Expat C language library, an @axml{} parser library.
 
+While @value{PACKAGE} can be used alone, its purpose is to provide a
+backend Expat interface for Nausicaa/Expat: a higher level interface
+adding syntactic sugar.
+
+The package installs a C language library implementing wrapper C
+functions for the C language Expat library; on top of this, the Scheme
+library @library{vicare expat} exports one binding for each Expat public
+function, with the exception of:
+
+@example
+XML_ParserCreateMM
+XML_MemMalloc
+XML_MemRealloc
+XML_MemFree
+@end example
+
+@noindent
+additionally the library @library{vicare expat constants} exports one
+binding for each constant value defined in the C language header
+@file{expat.h}.
 
 @c page
 @c ------------------------------------------------------------
@@ -141,6 +171,34 @@ This ...
 @appendix Bibliography and references
 
 
+The documentation of @value{PACKAGE} is available online:
+
+@center @url{http://marcomaggi.github.com/docs/vicare-expat.html}
+
+@noindent
+the latest version of this package can be downloaded from:
+
+@center @url{http://github.com/marcomaggi/vicare-expat/downloads}
+
+@noindent
+development takes place at:
+
+@center @url{http://github.com/marcomaggi/vicare-expat/}
+
+@noindent
+the home page of the Vicare project is at:
+
+@center @url{http://marcomaggi.github.com/vicare.html}
+
+@noindent
+the home page of the Nausicaa project is at:
+
+@center @url{http://marcomaggi.github.com/nausicaa.html}
+
+@noindent
+Expat can be found here:
+
+@center @url{http://expat.sourceforge.net/}
 
 @c page
 @node concept index
