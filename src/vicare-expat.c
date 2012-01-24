@@ -34,8 +34,15 @@
 #include <vicare.h>
 #include <expat.h>
 
-#define EX_PARSER(PARSER)	IK_POINTER_DATA_VOIDP(IK_FIELD(PARSER, 0))
+#define EX_PARSER_POINTER_OBJECT(PARSER)	IK_FIELD(PARSER, 0)
+#define EX_PARSER(PARSER)			\
+  IK_POINTER_DATA_VOIDP(EX_PARSER_POINTER_OBJECT(PARSER))
+
 #define EX_CALLBACK(CALLBACK)	IK_POINTER_DATA_VOIDP(CALLBACK)
+
+#define EX_BOOLEAN(BOOL)	((true_object == (BOOL))? XML_TRUE : XML_FALSE)
+
+#define BOOLEAN_TO_INT(BOOL)	((true_object == (BOOL))? 1 : 0)
 
 
 /** --------------------------------------------------------------------
@@ -85,7 +92,6 @@ DECLARE_SINGLE_CALLBACK_SETTER(set_not_standalone_handler,     XML_SetNotStandal
 DECLARE_SINGLE_CALLBACK_SETTER(set_external_entity_ref_handler,XML_SetExternalEntityRefHandler)
 DECLARE_SINGLE_CALLBACK_SETTER(set_skipped_entity_handler,     XML_SetSkippedEntityHandler)
 
-
 ikptr
 ik_expat_set_external_entity_ref_handler_arg (ikptr s_parser, ikptr s_pointer)
 {
@@ -99,7 +105,21 @@ ik_expat_set_unknown_encoding_handler (ikptr s_parser, ikptr s_callback, ikptr s
 				IK_POINTER_DATA_VOIDP(s_pointer));
   return void_object;
 }
-
+ikptr
+ik_expat_free_content_model (ikptr s_parser, ikptr s_model)
+/* Free   the  data   referenced  by   the  "model"   argument   to  the
+   "XML_ElementDeclHandler" callback. */
+{
+  XML_Content *	model = IK_POINTER_DATA_VOIDP(s_model);
+  XML_FreeContentModel(EX_PARSER(s_parser), model);
+  return void_object;
+}
+ikptr
+ik_expat_use_parser_as_handler_arg (ikptr s_parser)
+{
+  XML_UseParserAsHandlerArg(EX_PARSER(s_parser));
+  return void_object;
+}
 
 
 /** --------------------------------------------------------------------
@@ -131,8 +151,148 @@ ik_expat_parser_create_ns (ikptr s_encoding, ikptr s_namespace_separator, ikpcb 
   XML_Char		separator = (XML_Char)ik_integer_to_int(s_namespace_separator);
   XML_Parser		parser;
   parser = XML_ParserCreateNS(encoding, separator);
-  return ika_pointer_alloc(pcb, (ik_ulong)parser);
+  return (parser)? ika_pointer_alloc(pcb, (ik_ulong)parser) : false_object;
 }
+ikptr
+ik_expat_parser_reset (ikptr s_parser, ikptr s_encoding)
+{
+  XML_Parser		parser   = EX_PARSER(s_parser);
+  const XML_Char *	encoding = IK_BYTEVECTOR_DATA_VOIDP(s_encoding);
+  XML_Bool		rv;
+  rv = XML_ParserReset(parser, encoding);
+  return rv? true_object : false_object;
+}
+ikptr
+ik_expat_parser_free (ikptr s_parser)
+{
+  XML_Parser	parser = EX_PARSER(s_parser);
+  if (parser) {
+    XML_ParserFree(parser);
+    IK_POINTER_SET_NULL(EX_PARSER_POINTER_OBJECT(s_parser));
+  }
+  return void_object;
+}
+
+/* ------------------------------------------------------------------ */
+
+ikptr
+ik_expat_set_encoding (ikptr s_parser, ikptr s_encoding)
+{
+  const XML_Char *	encoding = IK_BYTEVECTOR_DATA_VOIDP(s_encoding);
+  enum XML_Status	rv;
+  rv = XML_SetEncoding(EX_PARSER(s_parser), encoding);
+  return IK_FIX(rv);
+}
+ikptr
+ik_expat_set_user_data (ikptr s_parser, ikptr s_pointer)
+{
+  XML_SetUserData(EX_PARSER(s_parser), IK_BYTEVECTOR_DATA_VOIDP(s_pointer));
+  return void_object;
+}
+ikptr
+ik_expat_get_user_data (ikptr s_parser, ikpcb * pcb)
+{
+  return ika_pointer_alloc(pcb, (ik_ulong)XML_GetUserData(EX_PARSER(s_parser)));
+}
+
+/* ------------------------------------------------------------------ */
+
+ikptr
+ik_expat_set_base (ikptr s_parser, ikptr s_base)
+{
+  const XML_Char *	base;
+  enum XML_Status	rv;
+  base = (false_object == s_base)? NULL : IK_BYTEVECTOR_DATA_VOIDP(s_base);
+  rv = XML_SetBase(EX_PARSER(s_parser), base);
+  return IK_FIX(rv);
+}
+ikptr
+ik_expat_get_base (ikptr s_parser, ikpcb * pcb)
+{
+  const XML_Char *	base;
+  base = XML_GetBase(EX_PARSER(s_parser));
+  return base? false_object : ika_bytevector_from_cstring(pcb, base);
+}
+
+/* ------------------------------------------------------------------ */
+
+ikptr
+ik_expat_user_foreign_dtd (ikptr s_parser, ikptr s_use_dtd, ikpcb * pcb)
+{
+  XML_Bool		use_dtd = EX_BOOLEAN(s_use_dtd);
+  enum XML_Error	rv;
+  rv = XML_UseForeignDTD(EX_PARSER(s_parser), use_dtd);
+  return ika_integer_from_int(pcb, (int)rv);
+}
+ikptr
+ik_expat_parse (ikptr s_parser, ikptr s_buffer, ikptr s_buflen, ikptr s_is_final)
+/* Parse the next chunk of  a document consuming characters from BUFFER.
+   BUFFER can  be a bytevector  or pointer, BUFLEN  can be false  or the
+   number of bytes in BUFFER.  If  BUFFER is a pointer: BUFLEN must be a
+   signed integer;  if BUFFER is a  bytevector: BUFLEN can  be false, in
+   which  case the  whole bytevector  is consumed.   IS_FINAL must  be a
+   boolean. */
+{
+  const char *	buffer;
+  int		buflen;
+  int		is_final = BOOLEAN_TO_INT(s_is_final);
+  enum XML_Status	rv;
+  if (ik_is_pointer(s_buffer)) {
+    buffer = IK_POINTER_DATA_VOIDP(s_buffer);
+    buflen = ik_integer_to_int(s_buflen);
+  } else { /* is bytevector */
+    buffer = IK_BYTEVECTOR_DATA_CHARP(s_buffer);
+    buflen = (int)IK_BYTEVECTOR_LENGTH(s_buffer);
+  }
+  rv = XML_Parse(EX_PARSER(s_parser), buffer, buflen, is_final);
+  return IK_FIX(rv);
+}
+ikptr
+ik_expat_get_buffer (ikptr s_parser, ikptr s_buflen, ikpcb * pcb)
+{
+  int		buflen = ik_integer_to_int(s_buflen);
+  void *	buffer;
+  buffer = XML_GetBuffer(EX_PARSER(s_parser), buflen);
+  return ika_pointer_alloc(pcb, (ik_ulong)buffer);
+}
+ikptr
+ik_expat_parse_buffer (ikptr s_parser, ikptr s_buflen, ikptr s_is_final)
+{
+  int	buflen   = (false_object == s_buflen)? 0 : ik_integer_to_int(s_buflen);
+  int	is_final = (true_object == s_is_final)? 1 : 0;
+  enum XML_Status	rv;
+  rv = XML_ParseBuffer(EX_PARSER(s_parser), buflen, is_final);
+  return IK_FIX(rv);
+}
+ikptr
+ik_expat_stop_parser (ikptr s_parser, ikptr s_resumable)
+{
+  XML_Bool		resumable = EX_BOOLEAN(s_resumable);
+  enum XML_Status	rv;
+  rv = XML_StopParser(EX_PARSER(s_parser), resumable);
+  return IK_FIX(rv);
+}
+ikptr
+ik_expat_resume_parser (ikptr s_parser)
+{
+  enum XML_Status	rv;
+  rv = XML_ResumeParser(EX_PARSER(s_parser));
+  return IK_FIX(rv);
+}
+ikptr
+ik_expat_get_parsing_status (ikptr s_parser, ikptr s_status)
+/* Acquire the parsing status of the parser.  STATUS must be an instance
+   of data structure PARSING-STATUS. */
+{
+  XML_ParsingStatus	status;
+  XML_GetParsingStatus(EX_PARSER(s_parser), &status);
+  IK_FIELD(s_status, 0) = IK_FIX(status.parsing);
+  IK_FIELD(s_status, 1) = status.finalBuffer? true_object : false_object;
+  return void_object;
+}
+
+/* ------------------------------------------------------------------ */
+
 #if 0 /* Excluded because, so far, I have  no idea about how to create a
 	 meaningful  memory  functions  suite.   (Marco Maggi;  Jan  21,
 	 2012) */
@@ -147,136 +307,18 @@ ik_expat_parser_create_mm (ikptr s_encoding, ikptr s_namespace_separator, ikpcb 
   return ika_pointer_alloc(pcb, (ik_ulong)parser);
 }
 #endif
-ikptr
-ik_expat_parser_reset (ikptr s_parser, ikptr s_encoding)
-{
-  XML_Parser		parser   = EX_PARSER(s_parser);
-  const XML_Char *	encoding = IK_BYTEVECTOR_DATA_VOIDP(s_encoding);
-  XML_Bool		rv;
-  rv = XML_ParserReset(parser, encoding);
-  return rv? true_object : false_object;
-}
+
+
+/** --------------------------------------------------------------------
+ ** Elements.
+ ** ----------------------------------------------------------------- */
+
 ikptr
 ik_expat_default_current (ikptr s_parser)
 {
   XML_DefaultCurrent(EX_PARSER(s_parser));
   return void_object;
 }
-ikptr
-ik_expat_set_user_data (ikptr s_parser, ikptr s_pointer)
-{
-  XML_SetUserData(EX_PARSER(s_parser), IK_BYTEVECTOR_DATA_VOIDP(s_pointer));
-  return void_object;
-}
-ikptr
-ik_expat_get_user_data (ikptr s_parser, ikpcb * pcb)
-{
-  return ika_pointer_alloc(pcb, (ik_ulong)XML_GetUserData(EX_PARSER(s_parser)));
-}
-ikptr
-ik_expat_set_encoding (ikptr s_parser, ikptr s_encoding, ikpcb * pcb)
-{
-  const XML_Char *	encoding = IK_BYTEVECTOR_DATA_VOIDP(s_encoding);
-  enum XML_Status	rv;
-  rv = XML_SetEncoding(EX_PARSER(s_parser), encoding);
-  return ika_integer_from_int(pcb, (int)rv);
-}
-ikptr
-ik_expat_use_parser_as_handler_arg (ikptr s_parser)
-{
-  XML_UseParserAsHandlerArg(EX_PARSER(s_parser));
-  return void_object;
-}
-ikptr
-ik_expat_user_foreign_dtd (ikptr s_parser, ikptr s_use_dtd, ikpcb * pcb)
-{
-  XML_Bool		use_dtd = (true_object == s_use_dtd)? XML_TRUE : XML_FALSE;
-  enum XML_Error	rv;
-  rv = XML_UseForeignDTD(EX_PARSER(s_parser), use_dtd);
-  return ika_integer_from_int(pcb, (int)rv);
-}
-
-/* ------------------------------------------------------------------ */
-
-ikptr
-ik_expat_set_base (ikptr s_parser, ikptr s_base, ikpcb * pcb)
-{
-  const XML_Char *	base = IK_BYTEVECTOR_DATA_VOIDP(s_base);
-  enum XML_Status	rv;
-  rv = XML_SetBase(EX_PARSER(s_parser), base);
-  return ika_integer_from_int(pcb, (int)rv);
-}
-ikptr
-ik_expat_get_base (ikptr s_parser, ikpcb * pcb)
-{
-  const XML_Char *	base;
-  base = XML_GetBase(EX_PARSER(s_parser));
-  return ika_bytevector_from_cstring(pcb, base);
-}
-
-/* ------------------------------------------------------------------ */
-
-ikptr
-ik_expat_parse (ikptr s_parser, ikptr s_buffer, ikptr s_buflen, ikptr s_is_final, ikpcb * pcb)
-{
-  const char *	buffer;
-  int		buflen;
-  int		is_final = (true_object == s_is_final)? 1 : 0;
-  enum XML_Status	rv;
-  if (ik_is_pointer(s_buffer)) {
-    buffer = IK_POINTER_DATA_VOIDP(s_buffer);
-    buflen = ik_integer_to_int(s_buflen);
-  } else { /* is bytevector */
-    buffer = IK_BYTEVECTOR_DATA_CHARP(s_buffer);
-    buflen = (int)IK_BYTEVECTOR_LENGTH(s_buffer);
-  }
-  rv = XML_Parse(EX_PARSER(s_parser), buffer, buflen, is_final);
-  return ika_integer_from_int(pcb, (int)rv);
-}
-ikptr
-ik_expat_get_buffer (ikptr s_parser, ikptr s_length, ikpcb * pcb)
-{
-  int		len = ik_integer_to_int(s_length);
-  void *	buffer;
-  buffer = XML_GetBuffer(EX_PARSER(s_parser), len);
-  return ika_pointer_alloc(pcb, (ik_ulong)buffer);
-}
-ikptr
-ik_expat_parse_buffer (ikptr s_parser, ikptr s_buflen, ikptr s_is_final, ikpcb * pcb)
-{
-  int	buflen   = ik_integer_to_int(s_buflen);
-  int	is_final = (true_object == s_is_final)? 1 : 0;
-  enum XML_Status	rv;
-  rv = XML_ParseBuffer(EX_PARSER(s_parser), buflen, is_final);
-  return ika_integer_from_int(pcb, (int)rv);
-}
-ikptr
-ik_expat_stop_parser (ikptr s_parser, ikptr s_resumable, ikpcb * pcb)
-{
-  XML_Bool		resumable = (true_object == s_resumable)? XML_TRUE : XML_FALSE;
-  enum XML_Status	rv;
-  rv = XML_StopParser(EX_PARSER(s_parser), resumable);
-  return ika_integer_from_int(pcb, (int)rv);
-}
-ikptr
-ik_expat_resume_parser (ikptr s_parser, ikpcb * pcb)
-{
-  enum XML_Status	rv;
-  rv = XML_ResumeParser(EX_PARSER(s_parser));
-  return ika_integer_from_int(pcb, (int)rv);
-}
-ikptr
-ik_expat_get_parsing_status (ikptr s_parser, ikptr s_status)
-{
-  XML_ParsingStatus	status;
-  XML_GetParsingStatus(EX_PARSER(s_parser), &status);
-  IK_FIELD(s_status, 0) = IK_FIX(status.parsing);
-  IK_FIELD(s_status, 1) = status.finalBuffer? true_object : false_object;
-  return void_object;
-}
-
-/* ------------------------------------------------------------------ */
-
 ikptr
 ik_expat_external_entity_parser_create (ikptr s_parser, ikptr s_context, ikptr s_encoding, ikpcb * pcb)
 {
@@ -355,23 +397,6 @@ ik_expat_get_input_context (ikptr s_parser, ikpcb * pcb)
 
 /* ------------------------------------------------------------------ */
 
-ikptr
-ik_expat_free_content_model (ikptr s_parser, ikptr s_model)
-{
-  XML_Content *	model = IK_POINTER_DATA_VOIDP(s_model);
-  XML_FreeContentModel(EX_PARSER(s_parser), model);
-  return void_object;
-}
-ikptr
-ik_expat_parser_free (ikptr s_parser)
-{
-  XML_Parser	parser;
-  if (parser) {
-    XML_ParserFree(EX_PARSER(s_parser));
-    IK_POINTER_SET_NULL(IK_FIELD(s_parser, 0));
-  }
-  return void_object;
-}
 
 
 

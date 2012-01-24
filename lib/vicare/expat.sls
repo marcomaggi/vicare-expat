@@ -92,7 +92,12 @@
     XML_ParserFree
     XML_ErrorString
     XML_ExpatVersion
-    XML_GetFeatureList)
+    XML_GetFeatureList
+
+    ;; parsing status object
+    make-parsing-status			parsing-status?
+    parsing-status-parsing		parsing-status-final-buffer?
+    )
   (import (vicare)
     (vicare syntactic-extensions)
     (prefix (vicare ffi) ffi.)
@@ -101,9 +106,9 @@
 
 ;;;; arguments validation
 
-(define-argument-validation (parser who obj)
-  (parser? obj)
-  (assertion-violation who "expected Expat parser as argument" obj))
+(define-argument-validation (boolean who obj)
+  (boolean? obj)
+  (assertion-violation who "expected boolean as argument" obj))
 
 (define-argument-validation (fixnum who obj)
   (fixnum? obj)
@@ -121,13 +126,80 @@
   (bytevector? obj)
   (assertion-violation who "expected bytevector as argument" obj))
 
+;;; --------------------------------------------------------------------
+
 (define-argument-validation (false/bytevector who obj)
   (or (not obj) (bytevector? obj))
   (assertion-violation who "expected false or bytevector as argument" obj))
 
+(define-argument-validation (pointer/bytevector who obj)
+  (or (ffi.pointer? obj) (bytevector? obj))
+  (assertion-violation who "expected pointer or bytevector as argument" obj))
+
 (define-argument-validation (false/encoding-symbol who obj)
   (or (not obj) (memq obj '(UTF-8 UTF-16 ISO-8859-1)))
   (assertion-violation who "expected false or Expat encoding symbol as argument" obj))
+
+(define-argument-validation (false/non-negative-signed-int who obj)
+  (or (not obj) (and (words.signed-int? obj) (<= 0 obj)))
+  (assertion-violation who "expected false or positive signed int as argument" obj))
+
+(define-argument-validation (encoding-symbol who obj)
+  (memq obj '(UTF-8 UTF-16 ISO-8859-1))
+  (assertion-violation who "expected Expat encoding symbol as argument" obj))
+
+(define-argument-validation (ascii-char who obj)
+  (and (char? obj) (<= 0 (char->integer obj) 127))
+  (assertion-violation who "expected Scheme character in the ASCII range as argument" obj))
+
+;;; --------------------------------------------------------------------
+
+(define-argument-validation (parser who obj)
+  (parser? obj)
+  (assertion-violation who "expected Expat parser as argument" obj))
+
+
+;;;; data structures
+
+(define-struct parser
+  (pointer))
+
+(define (%struct-parser-printer S port sub-printer)
+  (define-inline (%display thing)
+    (display thing port))
+  (%display "#[expat-parser")
+  (%display " pointer=")	(%display (parser-pointer S))
+  (%display "]"))
+
+(define %parser-guardian
+  (make-guardian))
+
+(define (%free-allocated-guardian)
+  (do ((P (%parser-guardian) (%parser-guardian)))
+      ((not P))
+    (foreign-call "ik_expat_parser_free" P)))
+
+;;; --------------------------------------------------------------------
+
+(define-struct parsing-status
+  (parsing final-buffer?))
+
+(define (%struct-parsing-status-printer S port sub-printer)
+  (define-inline (%display thing)
+    (display thing port))
+  (%display "#[expat-parsing-status")
+  (%display " parsing=")	(%display (let ((status (parsing-status-parsing S)))
+					    (cond ((= status XML_INITIALIZED)
+						   "XML_INITIALIZED")
+						  ((= status XML_PARSING)
+						   "XML_PARSING")
+						  ((= status XML_FINISHED)
+						   "XML_FINISHED")
+						  ((= status XML_SUSPENDED)
+						   "XML_SUSPENDED")
+						  (else "<unknown status>"))))
+  (%display " final-buffer?=")	(%display (parsing-status-final-buffer? S))
+  (%display "]"))
 
 
 ;;;; helpers
@@ -206,26 +278,20 @@
        (pointer		pointer))
     (foreign-call "ik_expat_set_unknown_encoding_handler" parser callback pointer)))
 
-
-;;;; parser structure
+;;; --------------------------------------------------------------------
 
-(define-struct parser
-  (pointer))
+(define (XML_FreeContentModel parser model)
+  (define who 'XML_FreeContentModel)
+  (with-arguments-validation (who)
+      ((parser		parser)
+       (pointer		model))
+    (foreign-call "ik_expat_free_content_model" parser model)))
 
-(define (%struct-parser-printer S port sub-printer)
-  (define-inline (%display thing)
-    (display thing port))
-  (%display "#[expat-parser")
-  (%display " pointer=")	(%display (parser-pointer S))
-  (%display "]"))
-
-(define %parser-guardian
-  (make-guardian))
-
-(define (%free-allocated-guardian)
-  (do ((P (%parser-guardian) (%parser-guardian)))
-      ((not P))
-    (foreign-call "ik_expat_parser_free" P)))
+(define (XML_UseParserAsHandlerArg parser)
+  (define who 'XML_UseParserAsHandlerArg)
+  (with-arguments-validation (who)
+      ((parser	parser))
+    (foreign-call "ik_expat_use_parser_as_handler_arg" parser)))
 
 
 ;;;; parsers
@@ -238,47 +304,135 @@
     (define who 'XML_ParserCreate)
     (with-arguments-validation (who)
 	((false/encoding-symbol	encoding))
-      (let ((rv (foreign-call "ik_expat_parser_create" (%document-encoding-symbol->fixnum encoding))))
+      (let ((rv (foreign-call "ik_expat_parser_create"
+			      (%document-encoding-symbol->fixnum encoding))))
 	(if rv
-	    (%parser-guardian rv)
+	    (%parser-guardian (make-parser rv))
 	  (error who "error allocating Expat parser" encoding)))))))
 
-ik_expat_parser_create_ns (encoding namespace_separator)
+(define (XML_ParserCreateNS encoding namespace-separator)
+  (define who 'XML_ParserCreateNS)
+  (with-arguments-validation (who)
+      ((false/encoding-symbol	encoding)
+       (ascii-char		namespace-separator))
+    (let ((rv (foreign-call "ik_expat_parser_create_ns"
+			    (%document-encoding-symbol->fixnum encoding)
+			    namespace-separator)))
+      (if rv
+	  (%parser-guardian (make-parser rv))
+	(error who "error allocating Expat parser" encoding namespace-separator)))))
 
-ik_expat_free_content_model (parser model)
+(define (XML_ParserReset parser encoding)
+  (define who 'XML_ParserReset)
+  (with-arguments-validation (who)
+      ((false/encoding-symbol	encoding))
+    (foreign-call "ik_expat_parser_reset" parser encoding)))
 
-ik_expat_parser_free (parser)
+(define (XML_ParserFree parser)
+  (define who 'XML_ParserFree)
+  (with-arguments-validation (who)
+      ((parser	parser))
+    (foreign-call "ik_expat_parser_free" parser)))
 
+;;; --------------------------------------------------------------------
 
-ik_expat_parser_reset (parser encoding)
+(define (XML_SetEncoding parser encoding)
+  (define who 'XML_SetEncoding)
+  (with-arguments-validation (who)
+      ((parser		parser)
+       (encoding-symbol	encoding))
+    (foreign-call "ik_expat_set_encoding" parser (%document-encoding-symbol->fixnum encoding))))
 
-ik_expat_default_current (parser)
+(define (XML_SetUserData parser pointer)
+  (define who 'XML_SetUserData)
+  (with-arguments-validation (who)
+      ((parser	parser)
+       (pointer	pointer))
+    (foreign-call "ik_expat_set_user_data" parser pointer)))
 
-ik_expat_set_user_data (parser pointer)
+(define (XML_GetUserData parser)
+  (define who 'XML_GetUserData)
+  (with-arguments-validation (who)
+      ((parser	parser))
+    (foreign-call "ik_expat_get_user_data" parser)))
 
-ik_expat_get_user_data (parser)
+;;; --------------------------------------------------------------------
 
-ik_expat_set_encoding (parser encoding)
+(define (XML_SetBase parser base)
+  (define who 'XML_SetBase)
+  (with-arguments-validation (who)
+      ((parser			parser)
+       (false/bytevector	base))
+    (foreign-call "ik_expat_set_base" parser base)))
 
-ik_expat_use_parser_as_handler_arg (parser)
+(define (XML_GetBase parser)
+  (define who 'XML_GetBase)
+  (with-arguments-validation (who)
+      ((parser	parser))
+    (foreign-call "ik_expat_get_base" parser)))
 
-ik_expat_user_foreign_dtd (parser use_dtd)
+;;; --------------------------------------------------------------------
 
-ik_expat_set_base (parser base)
+(define (XML_UseForeignDTD parser use-dtd?)
+  (define who 'XML_UseForeignDTD)
+  (with-arguments-validation (who)
+      ((parser	parser)
+       (boolean	use-dtd?))
+    (foreign-call "ik_expat_user_foreign_dtd" parser use-dtd?)))
 
-ik_expat_get_base (parser)
+(define (XML_Parse parser buffer buflen final?)
+  (define who 'XML_Parse)
+  (with-arguments-validation (who)
+      ((parser	parser)
+       (pointer/bytevector		buffer)
+       (false/non-negative-signed-int	buflen)
+       (boolean				final?))
+    (foreign-call "ik_expat_parse" parser buffer buflen final?)))
 
-ik_expat_parse (parser buffer buflen is_final)
+(define (XML_GetBuffer parser buflen)
+  (define who 'XML_GetBuffer)
+  (with-arguments-validation (who)
+      ((parser		parser)
+       (signed-int	buflen))
+    (foreign-call "ik_expat_get_buffer" parser buflen)))
 
-ik_expat_get_buffer (parser length)
+(define (XML_ParseBuffer parser buflen final?)
+  (define who 'XML_ParseBuffer)
+  (with-arguments-validation (who)
+      ((parser			parser)
+       (false/signed-int	buflen)
+       (boolean			final?))
+    (foreign-call "ik_expat_parse_buffer" parser buflen final?)))
 
-ik_expat_parse_buffer (parser buflen is_final)
+(define (XML_StopParser parser resumable?)
+  (define who 'XML_StopParser)
+  (with-arguments-validation (who)
+      ((parser	parser)
+       (boolean	resumable?))
+    (foreign-call "ik_expat_stop_parser" parser resumable?)))
 
-ik_expat_stop_parser (parser resumable)
+(define (XML_ResumeParser parser)
+  (define who 'XML_ResumeParser)
+  (with-arguments-validation (who)
+      ((parser	parser))
+    (foreign-call "ik_expat_resume_parser" parser)))
 
-ik_expat_resume_parser (parser)
+(define (XML_GetParsingStatus parser)
+  (define who 'XML_GetParsingStatus)
+  (with-arguments-validation (who)
+      ((parser	parser))
+    (let ((status (make-parsing-status #f #f)))
+      (foreign-call "ik_expat_get_parsing_status" parser status)
+      status)))
 
-ik_expat_get_parsing_status (parser status)
+
+;;;; elements
+
+(define (XML_DefaultCurrent parser)
+  (define who 'XML_DefaultCurrent)
+  (with-arguments-validation (who)
+      ((parser	parser))
+    (foreign-call "ik_expat_default_current" parser)))
 
 ik_expat_external_entity_parser_create (parser context encoding)
 
@@ -336,7 +490,8 @@ ik_expat_get_input_context (parser)
 
 ;;;; done
 
-(set-rtd-printer! (type-descriptor parsre) %struct-parser-printer)
+(set-rtd-printer! (type-descriptor parser) %struct-parser-printer)
+(set-rtd-printer! (type-descriptor parsing-status) %struct-parsing-status-printer)
 
 )
 
