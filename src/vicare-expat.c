@@ -246,7 +246,7 @@ ik_expat_set_return_ns_triplet (ikptr s_parser, ikptr s_do_nst)
   return void_object;
 }
 ikptr
-ik_expat_parse (ikptr s_parser, ikptr s_buffer, ikptr s_buflen, ikptr s_is_final)
+ik_expat_parse (ikptr s_parser, ikptr s_buffer, ikptr s_buflen, ikptr s_is_final, ikpcb * pcb)
 /* Parse the next chunk of  a document consuming characters from BUFFER.
    BUFFER can  be a bytevector  or pointer, BUFLEN  can be false  or the
    number of bytes in BUFFER.  If  BUFFER is a pointer: BUFLEN must be a
@@ -254,18 +254,23 @@ ik_expat_parse (ikptr s_parser, ikptr s_buffer, ikptr s_buflen, ikptr s_is_final
    which  case the  whole bytevector  is consumed.   IS_FINAL must  be a
    boolean. */
 {
-  const char *	buffer;
-  int		buflen;
-  int		is_final = BOOLEAN_TO_INT(s_is_final);
   enum XML_Status	rv;
-  if (ik_is_pointer(s_buffer)) {
-    buffer = IK_POINTER_DATA_VOIDP(s_buffer);
-    buflen = ik_integer_to_int(s_buflen);
-  } else { /* is bytevector */
-    buffer = IK_BYTEVECTOR_DATA_CHARP(s_buffer);
-    buflen = (int)IK_BYTEVECTOR_LENGTH(s_buffer);
+  ikptr			sk;
+  sk = ik_enter_c_function(pcb);
+  {
+    const char *	buffer;
+    int		buflen;
+    int		is_final = BOOLEAN_TO_INT(s_is_final);
+    if (ik_is_pointer(s_buffer)) {
+      buffer = IK_POINTER_DATA_VOIDP(s_buffer);
+      buflen = ik_integer_to_int(s_buflen);
+    } else { /* is bytevector */
+      buffer = IK_BYTEVECTOR_DATA_CHARP(s_buffer);
+      buflen = (int)IK_BYTEVECTOR_LENGTH(s_buffer);
+    }
+    rv = XML_Parse(EX_PARSER(s_parser), buffer, buflen, is_final);
   }
-  rv = XML_Parse(EX_PARSER(s_parser), buffer, buflen, is_final);
+  ik_leave_c_function(pcb, sk);
   return IK_FIX(rv);
 }
 ikptr
@@ -277,27 +282,42 @@ ik_expat_get_buffer (ikptr s_parser, ikptr s_buflen, ikpcb * pcb)
   return ika_pointer_alloc(pcb, (ik_ulong)buffer);
 }
 ikptr
-ik_expat_parse_buffer (ikptr s_parser, ikptr s_buflen, ikptr s_is_final)
+ik_expat_parse_buffer (ikptr s_parser, ikptr s_buflen, ikptr s_is_final, ikpcb * pcb)
 {
   int	buflen   = (false_object == s_buflen)? 0 : ik_integer_to_int(s_buflen);
   int	is_final = (true_object == s_is_final)? 1 : 0;
+  ikptr	sk;
   enum XML_Status	rv;
-  rv = XML_ParseBuffer(EX_PARSER(s_parser), buflen, is_final);
+  sk = ik_enter_c_function(pcb);
+  {
+    rv = XML_ParseBuffer(EX_PARSER(s_parser), buflen, is_final);
+  }
+  ik_leave_c_function(pcb, sk);
   return IK_FIX(rv);
 }
 ikptr
-ik_expat_stop_parser (ikptr s_parser, ikptr s_resumable)
+ik_expat_stop_parser (ikptr s_parser, ikptr s_resumable, ikpcb * pcb)
 {
   XML_Bool		resumable = EX_BOOLEAN(s_resumable);
   enum XML_Status	rv;
-  rv = XML_StopParser(EX_PARSER(s_parser), resumable);
+  ikptr			sk;
+  sk = ik_enter_c_function(pcb);
+  {
+    rv = XML_StopParser(EX_PARSER(s_parser), resumable);
+  }
+  ik_leave_c_function(pcb, sk);
   return IK_FIX(rv);
 }
 ikptr
-ik_expat_resume_parser (ikptr s_parser)
+ik_expat_resume_parser (ikptr s_parser, ikpcb * pcb)
 {
   enum XML_Status	rv;
-  rv = XML_ResumeParser(EX_PARSER(s_parser));
+  ikptr			sk;
+  sk = ik_enter_c_function(pcb);
+  {
+    rv = XML_ResumeParser(EX_PARSER(s_parser));
+  }
+  ik_leave_c_function(pcb, sk);
   return IK_FIX(rv);
 }
 ikptr
