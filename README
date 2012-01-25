@@ -21,7 +21,8 @@ Topics
 This package is a distribution of C and Scheme libraries for
 Vicare Scheme,  an R6RS compliant  Scheme implementation; it
 provides bindings  for the Expat C language  library, an XML
-parser library.
+parser  library.  Expat  must  be compiled  to handle  UTF-8
+strings.
 
   While this  package can be  used alone, its purpose  is to
 provide  a  backend Expat  interface  for Nausicaa/Expat:  a

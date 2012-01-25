@@ -159,6 +159,8 @@ and also online:
 
 @center @url{http://marcomaggi.github.com/docs/expat.html}
 
+Expat must be compiled to handle @utf{}-8 strings.
+
 The package installs a C language library implementing wrapper C
 functions for the C language Expat library; on top of this, the Scheme
 library @library{vicare expat} exports one binding for each Expat public
