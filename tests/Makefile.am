@@ -37,6 +37,9 @@ TESTS			=	\
 
 EXTRA_DIST =	\
 	test-vicare-expat.sps				\
+	\
+	proof-basic.sps					\
+	\
 	checks.sls
 
 ### end of file

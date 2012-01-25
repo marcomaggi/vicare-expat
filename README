@@ -136,6 +136,15 @@ Expat can be found here:
 
 	      <http://expat.sourceforge.net/>
 
+notice that unofficial Expat documentation in Texinfo format
+is available in the Nimby-Doc project at:
+
+	  <http://github.com/marcomaggi/nimby-doc>
+
+and also online:
+
+       <http://marcomaggi.github.com/docs/expat.html>
+
 
 ### end of file
 # Local Variables:
