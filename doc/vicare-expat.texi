@@ -7,6 +7,11 @@
 @include version.texi
 @include macros.texi
 
+@macro expatref{NODE, TITLE}
+@xref{\NODE\,\TITLE\,\TITLE\,expat}
+@end macro
+
+
 @c page
 @c ------------------------------------------------------------
 @c Values.
@@ -111,6 +116,7 @@ entitled ``@gnu{} Free Documentation License''.
 
 @menu
 * overview::                    Overview of the package.
+* parsers::                     Building and running parsers.
 * handlers::                    Building and registering callbacks.
 
 Appendices
@@ -259,6 +265,153 @@ which prints:
 (end "thing")
 (end "stuff")
 @end example
+
+@c page
+@node parsers
+@chapter Building and running parsers
+
+
+@menu
+* parsers create::              Creating parsers.
+* parsers external::            Creating external entities parsers.
+* parsers parsing::             Parsing data.
+@end menu
+
+@c page
+@node parsers create
+@section Creating parsers
+
+
+All the following bindings are exported by the @library{vicare expat}
+library.
+
+
+@defun XML_ParserCreate
+@defunx XML_ParserCreate @var{encoding}
+@expatref{api create, XML_ParserCreate}.  Build a new parser and return
+a pointer object referencing it.  Values returned by this function must
+be finalised with @func{XML_ParserFree}; this will happen automatically
+when the pointer object is garbage collected.
+
+The optional @var{encoding} must be one of the Scheme symbols:
+@code{UTF-8}, @code{UTF-16}, @code{ISO-8859-1}, @code{US-ASCII} or
+@false{}; when @var{encoding} is not used or it is @false{}: the parser
+will honour the encoding specification in the document.
+@end defun
+
+
+@defun XML_ParserCreateNS @var{encoding} @var{namespace-separator}
+@expatref{api create, XML_ParserCreateNS}.  Build a new parser, having
+namespace processing in effect, and return a pointer object referencing
+it.  Values returned by this function must be finalised with
+@func{XML_ParserFree}; this will happen automatically when the pointer
+object is garbage collected.
+
+@var{encoding} is as in @func{XML_ParserCreate}.
+@var{namespace-separator} must be a Scheme character in the @ascii{}
+range.
+@end defun
+
+
+@defun XML_ParserFree @var{parser}
+@expatref{api create, XML_ParserFree}.  Release all the resource
+associated to the pointer object @var{parser}, then mutate @var{parser}
+to represent the @cnull{} pointer; return unspecified values.  It is
+safe to apply this function multiple times to the same @var{parser}
+object: the first time it will release the resources, subsequent times
+nothing will happen.
+@end defun
+
+
+@defun XML_ParserReset @var{parser} @var{encoding}
+@expatref{api create, XML_ParserReset}.  Reset a parser so that it can
+be used again; return a boolean value: @true{} if success, @false{} if
+this parser cannot be reset.  @var{encoding} is as in
+@func{XML_ParserCreate}.
+@end defun
+
+@c page
+@node parsers external
+@section Creating external entities parsers
+
+
+All the following bindings are exported by the @library{vicare expat}
+library.
+
+
+@defun XML_SetParamEntityParsing @var{parser} @var{code}
+@expatref{api misc, XML_SetParamEntityParsing}.  Enable or disable
+external entity parsing according to @var{code}, which must be a fixnum
+among:
+
+@example
+XML_PARAM_ENTITY_PARSING_NEVER
+XML_PARAM_ENTITY_PARSING_UNLESS_STANDALONE
+XML_PARAM_ENTITY_PARSING_ALWAYS
+@end example
+@end defun
+
+
+@defun XML_ExternalEntityParserCreate @var{parser} @var{context} @var{encoding}
+@expatref{api create, XML_ExternalEntityParserCreate}.  Build a new
+parser to parse an external entity for @var{parser} and return a pointer
+object referencing it.  Values returned by this function must be
+finalised with @func{XML_ParserFree}; this will happen automatically
+when the pointer object is garbage collected.
+
+@var{parser} is a pointer object to the main parser.  @var{context} must
+be a pointer object.  @var{encoding} is as in @func{XML_ParserCreate}.
+@end defun
+
+
+The following is a skeleton program showing how to parse an external
+@dtd{}:
+
+@smallexample
+#!r6rs
+(import (vicare)
+  (vicare expat)
+  (vicare expat constants)
+  (prefix (vicare ffi) ffi.))
+
+(define xml-utf8
+  (string->utf8
+    "<!DOCTYPE toys SYSTEM 'http://localhost/toys'>
+     <toys><ball colour='red'/></toys>"))
+
+(define dtd-utf8
+  (string->utf8
+    "<!ELEMENT ball EMPTY>
+     <!ATTLIST ball colour CDATA #REQUIRED>"))
+
+(define (handler parser context base system-id public-id)
+  (let ((parser (XML_ExternalEntityParserCreate
+                   parser context 'UTF-8)))
+    (XML_Parse parser dtd-utf8 #f #t)
+    XML_STATUS_OK))
+
+(let* ((parser  (XML_ParserCreate 'UTF-8))
+       (cb      (XML_ExternalEntityRefHandler scheme-callback)))
+  (XML_SetParamEntityParsing parser
+     XML_PARAM_ENTITY_PARSING_ALWAYS)
+  (XML_SetExternalEntityRefHandler parser cb)
+  (XML_Parse parser xml-utf8 #f #t)
+  (ffi.free-c-callback cb))
+@end smallexample
+
+@c page
+@node parsers parsing
+@section Parsing data
+
+
+All the following bindings are exported by the @library{vicare expat}
+library.
+
+
+@defun XML_Parse @var{parser} @var{buffer} @var{buflen} @var{final?}
+@expatref{api parse, XML_Parse}.
+@end defun
+
 
 @c page
 @node handlers

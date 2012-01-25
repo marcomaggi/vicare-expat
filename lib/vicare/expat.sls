@@ -185,21 +185,11 @@
 ;;; --------------------------------------------------------------------
 
 (define-argument-validation (parser who obj)
-  (parser? obj)
-  (assertion-violation who "expected Expat parser as argument" obj))
+  (ffi.pointer? obj)
+  (assertion-violation who "expected pointer to Expat parser as argument" obj))
 
 
 ;;;; data structures
-
-(define-struct parser
-  (pointer))
-
-(define (%struct-parser-printer S port sub-printer)
-  (define-inline (%display thing)
-    (display thing port))
-  (%display "#[expat-parser")
-  (%display " pointer=")	(%display (parser-pointer S))
-  (%display "]"))
 
 (define %parser-guardian
   (make-guardian))
@@ -234,14 +224,15 @@
 
 ;;;; helpers
 
-(define (%document-encoding-symbol->fixnum encoding)
+(define (%document-encoding-symbol->fixnum who encoding)
   (case encoding
+    ((#f)		0) ;honour the encoding specified in the document
     ((UTF-8)		1)
     ((UTF-16)		2)
     ((ISO-8859-1)	3)
-    ;;Honour   the  encoding   specified   in  the
-    ;;document.
-    (else		0)))
+    ((US-ASCII)		4)
+    (else
+     (assertion-violation who "bad encoding selection" encoding))))
 
 
 ;;;; callback setters
@@ -490,9 +481,9 @@
     (with-arguments-validation (who)
 	((false/encoding-symbol	encoding))
       (let ((rv (foreign-call "ik_expat_parser_create"
-			      (%document-encoding-symbol->fixnum encoding))))
+			      (%document-encoding-symbol->fixnum who encoding))))
 	(if rv
-	    (%parser-guardian (make-parser rv))
+	    (%parser-guardian rv)
 	  (error who "error allocating Expat parser" encoding)))))))
 
 (define (XML_ParserCreateNS encoding namespace-separator)
@@ -501,10 +492,10 @@
       ((false/encoding-symbol	encoding)
        (ascii-char		namespace-separator))
     (let ((rv (foreign-call "ik_expat_parser_create_ns"
-			    (%document-encoding-symbol->fixnum encoding)
-			    namespace-separator)))
+			    (%document-encoding-symbol->fixnum who encoding)
+			    (char->integer namespace-separator))))
       (if rv
-	  (%parser-guardian (make-parser rv))
+	  (%parser-guardian rv)
 	(error who "error allocating Expat parser" encoding namespace-separator)))))
 
 (define (XML_ParserReset parser encoding)
@@ -519,6 +510,8 @@
       ((parser	parser))
     (foreign-call "ik_expat_parser_free" parser)))
 
+;;; --------------------------------------------------------------------
+
 (define (XML_ExternalEntityParserCreate parser context encoding)
   (define who 'XML_ExternalEntityParserCreate)
   (with-arguments-validation (who)
@@ -526,10 +519,17 @@
        (pointer		context)
        (encoding-symbol	encoding))
     (let ((rv (foreign-call "ik_expat_external_entity_parser_create" parser context
-			    (%document-encoding-symbol->fixnum encoding))))
+			    (%document-encoding-symbol->fixnum who encoding))))
       (if rv
-	  (%parser-guardian (make-parser rv))
+	  (%parser-guardian rv)
 	(error who "error allocating Expat entity parser" parser context encoding)))))
+
+(define (XML_SetParamEntityParsing parser parsing)
+  (define who 'XML_SetParamEntityParsing)
+  (with-arguments-validation (who)
+      ((parser	parser)
+       (fixnum	parsing))
+    (foreign-call "ik_expat_set_param_entity_parsing" parser parsing)))
 
 ;;; --------------------------------------------------------------------
 
@@ -538,7 +538,8 @@
   (with-arguments-validation (who)
       ((parser		parser)
        (encoding-symbol	encoding))
-    (foreign-call "ik_expat_set_encoding" parser (%document-encoding-symbol->fixnum encoding))))
+    (foreign-call "ik_expat_set_encoding" parser
+		  (%document-encoding-symbol->fixnum who encoding))))
 
 (define (XML_SetUserData parser pointer)
   (define who 'XML_SetUserData)
@@ -648,13 +649,6 @@
       ((parser	parser))
     (foreign-call "ik_expat_default_current" parser)))
 
-(define (XML_SetParamEntityParsing parser parsing)
-  (define who 'XML_SetParamEntityParsing)
-  (with-arguments-validation (who)
-      ((parser	parser)
-       (fixnum	parsing))
-    (foreign-call "ik_expat_set_param_entity_parsing" parser parsing)))
-
 
 ;;;; attributes
 
@@ -724,7 +718,6 @@
 
 ;;;; done
 
-(set-rtd-printer! (type-descriptor parser) %struct-parser-printer)
 (set-rtd-printer! (type-descriptor parsing-status) %struct-parsing-status-printer)
 
 )

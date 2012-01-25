@@ -34,7 +34,7 @@
 #include <vicare.h>
 #include <expat.h>
 
-#define EX_PARSER_POINTER_OBJECT(PARSER)	IK_FIELD(PARSER, 0)
+#define EX_PARSER_POINTER_OBJECT(PARSER)	(PARSER)
 #define EX_PARSER(PARSER)			\
   IK_POINTER_DATA_VOIDP(EX_PARSER_POINTER_OBJECT(PARSER))
 
@@ -134,6 +134,7 @@ fixnum_to_encoding (ikptr s_encoding)
   case 1: return "UTF-8";
   case 2: return "UTF-16";
   case 3: return "ISO-8859-1";
+  case 4: return "US-ASCII";
   default: return NULL;
   }
 }

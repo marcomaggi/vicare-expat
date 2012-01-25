@@ -38,6 +38,13 @@
 (display "*** testing Vicare Expat bindings\n")
 
 
+;;;; helpers
+
+(define (%print-parser-error-maybe parser rv)
+  (unless (= XML_STATUS_OK rv)
+    (printf "error: ~a\n" (latin1->string (XML_ErrorString (XML_GetErrorCode parser))))))
+
+
 (parametrise ((check-test-name	'parsing-basic))
 
   (define xml-1 "<!-- this is a test document -->\
@@ -93,7 +100,89 @@
 	       (end "thing")
 	       (end "stuff"))))
 
+  (check	;XML_ParserCreateNS
+      (with-result
+       (define (start-callback data element attributes)
+	 (add-result (list 'start
+			   (ffi.cstring->string element)
+			   (ffi.argv->strings attributes))))
+       (define (end-callback data element)
+	 (add-result (list 'end (ffi.cstring->string element))))
+       (define (chdata-callback data buf.ptr buf.len)
+	 (add-result (list 'character-data (ffi.cstring->string buf.ptr buf.len))))
+       (define (comment-callback data cstr)
+	 (add-result (list 'comment (ffi.cstring->string cstr))))
+       (let ((parser	(XML_ParserCreateNS 'UTF-8 #\,))
+	     (start	(XML_StartElementHandler  start-callback))
+	     (end	(XML_EndElementHandler    end-callback))
+	     (chdata	(XML_CharacterDataHandler chdata-callback))
+	     (comment	(XML_CommentHandler       comment-callback)))
+	 (XML_SetElementHandler		parser start end)
+	 (XML_SetCharacterDataHandler	parser chdata)
+	 (XML_SetCommentHandler		parser comment)
+	 (let* ((buffer	(string->utf8 xml-1))
+		(finished?	#t)
+		(rv		(XML_Parse parser buffer #f finished?)))
+	   (ffi.free-c-callback start)
+	   (ffi.free-c-callback end)
+	   (ffi.free-c-callback chdata)
+	   (ffi.free-c-callback comment)
+	   rv)))
+    => (list XML_STATUS_OK
+	     '((comment " this is a test document ")
+	       (start "stuff" ())
+	       (start "thing" ())
+	       (start "alpha" ()) (character-data "one") (end "alpha")
+	       (start "beta" ()) (character-data "two")(end "beta")
+	       (end "thing")
+	       (start "thing" ())
+	       (start "alpha" ()) (character-data "123") (end "alpha")
+	       (start "beta" ()) (character-data "456") (end "beta")
+	       (end "thing")
+	       (end "stuff"))))
+
   #t)
+
+
+(parametrise ((check-test-name	'external-entity-parser))
+
+  (define xml-utf8
+    (string->utf8 "<!DOCTYPE toys SYSTEM 'http://localhost/toys'>
+                   <toys><ball colour='red'/></toys>"))
+
+  (define dtd-utf8
+    (string->utf8 "<!ELEMENT ball EMPTY>
+                   <!ATTLIST ball colour CDATA #REQUIRED>"))
+
+  (define (scheme-callback parser context base system-id public-id)
+    (let* ((parser (XML_ExternalEntityParserCreate parser context 'UTF-8))
+	   (rv     (XML_Parse parser dtd-utf8 #f #t)))
+      (add-result (list 'external-entity rv
+			(ffi.pointer-null? context)
+			(ffi.pointer-null? base)
+			(ffi.cstring->string system-id)
+			(ffi.pointer-null? public-id)))
+      XML_STATUS_OK))
+
+  (define (doit)
+    (with-result
+     (let* ((parser	(XML_ParserCreate 'UTF-8))
+	    (cb		(XML_ExternalEntityRefHandler scheme-callback)))
+       (XML_SetParamEntityParsing parser XML_PARAM_ENTITY_PARSING_ALWAYS)
+       (XML_SetExternalEntityRefHandler parser cb)
+       (let ((rv (XML_Parse parser xml-utf8 #f #t)))
+	 (ffi.free-c-callback cb)
+	 rv))))
+
+;;; --------------------------------------------------------------------
+
+  (check
+      (doit)
+    => `(,XML_STATUS_OK
+	 ((external-entity ,XML_STATUS_OK #t #t "http://localhost/toys" #t))))
+
+  #t)
+
 
 
 (parametrise ((check-test-name	'dtd-attlist-handler))
