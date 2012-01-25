@@ -40,7 +40,8 @@
 
 (parametrise ((check-test-name	'parsing-basic))
 
-  (define xml-1 "<stuff>\
+  (define xml-1 "<!-- this is a test document -->\
+     <stuff>\
      <thing>\
      <alpha>one</alpha>\
      <beta>two</beta>\
@@ -50,15 +51,6 @@
      <beta>456</beta>\
      </thing>\
      </stuff>")
-
-  (define make-start-cb
-    (ffi.make-c-callback-maker 'void '(pointer pointer pointer)))
-
-  (define make-end-cb
-    (ffi.make-c-callback-maker 'void '(pointer pointer)))
-
-  (define make-cdata-cb
-    (ffi.make-c-callback-maker 'void '(pointer pointer signed-int)))
 
   (check
       (with-result
@@ -74,20 +66,28 @@
        (define (cdata-callback data buf.ptr buf.len)
 	 (let ((text (ffi.cstring->string buf.ptr buf.len)))
 	   (add-result (list 'cdata text))))
+       (define (comment-callback data cstr)
+	 (let ((text (ffi.cstring->string cstr)))
+	   (add-result (list 'comment text))))
        (let ((parser	(XML_ParserCreate 'UTF-8))
-	     (start	(make-start-cb start-callback))
-	     (end	(make-end-cb   end-callback))
-	     (cdata	(make-cdata-cb cdata-callback)))
-	 (XML_SetElementHandler parser start end)
-	 (XML_SetCharacterDataHandler parser cdata)
+	     (start	(XML_StartElementHandler  start-callback))
+	     (end	(XML_EndElementHandler    end-callback))
+	     (cdata	(XML_CharacterDataHandler cdata-callback))
+	     (comment	(XML_CommentHandler       comment-callback)))
+	 (XML_SetElementHandler		parser start end)
+	 (XML_SetCharacterDataHandler	parser cdata)
+	 (XML_SetCommentHandler		parser comment)
 	 (let* ((buffer	(string->utf8 xml-1))
 		(finished?	#t)
 		(rv		(XML_Parse parser buffer #f finished?)))
 	   (ffi.free-c-callback start)
 	   (ffi.free-c-callback end)
+	   (ffi.free-c-callback cdata)
+	   (ffi.free-c-callback comment)
 	   rv)))
     => (list XML_STATUS_OK
-	     '((start "stuff" ())
+	     '((comment " this is a test document ")
+	       (start "stuff" ())
 	       (start "thing" ())
 	       (start "alpha" ()) (cdata "one") (end "alpha")
 	       (start "beta" ()) (cdata "two")(end "beta")

@@ -29,43 +29,15 @@
 #!(load-shared-library "vicare-expat")
 (library (vicare expat)
   (export
-    XML_SetElementDeclHandler
-    XML_SetAttlistDeclHandler
-    XML_SetXmlDeclHandler
+
     XML_ParserCreate
     XML_ParserCreateNS
 ;;;XML_ParserCreate_MM
     XML_ParserReset
-    XML_SetEntityDeclHandler
-    XML_SetElementHandler
-    XML_SetStartElementHandler
-    XML_SetEndElementHandler
-    XML_SetCharacterDataHandler
-    XML_SetProcessingInstructionHandler
-    XML_SetCommentHandler
-    XML_SetCdataSectionHandler
-    XML_SetStartCdataSectionHandler
-    XML_SetEndCdataSectionHandler
-    XML_SetDefaultHandler
-    XML_SetDefaultHandlerExpand
-    XML_SetDoctypeDeclHandler
-    XML_SetStartDoctypeDeclHandler
-    XML_SetEndDoctypeDeclHandler
-    XML_SetUnparsedEntityDeclHandler
-    XML_SetNotationDeclHandler
-    XML_SetNamespaceDeclHandler
-    XML_SetStartNamespaceDeclHandler
-    XML_SetEndNamespaceDeclHandler
-    XML_SetNotStandaloneHandler
-    XML_SetExternalEntityRefHandler
-    XML_SetExternalEntityRefHandlerArg
-    XML_SetSkippedEntityHandler
-    XML_SetUnknownEncodingHandler
     XML_DefaultCurrent
     XML_SetReturnNSTriplet
     XML_SetUserData
     XML_SetEncoding
-    XML_UseParserAsHandlerArg
     XML_UseForeignDTD
     XML_SetBase
     XML_GetBase
@@ -91,10 +63,66 @@
     XML_ExpatVersion
     XML_GetFeatureList
 
+    ;; callback setters
+    XML_SetAttlistDeclHandler
+    XML_SetCdataSectionHandler
+    XML_SetCharacterDataHandler
+    XML_SetCommentHandler
+    XML_SetDefaultHandler
+    XML_SetDefaultHandlerExpand
+    XML_SetDoctypeDeclHandler
+    XML_SetElementDeclHandler
+    XML_SetElementHandler
+    XML_SetEndCdataSectionHandler
+    XML_SetEndDoctypeDeclHandler
+    XML_SetEndElementHandler
+    XML_SetEndNamespaceDeclHandler
+    XML_SetEntityDeclHandler
+    XML_SetExternalEntityRefHandler
+    XML_SetNamespaceDeclHandler
+    XML_SetNotStandaloneHandler
+    XML_SetNotationDeclHandler
+    XML_SetProcessingInstructionHandler
+    XML_SetSkippedEntityHandler
+    XML_SetStartCdataSectionHandler
+    XML_SetStartDoctypeDeclHandler
+    XML_SetStartElementHandler
+    XML_SetStartNamespaceDeclHandler
+    XML_SetUnknownEncodingHandler
+    XML_SetUnparsedEntityDeclHandler
+    XML_SetXmlDeclHandler
+
+    ;; auxiliary callback functions
+    XML_SetExternalEntityRefHandlerArg
+    XML_UseParserAsHandlerArg
+
+    ;; callback makers
+    XML_AttlistDeclHandler
+    XML_CharacterDataHandler
+    XML_CommentHandler
+    XML_DefaultHandler
+    XML_ElementDeclHandler
+    XML_EndCdataSectionHandler
+    XML_EndDoctypeDeclHandler
+    XML_EndElementHandler
+    XML_EndNamespaceDeclHandler
+    XML_EntityDeclHandler
+    XML_ExternalEntityRefHandler
+    XML_NotStandaloneHandler
+    XML_NotationDeclHandler
+    XML_ProcessingInstructionHandler
+    XML_SkippedEntityHandler
+    XML_StartCdataSectionHandler
+    XML_StartDoctypeDeclHandler
+    XML_StartElementHandler
+    XML_StartNamespaceDeclHandler
+    XML_UnknownEncodingHandler
+    XML_UnparsedEntityDeclHandler
+    XML_XmlDeclHandler
+
     ;; parsing status object
     make-parsing-status			parsing-status?
-    parsing-status-parsing		parsing-status-final-buffer?
-    )
+    parsing-status-parsing		parsing-status-final-buffer?)
   (import (vicare)
     (vicare expat constants)
     (vicare syntactic-extensions)
@@ -216,7 +244,7 @@
     (else		0)))
 
 
-;;;; callbacks
+;;;; callback setters
 
 (let-syntax ((declare (syntax-rules ()
 			((_ ?func ?who)
@@ -294,6 +322,161 @@
   (with-arguments-validation (who)
       ((parser	parser))
     (foreign-call "ik_expat_use_parser_as_handler_arg" parser)))
+
+
+;;;; callback makers
+
+;; typedef void (XMLCALL *XML_ElementDeclHandler) (void *userData,
+;;                                                 const XML_Char *name,
+;;                                                 XML_Content *model);
+(define XML_ElementDeclHandler
+  (ffi.make-c-callback-maker 'void '(pointer pointer pointer)))
+
+;; typedef void (XMLCALL *XML_AttlistDeclHandler) (
+;;                                     void            *userData,
+;;                                     const XML_Char  *elname,
+;;                                     const XML_Char  *attname,
+;;                                     const XML_Char  *att_type,
+;;                                     const XML_Char  *dflt,
+;;                                     int              isrequired);
+(define XML_AttlistDeclHandler
+  (ffi.make-c-callback-maker 'void '(pointer pointer pointer pointer pointer signed-int)))
+
+;; typedef void (XMLCALL *XML_XmlDeclHandler) (void           *userData,
+;;                                             const XML_Char *version,
+;;                                             const XML_Char *encoding,
+;;                                             int             standalone);
+(define XML_XmlDeclHandler
+  (ffi.make-c-callback-maker 'void '(pointer pointer pointer signed-int)))
+
+;; typedef void (XMLCALL *XML_StartElementHandler) (void *userData,
+;;                                                  const XML_Char *name,
+;;                                                  const XML_Char **atts);
+(define XML_StartElementHandler
+  (ffi.make-c-callback-maker 'void '(pointer pointer pointer)))
+
+;; typedef void (XMLCALL *XML_EndElementHandler) (void *userData,
+;;                                                const XML_Char *name);
+(define XML_EndElementHandler
+  (ffi.make-c-callback-maker 'void '(pointer pointer)))
+
+;; typedef void (XMLCALL *XML_CharacterDataHandler) (void *userData,
+;;                                                   const XML_Char *s,
+;;                                                   int len);
+(define XML_CharacterDataHandler
+  (ffi.make-c-callback-maker 'void '(pointer pointer signed-int)))
+
+;; typedef void (XMLCALL *XML_ProcessingInstructionHandler) (void *userData,
+;; 							       const XML_Char *target,
+;; 							       const XML_Char *data) ;
+(define XML_ProcessingInstructionHandler
+  (ffi.make-c-callback-maker 'void '(pointer pointer pointer)))
+
+;; typedef void (XMLCALL *XML_CommentHandler) (void *userData,
+;;                                             const XML_Char *data);
+(define XML_CommentHandler
+  (ffi.make-c-callback-maker 'void '(pointer pointer)))
+
+;; typedef void (XMLCALL *XML_StartCdataSectionHandler) (void *userData);
+(define XML_StartCdataSectionHandler
+  (ffi.make-c-callback-maker 'void '(pointer)))
+
+;; typedef void (XMLCALL *XML_EndCdataSectionHandler) (void *userData);
+(define XML_EndCdataSectionHandler
+  (ffi.make-c-callback-maker 'void '(pointer)))
+
+;; typedef void (XMLCALL *XML_DefaultHandler) (void *userData,
+;;                                             const XML_Char *s,
+;;                                             int len);
+(define XML_DefaultHandler
+  (ffi.make-c-callback-maker 'void '(pointer pointer signed-int)))
+
+;; typedef void (XMLCALL *XML_StartDoctypeDeclHandler) (
+;;                                             void *userData,
+;;                                             const XML_Char *doctypeName,
+;;                                             const XML_Char *sysid,
+;;                                             const XML_Char *pubid,
+;;                                             int has_internal_subset);
+(define XML_StartDoctypeDeclHandler
+  (ffi.make-c-callback-maker 'void '(pointer pointer pointer pointer signed-int)))
+
+;; typedef void (XMLCALL *XML_EndDoctypeDeclHandler)(void *userData);
+(define XML_EndDoctypeDeclHandler
+  (ffi.make-c-callback-maker 'void '(pointer)))
+
+;; typedef void (XMLCALL *XML_EntityDeclHandler) (
+;;                               void *userData,
+;;                               const XML_Char *entityName,
+;;                               int is_parameter_entity,
+;;                               const XML_Char *value,
+;;                               int value_length,
+;;                               const XML_Char *base,
+;;                               const XML_Char *systemId,
+;;                               const XML_Char *publicId,
+;;                               const XML_Char *notationName);
+(define XML_EntityDeclHandler
+  (ffi.make-c-callback-maker 'void '(pointer pointer signed-int pointer
+					     signed-int pointer pointer
+					     pointer pointer)))
+
+;; typedef void (XMLCALL *XML_UnparsedEntityDeclHandler) (
+;;                                     void *userData,
+;;                                     const XML_Char *entityName,
+;;                                     const XML_Char *base,
+;;                                     const XML_Char *systemId,
+;;                                     const XML_Char *publicId,
+;;                                     const XML_Char *notationName);
+(define XML_UnparsedEntityDeclHandler
+  (ffi.make-c-callback-maker 'void '(pointer pointer pointer pointer pointer pointer)))
+
+;; typedef void (XMLCALL *XML_NotationDeclHandler) (
+;;                                     void *userData,
+;;                                     const XML_Char *notationName,
+;;                                     const XML_Char *base,
+;;                                     const XML_Char *systemId,
+;;                                     const XML_Char *publicId);
+(define XML_NotationDeclHandler
+  (ffi.make-c-callback-maker 'void '(pointer pointer pointer pointer pointer)))
+
+;; typedef void (XMLCALL *XML_StartNamespaceDeclHandler) (
+;;                                     void *userData,
+;;                                     const XML_Char *prefix,
+;;                                     const XML_Char *uri);
+(define XML_StartNamespaceDeclHandler
+  (ffi.make-c-callback-maker 'void '(pointer pointer pointer)))
+
+;; typedef void (XMLCALL *XML_EndNamespaceDeclHandler) (
+;;                                     void *userData,
+;;                                     const XML_Char *prefix);
+(define XML_EndNamespaceDeclHandler
+  (ffi.make-c-callback-maker 'void '(pointer pointer)))
+
+;; typedef int (XMLCALL *XML_NotStandaloneHandler) (void *userData);
+(define XML_NotStandaloneHandler
+  (ffi.make-c-callback-maker 'signed-int '(pointer)))
+
+;; typedef int (XMLCALL *XML_ExternalEntityRefHandler) (
+;;                                     XML_Parser parser,
+;;                                     const XML_Char *context,
+;;                                     const XML_Char *base,
+;;                                     const XML_Char *systemId,
+;;                                     const XML_Char *publicId);
+(define XML_ExternalEntityRefHandler
+  (ffi.make-c-callback-maker 'signed-int '(pointer pointer pointer pointer pointer)))
+
+;; typedef void (XMLCALL *XML_SkippedEntityHandler) (
+;;                                     void *userData,
+;;                                     const XML_Char *entityName,
+;;                                     int is_parameter_entity);
+(define XML_SkippedEntityHandler
+  (ffi.make-c-callback-maker 'void '(pointer pointer signed-int)))
+
+;; typedef int (XMLCALL *XML_UnknownEncodingHandler) (
+;;                                     void *encodingHandlerData,
+;;                                     const XML_Char *name,
+;;                                     XML_Encoding *info);
+(define XML_UnknownEncodingHandler
+  (ffi.make-c-callback-maker 'signed-int '(pointer pointer pointer)))
 
 
 ;;;; parsers
