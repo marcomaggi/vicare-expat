@@ -35,11 +35,12 @@
 
 ;;;; simple document parsing
 
-(let ()
+(when #f
+  (let ()
 
-  (define xml-utf8
-    (string->utf8
-     "<!-- this is a test document -->\
+    (define xml-utf8
+      (string->utf8
+       "<!-- this is a test document -->\
      <stuff>\
      <thing colour=\"yellow\">\
      <alpha>one</alpha>\
@@ -51,40 +52,75 @@
      </thing>\
      </stuff>"))
 
-  (define (start-callback data element attributes)
-    (let ((element    (ffi.cstring->string element))
-	  (attributes (ffi.argv->strings attributes)))
-      (pretty-print (list 'start element attributes))))
+    (define (start-callback data element attributes)
+      (let ((element    (ffi.cstring->string element))
+	    (attributes (ffi.argv->strings attributes)))
+	(pretty-print (list 'start element attributes))))
 
-  (define (end-callback data element)
-    (let ((element (ffi.cstring->string element)))
-      (pretty-print (list 'end element))))
+    (define (end-callback data element)
+      (let ((element (ffi.cstring->string element)))
+	(pretty-print (list 'end element))))
 
-  (define (cdata-callback data buf.ptr buf.len)
-    (let ((text (ffi.cstring->string buf.ptr buf.len)))
-      (pretty-print (list 'cdata text))))
+    (define (cdata-callback data buf.ptr buf.len)
+      (let ((text (ffi.cstring->string buf.ptr buf.len)))
+	(pretty-print (list 'cdata text))))
 
-  (define (comment-callback data cstr)
-    (let ((text (ffi.cstring->string cstr)))
-      (pretty-print (list 'comment text))))
+    (define (comment-callback data cstr)
+      (let ((text (ffi.cstring->string cstr)))
+	(pretty-print (list 'comment text))))
 
-  (let ((parser		(XML_ParserCreate 'UTF-8))
-	(start		(XML_StartElementHandler  start-callback))
-	(end		(XML_EndElementHandler    end-callback))
-	(cdata		(XML_CharacterDataHandler cdata-callback))
-	(comment	(XML_CommentHandler       comment-callback)))
-    (XML_SetElementHandler       parser start end)
-    (XML_SetCharacterDataHandler parser cdata)
-    (XML_SetCommentHandler       parser comment)
-    (XML_Parse parser xml-utf8 #f #t)
-    (ffi.free-c-callback start)
-    (ffi.free-c-callback end)
-    (ffi.free-c-callback cdata)
-    (ffi.free-c-callback comment))
+    (let ((parser		(XML_ParserCreate 'UTF-8))
+	  (start		(XML_StartElementHandler  start-callback))
+	  (end		(XML_EndElementHandler    end-callback))
+	  (cdata		(XML_CharacterDataHandler cdata-callback))
+	  (comment	(XML_CommentHandler       comment-callback)))
+      (XML_SetElementHandler       parser start end)
+      (XML_SetCharacterDataHandler parser cdata)
+      (XML_SetCommentHandler       parser comment)
+      (XML_Parse parser xml-utf8 #f #t)
+      (ffi.free-c-callback start)
+      (ffi.free-c-callback end)
+      (ffi.free-c-callback cdata)
+      (ffi.free-c-callback comment))
 
-  (flush-output-port (current-output-port))
+    (flush-output-port (current-output-port))
 
-  #f)
+    #f))
 
+
+;;;; DTD attributes list
+
+(when #f
+  (let ()
+
+    (define xml-utf8
+      (string->utf8
+       "<!DOCTYPE spiffy [
+         <!ELEMENT ball EMPTY>
+         <!ATTLIST ball colour CDATA #REQUIRED>
+       ]>
+       <spiffy><ball colour='red' /></spiffy>"))
+
+    (define (scheme-callback user-data element-name attribute-name attribute-type default-value required?)
+      (let ((element-name	(ffi.cstring->string element-name))
+	    (attribute-name	(ffi.cstring->string attribute-name))
+	    (attribute-type	(ffi.cstring->string attribute-type))
+	    (default-value	(if (ffi.pointer-null? default-value)
+				    'NULL
+				  (ffi.cstring->string default-value))))
+	(pretty-print (list element-name attribute-name attribute-type default-value required?))))
+
+    (let ((parser	(XML_ParserCreate 'UTF-8))
+	  (cb		(XML_AttlistDeclHandler scheme-callback)))
+      (XML_SetAttlistDeclHandler parser cb)
+      (if (= XML_STATUS_OK (XML_Parse parser xml-utf8 #f #t))
+	  (display "success\n")
+	(let ((code (XML_GetErrorCode parser)))
+	  (printf "error: ~a\n" (latin1->string (XML_ErrorString code)))))
+      (ffi.free-c-callback cb))
+
+    (flush-output-port (current-output-port))
+
+    #f))
 
 ;;; end of file

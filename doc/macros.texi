@@ -118,6 +118,10 @@ Revised^6 Report on the algorithmic language Scheme
 @acronym{XML}
 @end macro
 
+@macro dtd{}
+@acronym{DTD}
+@end macro
+
 @macro urldate{DATE}
 (@acronym{URL} last verified \DATE\)
 @end macro

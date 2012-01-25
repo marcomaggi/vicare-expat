@@ -111,6 +111,7 @@ entitled ``@gnu{} Free Documentation License''.
 
 @menu
 * overview::                    Overview of the package.
+* handlers::                    Building and registering callbacks.
 
 Appendices
 
@@ -256,6 +257,218 @@ which prints:
 (end "thing")
 (end "stuff")
 @end example
+
+@c page
+@node handlers
+@chapter Building and registering callbacks
+
+
+In the descriptions of this chapters: @var{scheme-callback} is a Scheme
+function used as callback; @var{parser} is a pointer of type
+@code{XML_Parser}; @var{c-callback}, @var{start-c-callback} and
+@var{end-c-callback} are pointers referencing C language callbacks.
+
+@menu
+* handlers dtd attlist::        @dtd{} attribute lists.
+* handlers misc::               Miscellaneous handlers.
+@end menu
+
+@c page
+@node handlers dtd attlist
+@section @dtd{} attribute lists
+
+
+All the following bindings are exported by the @library{vicare expat}
+library.
+
+
+@defun XML_AttlistDeclHandler @var{scheme-callback}
+@defunx XML_SetAttlistDeclHandler @var{parser} @var{c-callback}
+Maker and setter for handlers of attributes list in the @dtd{}.  The
+following program:
+
+@smallexample
+#!r6rs
+(import (vicare)
+  (vicare expat)
+  (vicare expat constants)
+  (prefix (vicare ffi) ffi.))
+
+(define xml-utf8
+  (string->utf8
+   "<!DOCTYPE spiffy [
+     <!ELEMENT ball EMPTY>
+     <!ATTLIST ball colour CDATA #REQUIRED>
+   ]>
+   <spiffy><ball colour='red' /></spiffy>"))
+
+(define (scheme-callback user-data element-name attribute-name
+                         attribute-type default-value required?)
+  (let ((element-name    (ffi.cstring->string element-name))
+        (attribute-name  (ffi.cstring->string attribute-name))
+        (attribute-type  (ffi.cstring->string attribute-type))
+        (default-value   (if (ffi.pointer-null? default-value)
+                             'NULL
+                           (ffi.cstring->string default-value))))
+    (pretty-print (list element-name attribute-name
+                        attribute-type default-value
+                        required?))))
+
+(let ((parser  (XML_ParserCreate 'UTF-8))
+      (cb      (XML_AttlistDeclHandler scheme-callback)))
+  (XML_SetAttlistDeclHandler parser cb)
+  (XML_Parse parser xml-utf8 #f #t)
+  (ffi.free-c-callback cb))
+
+(flush-output-port (current-output-port))
+@end smallexample
+
+@noindent
+prints:
+
+@example
+("ball" "colour" "CDATA" NULL 1)
+@end example
+@end defun
+
+@c page
+@node handlers misc
+@section Miscellaneous handlers
+
+
+@defun XML_SetCdataSectionHandler @var{parser} @var{start-c-callback} @var{end-c-callback}
+@end defun
+
+
+@defun XML_CharacterDataHandler @var{scheme-callback}
+@defunx XML_SetCharacterDataHandler @var{parser} @var{c-callback}
+@end defun
+
+
+@defun XML_StartCdataSectionHandler @var{scheme-callback}
+@defunx XML_SetStartCdataSectionHandler @var{parser} @var{c-callback}
+@end defun
+
+
+@defun XML_EndCdataSectionHandler @var{scheme-callback}
+@defunx XML_SetEndCdataSectionHandler @var{parser} @var{c-callback}
+@end defun
+
+
+@c ------------------------------------------------------------
+
+@defun XML_CommentHandler @var{scheme-callback}
+@defunx XML_SetCommentHandler @var{parser} @var{c-callback}
+@end defun
+
+@c ------------------------------------------------------------
+
+
+@defun XML_DefaultHandler @var{scheme-callback}
+@defunx XML_SetDefaultHandler @var{parser} @var{c-callback}
+@end defun
+
+
+@defun XML_SetDefaultHandlerExpand @var{parser} @var{c-callback}
+
+@end defun
+
+
+@defun XML_ElementDeclHandler @var{scheme-callback}
+@defunx XML_SetElementDeclHandler @var{parser} @var{c-callback}
+@end defun
+
+@c ------------------------------------------------------------
+
+@defun XML_SetDoctypeDeclHandler @var{parser} @var{start-c-callback} @var{end-c-callback}
+@end defun
+
+
+@defun XML_EndDoctypeDeclHandler @var{scheme-callback}
+@defunx XML_SetEndDoctypeDeclHandler @var{parser} @var{c-callback}
+@end defun
+
+@c ------------------------------------------------------------
+
+@defun XML_SetElementHandler @var{parser} @var{start-c-callback} @var{end-c-callback}
+
+@end defun
+
+
+@defun XML_EndElementHandler @var{scheme-callback}
+@defunx XML_SetEndElementHandler @var{parser} @var{c-callback}
+@end defun
+
+@c ------------------------------------------------------------
+
+@defun XML_SetNamespaceDeclHandler @var{parser} @var{start-c-callback} @var{end-c-callback}
+
+@end defun
+
+
+@defun XML_EndNamespaceDeclHandler @var{scheme-callback}
+@defunx XML_SetEndNamespaceDeclHandler @var{parser} @var{c-callback}
+@end defun
+
+
+@defun XML_EntityDeclHandler @var{scheme-callback}
+@defunx XML_SetEntityDeclHandler @var{parser} @var{c-callback}
+@end defun
+
+
+@defun XML_ExternalEntityRefHandler @var{scheme-callback}
+@defunx XML_SetExternalEntityRefHandler @var{parser} @var{c-callback}
+@end defun
+
+
+@defun XML_NotStandaloneHandler @var{scheme-callback}
+@defunx XML_SetNotStandaloneHandler @var{parser} @var{c-callback}
+@end defun
+
+
+@defun XML_NotationDeclHandler @var{scheme-callback}
+@defunx XML_SetNotationDeclHandler @var{parser} @var{c-callback}
+@end defun
+
+
+@defun XML_ProcessingInstructionHandler @var{scheme-callback}
+@defunx XML_SetProcessingInstructionHandler @var{parser} @var{c-callback}
+@end defun
+
+
+@defun XML_SkippedEntityHandler @var{scheme-callback}
+@defunx XML_SetSkippedEntityHandler @var{parser} @var{c-callback}
+@end defun
+
+
+@defun XML_StartDoctypeDeclHandler @var{scheme-callback}
+@defunx XML_SetStartDoctypeDeclHandler @var{parser} @var{c-callback}
+@end defun
+
+
+@defun XML_StartElementHandler @var{scheme-callback}
+@defunx XML_SetStartElementHandler @var{parser} @var{c-callback}
+@end defun
+
+
+@defun XML_StartNamespaceDeclHandler @var{scheme-callback}
+@defunx XML_SetStartNamespaceDeclHandler @var{parser} @var{c-callback}
+@end defun
+
+
+@defun XML_UnknownEncodingHandler @var{scheme-callback}
+@defunx XML_SetUnknownEncodingHandler @var{parser} @var{c-callback}
+@end defun
+
+
+@defun XML_UnparsedEntityDeclHandler @var{scheme-callback}
+@defunx XML_SetUnparsedEntityDeclHandler @var{parser} @var{c-callback}
+@end defun
+
+
+@defun XML_XmlDeclHandler @var{scheme-callback}
+@defunx XML_SetXmlDeclHandler @var{parser} @var{c-callback}
+@end defun
 
 @c page
 @c ------------------------------------------------------------
