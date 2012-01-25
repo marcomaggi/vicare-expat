@@ -231,12 +231,12 @@ ik_expat_get_base (ikptr s_parser, ikpcb * pcb)
 /* ------------------------------------------------------------------ */
 
 ikptr
-ik_expat_user_foreign_dtd (ikptr s_parser, ikptr s_use_dtd, ikpcb * pcb)
+ik_expat_user_foreign_dtd (ikptr s_parser, ikptr s_use_dtd)
 {
   XML_Bool		use_dtd = EX_BOOLEAN(s_use_dtd);
   enum XML_Error	rv;
   rv = XML_UseForeignDTD(EX_PARSER(s_parser), use_dtd);
-  return ika_integer_from_int(pcb, (int)rv);
+  return IK_FIX(rv);
 }
 ikptr
 ik_expat_set_return_ns_triplet (ikptr s_parser, ikptr s_do_nst)
@@ -381,12 +381,12 @@ ik_expat_default_current (ikptr s_parser)
   return void_object;
 }
 ikptr
-ik_expat_set_param_entity_parsing (ikptr s_parser, ikptr s_parsing, ikpcb * pcb)
+ik_expat_set_param_entity_parsing (ikptr s_parser, ikptr s_parsing)
 {
   enum XML_ParamEntityParsing parsing = IK_UNFIX(s_parsing);
   int	rv;
   rv = XML_SetParamEntityParsing(EX_PARSER(s_parser), parsing);
-  return ika_integer_from_int(pcb, rv);
+  return IK_FIX(rv);
 }
 
 
