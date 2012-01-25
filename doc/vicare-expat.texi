@@ -296,11 +296,11 @@ following program:
 
 (define xml-utf8
   (string->utf8
-   "<!DOCTYPE spiffy [
+   "<!DOCTYPE toys [
      <!ELEMENT ball EMPTY>
      <!ATTLIST ball colour CDATA #REQUIRED>
    ]>
-   <spiffy><ball colour='red' /></spiffy>"))
+   <toys><ball colour='red' /></toys>"))
 
 (define (scheme-callback user-data element-name attribute-name
                          attribute-type default-value required?)

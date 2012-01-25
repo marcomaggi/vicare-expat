@@ -55,48 +55,98 @@
   (check
       (with-result
        (define (start-callback data element attributes)
-	 (let ((element    (ffi.cstring->string element))
-	       (attributes (ffi.argv->strings attributes)))
-	   (add-result (list 'start element attributes)))
-	 (void))
+	 (add-result (list 'start
+			   (ffi.cstring->string element)
+			   (ffi.argv->strings attributes))))
        (define (end-callback data element)
-	 (let ((element (ffi.cstring->string element)))
-	   (add-result (list 'end element)))
-	 (void))
-       (define (cdata-callback data buf.ptr buf.len)
-	 (let ((text (ffi.cstring->string buf.ptr buf.len)))
-	   (add-result (list 'cdata text))))
+	 (add-result (list 'end (ffi.cstring->string element))))
+       (define (chdata-callback data buf.ptr buf.len)
+	 (add-result (list 'character-data (ffi.cstring->string buf.ptr buf.len))))
        (define (comment-callback data cstr)
-	 (let ((text (ffi.cstring->string cstr)))
-	   (add-result (list 'comment text))))
+	 (add-result (list 'comment (ffi.cstring->string cstr))))
        (let ((parser	(XML_ParserCreate 'UTF-8))
 	     (start	(XML_StartElementHandler  start-callback))
 	     (end	(XML_EndElementHandler    end-callback))
-	     (cdata	(XML_CharacterDataHandler cdata-callback))
+	     (chdata	(XML_CharacterDataHandler chdata-callback))
 	     (comment	(XML_CommentHandler       comment-callback)))
 	 (XML_SetElementHandler		parser start end)
-	 (XML_SetCharacterDataHandler	parser cdata)
+	 (XML_SetCharacterDataHandler	parser chdata)
 	 (XML_SetCommentHandler		parser comment)
 	 (let* ((buffer	(string->utf8 xml-1))
 		(finished?	#t)
 		(rv		(XML_Parse parser buffer #f finished?)))
 	   (ffi.free-c-callback start)
 	   (ffi.free-c-callback end)
-	   (ffi.free-c-callback cdata)
+	   (ffi.free-c-callback chdata)
 	   (ffi.free-c-callback comment)
 	   rv)))
     => (list XML_STATUS_OK
 	     '((comment " this is a test document ")
 	       (start "stuff" ())
 	       (start "thing" ())
-	       (start "alpha" ()) (cdata "one") (end "alpha")
-	       (start "beta" ()) (cdata "two")(end "beta")
+	       (start "alpha" ()) (character-data "one") (end "alpha")
+	       (start "beta" ()) (character-data "two")(end "beta")
 	       (end "thing")
 	       (start "thing" ())
-	       (start "alpha" ()) (cdata "123") (end "alpha")
-	       (start "beta" ()) (cdata "456") (end "beta")
+	       (start "alpha" ()) (character-data "123") (end "alpha")
+	       (start "beta" ()) (character-data "456") (end "beta")
 	       (end "thing")
 	       (end "stuff"))))
+
+  #t)
+
+
+(parametrise ((check-test-name	'dtd-attlist-handler))
+
+  (define (scheme-callback user-data element-name attribute-name
+			   attribute-type default-value required?)
+    (add-result (list 'attlist
+		      (ffi.cstring->string element-name)
+		      (ffi.cstring->string attribute-name)
+		      (ffi.cstring->string attribute-type)
+		      (if (ffi.pointer-null? default-value)
+			  'no-value
+			(ffi.cstring->string default-value))
+		      required?)))
+
+  (define (doit xml)
+    (with-result
+     (let* ((xml-utf8	(string->utf8 xml))
+	    (parser	(XML_ParserCreate 'UTF-8))
+	    (cb		(XML_AttlistDeclHandler scheme-callback)))
+       (XML_SetAttlistDeclHandler parser cb)
+       (let ((rv (XML_Parse parser xml-utf8 #f #t)))
+	 (ffi.free-c-callback cb)
+	 rv))))
+
+;;; --------------------------------------------------------------------
+
+  (check
+      (doit "<!DOCTYPE toys [
+               <!ELEMENT ball EMPTY>
+               <!ATTLIST ball colour CDATA #REQUIRED>
+             ]>
+             <toys><ball colour='red' /></toys>")
+    => (list XML_STATUS_OK
+	     '((attlist "ball" "colour" "CDATA" no-value 1))))
+
+  (check
+      (doit "<!DOCTYPE toys [
+               <!ELEMENT ball EMPTY>
+               <!ATTLIST ball colour CDATA #IMPLIED>
+             ]>
+             <toys><ball colour='red' /></toys>")
+    => (list XML_STATUS_OK
+	     '((attlist "ball" "colour" "CDATA" no-value 0))))
+
+  (check	;enumeration type
+      (doit "<!DOCTYPE toys [
+               <!ELEMENT ball EMPTY>
+               <!ATTLIST ball colour (red|blue|yellow) #REQUIRED>
+             ]>
+             <toys><ball colour='red' /></toys>")
+    => (list XML_STATUS_OK
+	     '((attlist "ball" "colour" "(red|blue|yellow)" no-value 1))))
 
   #t)
 
