@@ -591,6 +591,8 @@
        (boolean	do-nst?))
     (foreign-call "ik_expat_set_return_ns_triplet" parser do-nst?)))
 
+;;; --------------------------------------------------------------------
+
 (define (XML_Parse parser buffer buflen final?)
   (define who 'XML_Parse)
   (with-arguments-validation (who)

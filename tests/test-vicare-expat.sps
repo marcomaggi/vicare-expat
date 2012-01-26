@@ -306,6 +306,23 @@
 	(XML_GetBase parser))
     => #f)
 
+  (check
+      (let ((parser (XML_ParserCreate)))
+	(XML_SetEncoding parser 'UTF-8))
+    => XML_STATUS_OK)
+
+  (check
+      (let ((parser (XML_ParserCreate)))
+	(XML_UseForeignDTD parser #t))
+    => XML_ERROR_NONE)
+
+  (check
+      (let ((parser (XML_ParserCreate)))
+	(XML_UseForeignDTD parser #f))
+    => XML_ERROR_NONE)
+
+
+
   #t)
 
 

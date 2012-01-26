@@ -336,6 +336,13 @@ this parser cannot be reset.  @var{encoding} is as in
 @func{XML_ParserCreate}.
 @end defun
 
+
+@defun XML_SetEncoding @var{parser} @var{encoding}
+@expatref{api misc, XML_SetEncoding}.  Set the encoding to be used while
+parsing.  @var{encoding} is as in @func{XML_ParserCreate}.  Return a
+fixnum representing a status code.
+@end defun
+
 @c page
 @node parsers external
 @section Creating external entities parsers
@@ -692,6 +699,27 @@ original documentation.
 documentation.
 @end defun
 
+
+@defun XML_UseForeignDTD @var{parser} @var{use-dtd?}
+@expatref{api misc, XML_UseForeignDTD}.  Allow the application to
+provide an external @dtd{}.  Return a fixnum representing an error code,
+if successful @code{XML_ERROR_NONE}.
+@end defun
+
+
+@defun XML_SetReturnNSTriplet @var{parser} @var{do-nst?}
+
+@end defun
+
+
+@defun XML_DefaultCurrent @var{parser}
+
+@end defun
+
+
+@defun XML_FreeContentModel @var{parser} @var{model}
+
+@end defun
 
 @c page
 @node handlers
