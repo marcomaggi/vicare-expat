@@ -275,6 +275,8 @@ which prints:
 * parsers create::              Creating parsers.
 * parsers external::            Creating external entities parsers.
 * parsers parsing::             Parsing data.
+* parsers stop::                Stopping and resuming.
+* parsers status::              Parsing status.
 @end menu
 
 @c page
@@ -405,18 +407,6 @@ The following is a skeleton program showing how to parse an external
 @section Parsing data
 
 
-@menu
-* parsers parsing basic::       Basic parsing of @axml{} data.
-* parsers parsing internal::    Parsing data from an internal buffer.
-* parsers parsing stop::        Stopping and resuming.
-* parsers parsing status::      Parsing status.
-@end menu
-
-@c page
-@node parsers parsing basic
-@subsection Basic parsing of @axml{} data
-
-
 All the following bindings are exported by the @library{vicare expat}
 library.  In all the descriptions: the @var{parser} argument must be a
 pointer object referencing the parser.
@@ -436,14 +426,9 @@ representing the number bytes to consume from the buffer; if
 bytevector is consumed.
 @end defun
 
-@c page
-@node parsers parsing internal
-@subsection Parsing data from an internal buffer
+@c ------------------------------------------------------------
 
-
-All the following bindings are exported by the @library{vicare expat}
-library.  In all the descriptions: the @var{parser} argument must be a
-pointer object referencing the parser.
+@subsubheading Parsing data from an internal buffer
 
 
 @defun XML_GetBuffer @var{parser} @var{buflen}
@@ -485,8 +470,8 @@ buffer:
 @end example
 
 @c page
-@node parsers parsing stop
-@subsection Stopping and resuming
+@node parsers stop
+@section Stopping and resuming
 
 
 All the following bindings are exported by the @library{vicare expat}
@@ -580,8 +565,8 @@ and then resuming:
 @end smallexample
 
 @c page
-@node parsers parsing status
-@subsection Parsing status
+@node parsers status
+@section Parsing status
 
 
 All the following bindings are exported by the @library{vicare expat}
