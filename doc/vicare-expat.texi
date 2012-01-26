@@ -118,6 +118,7 @@ entitled ``@gnu{} Free Documentation License''.
 * overview::                    Overview of the package.
 * parsers::                     Building and running parsers.
 * handlers::                    Building and registering callbacks.
+* version::                     Expat version informations.
 
 Appendices
 
@@ -277,6 +278,8 @@ which prints:
 * parsers parsing::             Parsing data.
 * parsers stop::                Stopping and resuming.
 * parsers status::              Parsing status.
+* parsers report::              Reporting errors.
+* parsers misc::                Miscellaneous functions.
 @end menu
 
 @c page
@@ -610,6 +613,85 @@ Accessors for the fields of @code{xml-parsing-status} instances.
 of the parser and return an instance of @code{xml-parsing-status}.
 @end defun
 
+@c page
+@node parsers report
+@section Reporting errors
+
+
+All the following bindings are exported by the @library{vicare expat}
+library.  In all the descriptions: the @var{parser} argument must be a
+pointer object referencing the parser.
+
+
+@defun XML_GetErrorCode @var{parser}
+@expatref{api report, XML_GetErrorCode}.  Return a fixnum representing
+an error code for the last error while parsing.
+@end defun
+
+
+@defun XML_ErrorString @var{code}
+@expatref{api report, XML_ErrorString}.  Return a Scheme string
+describing the error associated to @var{code}, which must be the return
+value of @func{XML_GetErrorCode}.
+@end defun
+
+
+@defun XML_GetCurrentByteIndex @var{parser}
+@defunx XML_GetCurrentColumnNumber @var{parser}
+@defunx XML_GetCurrentByteIndex @var{parser}
+@defunx XML_GetCurrentByteCount @var{parser}
+@expatref{api report, XML_GetCurrentByteIndex}.  Inspect the current
+parsing position.
+@end defun
+
+@c page
+@node parsers misc
+@section Miscellaneous functions
+
+
+All the following bindings are exported by the @library{vicare expat}
+library.  In all the descriptions: the @var{parser} argument must be a
+pointer object referencing the parser.
+
+
+@defun XML_SetUserData @var{parser} @var{pointer}
+@defunx XML_GetUserData @var{parser}
+@expatref{api misc, XML_SetUserData}.  Setter and getter for custom data
+pointer used as first argument to many handlers.
+@end defun
+
+
+@defun XML_UseParserAsHandlerArg @var{parser}
+@expatref{api misc, XML_UseParserAsHandlerArg}.  Set the parser pointer
+as first argument to many handlers.
+@end defun
+
+
+@defun XML_SetBase @var{parser} @var{base}
+@expatref{api misc, XML_SetBase}.  Set the base to resolve relative
+@uri{}s.  @var{base} can be a bytevector representing a string or
+@false{}, in which case the base is reset.
+@end defun
+
+
+@defun XML_GetBase @var{parser}
+@expatref{api misc, XML_GetBase}.  Get the base to resolve relative
+@uri{}s and return it as bytevector.  If there is no base set: the
+return value is @false{}.
+@end defun
+
+
+@defun XML_GetSpecifiedAttributeCount @var{parser}
+@expatref{api misc, XML_GetSpecifiedAttributeCount}.  Refer to the
+original documentation.
+@end defun
+
+
+@defun XML_GetIdAttributeIndex @var{parser}
+@expatref{api misc, XML_GetIdAttributeIndex}.  Refer to the original
+documentation.
+@end defun
+
 
 @c page
 @node handlers
@@ -826,6 +908,42 @@ prints:
 
 @defun XML_XmlDeclHandler @var{scheme-callback}
 @defunx XML_SetXmlDeclHandler @var{parser} @var{c-callback}
+@end defun
+
+@c page
+@node version
+@chapter Expat version informations
+
+
+The following bindings are exported by the @library{vicare expat}
+library.
+
+
+@defun XML_ExpatVersion
+@expatref{api version, XML_ExpatVersion}.  Return a Scheme string
+representing the Expat version number.
+@end defun
+
+
+@defun XML_ExpatVersionInfo
+@expatref{api version, XML_ExpatVersionInfo}.  Return a Scheme vector
+holding exact integers representing the Expat version numbers: major,
+minor, micro.
+@end defun
+
+
+@defun XML_GetFeatureList
+@expatref{api version, XML_GetFeatureList}.  Return a vector of vectors
+representing the features of the running version of Expat.  Example:
+
+@example
+(XML_GetFeatureList)
+@result{} #(#(6 "sizeof(XML_Char)" 1)
+     #(7 "sizeof(XML_LChar)" 1)
+     #(3 "XML_DTD" #f)
+     #(4 "XML_CONTEXT_BYTES" 1024)
+     #(8 "XML_NS" #f))
+@end example
 @end defun
 
 @c page

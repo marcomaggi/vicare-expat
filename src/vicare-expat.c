@@ -226,7 +226,7 @@ ik_expat_get_base (ikptr s_parser, ikpcb * pcb)
 {
   const XML_Char *	base;
   base = XML_GetBase(EX_PARSER(s_parser));
-  return base? false_object : ika_bytevector_from_cstring(pcb, base);
+  return base? ika_bytevector_from_cstring(pcb, base) : false_object;
 }
 
 /* ------------------------------------------------------------------ */

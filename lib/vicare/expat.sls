@@ -37,6 +37,7 @@
     XML_DefaultCurrent
     XML_SetReturnNSTriplet
     XML_SetUserData
+    XML_GetUserData
     XML_SetEncoding
     XML_UseForeignDTD
     XML_SetBase
@@ -61,6 +62,7 @@
     XML_ParserFree
     XML_ErrorString
     XML_ExpatVersion
+    XML_ExpatVersionInfo
     XML_GetFeatureList
 
     ;; callback setters
@@ -675,7 +677,7 @@
   (define who 'XML_ErrorString)
   (with-arguments-validation (who)
       ((signed-int	code))
-    (foreign-call "ik_expat_error_string" code)))
+    (latin1->string (foreign-call "ik_expat_error_string" code))))
 
 (define (XML_GetErrorCode parser)
   (define who 'XML_GetErrorCode)
@@ -711,13 +713,16 @@
 ;;;; miscellaneous functions
 
 (define (XML_ExpatVersion)
-  (foreign-call "ik_expat_version"))
+  (latin1->string (foreign-call "ik_expat_version")))
 
 (define (XML_ExpatVersionInfo)
   (foreign-call "ik_expat_version_info"))
 
 (define (XML_GetFeatureList)
-  (foreign-call "ik_expat_get_feature_list"))
+  (vector-map (lambda (vec)
+		(vector-set! vec 1 (latin1->string (vector-ref vec 1)))
+		vec)
+    (foreign-call "ik_expat_get_feature_list")))
 
 
 ;;;; done

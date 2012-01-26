@@ -113,6 +113,10 @@ Revised^6 Report on the algorithmic language Scheme
 @acronym{URL}
 @end macro
 
+@macro uri{}
+@acronym{URI}
+@end macro
+
 @c Remember that @xml is already used by Texinfo.
 @macro axml{}
 @acronym{XML}

@@ -42,7 +42,7 @@
 
 (define (%print-parser-error-maybe parser rv)
   (unless (= XML_STATUS_OK rv)
-    (printf "error: ~a\n" (latin1->string (XML_ErrorString (XML_GetErrorCode parser))))))
+    (printf "error: ~a\n" (XML_ErrorString (XML_GetErrorCode parser)))))
 
 
 (parametrise ((check-test-name	'parsing-basic))
@@ -276,6 +276,59 @@
 			 (suspended ,XML_STATUS_SUSPENDED)
 			 (start "ball" ("colour" "red")))))
 
+
+  #t)
+
+
+(parametrise ((check-test-name	'parser-misc))
+
+  (check
+      (let ((parser (XML_ParserCreate)))
+	(XML_SetUserData parser parser)
+	(ffi.pointer=? parser (XML_GetUserData parser)))
+    => #t)
+
+  (check
+      (let ((parser (XML_ParserCreate)))
+	(XML_UseParserAsHandlerArg parser)
+	#t)
+    => #t)
+
+  (check
+      (let ((parser (XML_ParserCreate)))
+	(XML_SetBase parser '#vu8(1 2 3 4))
+	(XML_GetBase parser))
+    => '#vu8(1 2 3 4))
+
+  (check
+      (let ((parser (XML_ParserCreate)))
+	(XML_SetBase parser #f)
+	(XML_GetBase parser))
+    => #f)
+
+  #t)
+
+
+(parametrise ((check-test-name	'error-reporting))
+
+  (check
+      (XML_ErrorString XML_ERROR_NO_ELEMENTS)
+    => "no element found")
+
+  #t)
+
+
+(parametrise ((check-test-name	'version))
+
+  (check
+      (XML_ExpatVersion)
+    => "expat_2.0.1")
+
+  (check
+      (XML_ExpatVersionInfo)
+    => '#(2 0 1))
+
+;;;(check-pretty-print (XML_GetFeatureList))
 
   #t)
 
