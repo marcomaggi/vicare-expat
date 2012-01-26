@@ -870,6 +870,11 @@ Expat can be found here:
 
 @center @url{http://expat.sourceforge.net/}
 
+@noindent
+the @axml{} specification is available from:
+
+@center @url{http://www.w3.org/TR/REC-xml/}
+
 @c page
 @node concept index
 @appendix An entry for each concept
