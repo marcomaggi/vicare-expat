@@ -323,7 +323,8 @@ nothing will happen.
 @end defun
 
 
-@defun XML_ParserReset @var{parser} @var{encoding}
+@defun XML_ParserReset @var{parser}
+@defunx XML_ParserReset @var{parser} @var{encoding}
 @expatref{api create, XML_ParserReset}.  Reset a parser so that it can
 be used again; return a boolean value: @true{} if success, @false{} if
 this parser cannot be reset.  @var{encoding} is as in
@@ -404,12 +405,224 @@ The following is a skeleton program showing how to parse an external
 @section Parsing data
 
 
+@menu
+* parsers parsing basic::       Basic parsing of @axml{} data.
+* parsers parsing internal::    Parsing data from an internal buffer.
+* parsers parsing stop::        Stopping and resuming.
+* parsers parsing status::      Parsing status.
+@end menu
+
+@c page
+@node parsers parsing basic
+@subsection Basic parsing of @axml{} data
+
+
 All the following bindings are exported by the @library{vicare expat}
-library.
+library.  In all the descriptions: the @var{parser} argument must be a
+pointer object referencing the parser.
 
 
 @defun XML_Parse @var{parser} @var{buffer} @var{buflen} @var{final?}
-@expatref{api parse, XML_Parse}.
+@expatref{api parse, XML_Parse}.  Parse the next portion of the
+document; return a fixnum representing a status code.
+
+@var{buffer} must be a bytevector or a pointer object.  @var{buflen}
+must be @false{} or a non--negative exact integer in the range of the
+@code{int} C language type.  @var{final?} must be a boolean object.
+
+If @var{buffer} is a pointer: @var{buflen} must be an integer
+representing the number bytes to consume from the buffer; if
+@var{buffer} is a bytevector: @var{buflen} is ignored and the whole
+bytevector is consumed.
+@end defun
+
+@c page
+@node parsers parsing internal
+@subsection Parsing data from an internal buffer
+
+
+All the following bindings are exported by the @library{vicare expat}
+library.  In all the descriptions: the @var{parser} argument must be a
+pointer object referencing the parser.
+
+
+@defun XML_GetBuffer @var{parser} @var{buflen}
+@expatref{api parse, XML_GetBuffer}.  Allocate an internal buffer
+@var{buflen} bytes wide and return a pointer object to it; return
+@false{} if the allocation fails.  The returned value is meant to be
+filled with the next portion of the document and processed by
+@func{XML_ParseBuffer}.
+@end defun
+
+
+@defun XML_ParseBuffer @var{parser} @var{buflen} @var{final?}
+@expatref{api parse, XML_ParseBuffer}.  Parse the next portion of the
+document from the internal buffer allocated by a previous call to
+@func{XML_GetBuffer}.  Return a fixnum representing a status code.
+@end defun
+
+
+The following skeleton program shows the mechanics of using an internal
+buffer:
+
+@example
+#!r6rs
+(import (vicare)
+  (vicare expat)
+  (vicare expat constants)
+  (prefix (vicare ffi) ffi.))
+
+(define xml
+  (string->utf8
+    "<!DOCTYPE toys SYSTEM 'http://localhost/toys'>
+     <toys><ball colour='red'/></toys>"))
+
+(let ((parser  (XML_ParserCreate 'UTF-8))
+      (buflen  (bytevector-length data))
+      (buffer  (XML_GetBuffer parser buflen)))
+  (ffi.memory-copy buffer 0 data 0 buflen)
+  (XML_ParseBuffer parser buflen #t))
+@end example
+
+@c page
+@node parsers parsing stop
+@subsection Stopping and resuming
+
+
+All the following bindings are exported by the @library{vicare expat}
+library.  In all the descriptions: the @var{parser} argument must be a
+pointer object referencing the parser.
+
+
+@defun XML_StopParser @var{parser} @var{resumable?}
+@expatref{api parse, XML_StopParser}.  Stop parsing causing the parse
+function to return; return a fixnum representing a status code.
+@var{resumable?} must be a boolean object.
+@end defun
+
+
+@defun XML_ResumeParser @var{parser}
+@expatref{api parse, XML_ResumeParser}.  Resume parsing for a suspended
+parser.  A call to this function is like a call to @func{XML_Parse} or
+@func{XML_ParseBuffer}.
+@end defun
+
+
+The following skeleton program shows the mechanics of aborting parsing:
+
+@example
+#!r6rs
+(import (vicare)
+  (vicare expat)
+  (vicare expat constants)
+  (prefix (vicare ffi) ffi.))
+
+(define xml-utf8
+  (string->utf8
+   "<?xml version='1.0'?>
+    <!DOCTYPE toys [
+      <!ELEMENT ball EMPTY>
+      <!ATTLIST ball colour CDATA #REQUIRED>
+    ]>
+    <toys><ball colour='red'/></toys>"))
+
+(define (start-callback parser element attributes)
+  (let ((status (XML_GetParsingStatus parser)))
+    (unless (= XML_STATUS_SUSPENDED
+               (parsing-status-parsing status))
+      (XML_StopParser parser #f))))
+
+(let ((parser  (XML_ParserCreate))
+      (start   (XML_StartElementHandler start-callback)))
+  (XML_SetStartElementHandler parser start)
+  (XML_SetUserData parser parser)
+  (XML_Parse parser xml-utf8 #f #t)     @result{} XML_STATUS_ERROR
+  (ffi.free-c-callback start)
+  (XML_GetErrorCode parser))            @result{} XML_ERROR_ABORTED
+@end example
+
+@noindent
+the following skeleton program shows the mechanics of stopping parsing
+and then resuming:
+
+@smallexample
+#!r6rs
+(import (vicare)
+  (vicare expat)
+  (vicare expat constants)
+  (prefix (vicare ffi) ffi.))
+
+(define xml-utf8
+  (string->utf8
+   "<?xml version='1.0'?>
+    <!DOCTYPE toys [
+      <!ELEMENT ball EMPTY>
+      <!ATTLIST ball colour CDATA #REQUIRED>
+    ]>
+    <toys><ball colour='red'/></toys>"))
+
+(define (start-callback-and-suspend parser element attributes)
+  (XML_StopParser parser #t))
+
+(define (start-callback parser element attributes)
+  (void))
+
+(let* ((parser   (XML_ParserCreate))
+       (suspend  (XML_StartElementHandler start-callback-and-suspend)))
+  (XML_SetStartElementHandler parser suspend)
+  (XML_SetUserData parser parser)
+  (XML_Parse parser xml-utf8 #f #t)     @result{} XML_STATUS_SUSPENDED
+  (ffi.free-c-callback suspend)
+  (let ((start (XML_StartElementHandler start-callback)))
+    (XML_SetStartElementHandler parser start)
+    (XML_ResumeParser parser)           @result{} XML_STATUS_OK
+    (ffi.free-c-callback start)))
+@end smallexample
+
+@c page
+@node parsers parsing status
+@subsection Parsing status
+
+
+All the following bindings are exported by the @library{vicare expat}
+library.  In all the descriptions: the @var{parser} argument must be a
+pointer object referencing the parser.
+
+
+@deftp {Structure Type} xml-parsing-status
+@expatref{api parse, XML_ParsingStatus}.  Structure representing the
+current parser status as mirror of the C data structure
+@code{XML_ParsingStatus}.  It has the following fields:
+
+@table @code
+@item parsing
+A fixnum.
+
+@item final-buffer?
+A boolean.
+@end table
+@end deftp
+
+
+@defun make-xml-parsing-status @var{code} @var{boolean}
+Build and return a new instance of @code{xml-parsing-status}.
+@end defun
+
+
+@defun xml-parsing-status? @var{obj}
+Return true if @var{obj} is an instance of @code{xml-parsing-status}.
+@end defun
+
+
+@defun xml-parsing-status-parsing @var{stru}
+@defunx xml-parsing-status-final-buffer? @var{stru}
+Accessors for the fields of @code{xml-parsing-status} instances.
+@end defun
+
+
+@defun XML_GetParsingStatus @var{parser}
+@expatref{api parse, XML_GetParsingStatus}.  Acquire the current status
+of the parser and return an instance of @code{xml-parsing-status}.
 @end defun
 
 
@@ -417,6 +630,11 @@ library.
 @node handlers
 @chapter Building and registering callbacks
 
+
+Expat offers a significant number of callbacks to process input from the
+@axml{} document.  If we do not register any handler: the parsing
+process will proceed successfully producing no side effect in the
+program.
 
 In the descriptions of this chapters: @var{scheme-callback} is a Scheme
 function used as callback; @var{parser} is a pointer of type

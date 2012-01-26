@@ -141,6 +141,142 @@
 	       (end "thing")
 	       (end "stuff"))))
 
+  (check	;parsing with internal buffer
+      (with-result
+       (define (start-callback data element attributes)
+	 (add-result (list 'start
+			   (ffi.cstring->string element)
+			   (ffi.argv->strings attributes))))
+       (define (end-callback data element)
+	 (add-result (list 'end (ffi.cstring->string element))))
+       (define (chdata-callback data buf.ptr buf.len)
+	 (add-result (list 'character-data (ffi.cstring->string buf.ptr buf.len))))
+       (define (comment-callback data cstr)
+	 (add-result (list 'comment (ffi.cstring->string cstr))))
+       (let ((parser	(XML_ParserCreate 'UTF-8))
+	     (start	(XML_StartElementHandler  start-callback))
+	     (end	(XML_EndElementHandler    end-callback))
+	     (chdata	(XML_CharacterDataHandler chdata-callback))
+	     (comment	(XML_CommentHandler       comment-callback)))
+	 (XML_SetElementHandler		parser start end)
+	 (XML_SetCharacterDataHandler	parser chdata)
+	 (XML_SetCommentHandler		parser comment)
+	 (let* ((data		(string->utf8 xml-1))
+		(buflen		(bytevector-length data))
+		(buffer		(XML_GetBuffer parser buflen)))
+	   (ffi.memory-copy buffer 0 data 0 buflen)
+	   (let* ((finished?	#t)
+		  (rv		(XML_ParseBuffer parser buflen finished?)))
+	     (ffi.free-c-callback start)
+	     (ffi.free-c-callback end)
+	     (ffi.free-c-callback chdata)
+	     (ffi.free-c-callback comment)
+	     rv))))
+    => (list XML_STATUS_OK
+	     '((comment " this is a test document ")
+	       (start "stuff" ())
+	       (start "thing" ())
+	       (start "alpha" ()) (character-data "one") (end "alpha")
+	       (start "beta" ()) (character-data "two")(end "beta")
+	       (end "thing")
+	       (start "thing" ())
+	       (start "alpha" ()) (character-data "123") (end "alpha")
+	       (start "beta" ()) (character-data "456") (end "beta")
+	       (end "thing")
+	       (end "stuff"))))
+
+  #t)
+
+
+(parametrise ((check-test-name	'creation))
+
+  (check
+      (let ((parser (XML_ParserCreate 'UTF-8)))
+	(XML_ParserFree parser)
+	(ffi.pointer-null? parser))
+    => #t)
+
+  (check
+      (let ((parser (XML_ParserCreate 'UTF-8)))
+	(XML_ParserFree parser)
+	(XML_ParserFree parser)
+	(XML_ParserFree parser)
+	(ffi.pointer-null? parser))
+    => #t)
+
+  (check
+      (let ((parser (XML_ParserCreate 'UTF-8)))
+	(XML_ParserReset parser)
+	(XML_ParserFree parser)
+	(ffi.pointer-null? parser))
+    => #t)
+
+
+  #t)
+
+
+(parametrise ((check-test-name	'stop-and-resume))
+
+  (define xml-utf8
+    (string->utf8
+     "<?xml version='1.0'?>
+      <!DOCTYPE toys [
+        <!ELEMENT ball EMPTY>
+        <!ATTLIST ball colour CDATA #REQUIRED>
+      ]>
+      <toys><ball colour='red'/></toys>"))
+
+  (check	;stopping with NO resuming
+      (with-result
+       (define (start-callback parser element attributes)
+	 (add-result (list 'start
+			   (ffi.cstring->string element)
+			   (ffi.argv->strings attributes)))
+	 (let ((status (XML_GetParsingStatus parser)))
+	   (unless (= XML_STATUS_SUSPENDED
+		      (xml-parser-status-parsing status))
+	     (add-result (list 'stop-rv (XML_StopParser parser #f))))))
+       (let* ((parser	(XML_ParserCreate))
+	      (start	(XML_StartElementHandler start-callback)))
+	 (XML_SetStartElementHandler parser start)
+	 (XML_SetUserData parser parser)
+	 (let ((rv	(XML_Parse parser xml-utf8 #f #t)))
+	   (ffi.free-c-callback start)
+	   (add-result (XML_GetErrorCode parser))
+	   rv)))
+    => `(,XML_STATUS_ERROR ((start "toys" ())
+			    (stop-rv ,XML_STATUS_OK)
+			    ,XML_ERROR_ABORTED)))
+
+  (check	;stopping with resuming
+      (with-result
+       (define (start-callback-and-suspend parser element attributes)
+	 (add-result (list 'start
+			   (ffi.cstring->string element)
+			   (ffi.argv->strings attributes)))
+	 (add-result (list 'stop-rv (XML_StopParser parser #t))))
+       (define (start-callback parser element attributes)
+	 (add-result (list 'start
+			   (ffi.cstring->string element)
+			   (ffi.argv->strings attributes))))
+       (let* ((parser	(XML_ParserCreate))
+	      (suspend	(XML_StartElementHandler start-callback-and-suspend)))
+	 (XML_SetStartElementHandler parser suspend)
+	 (XML_SetUserData parser parser)
+	 (let ((rv (XML_Parse parser xml-utf8 #f #t)))
+	   (ffi.free-c-callback suspend)
+	   (add-result (list 'suspended rv))
+	   (let ((start (XML_StartElementHandler start-callback)))
+	     (XML_SetStartElementHandler parser start)
+	     (let ((rv (XML_ResumeParser parser)))
+	       (ffi.free-c-callback start)
+	       rv)))))
+    => `(,XML_STATUS_OK ((start "toys" ())
+			 (stop-rv ,XML_STATUS_OK)
+			 (suspended ,XML_STATUS_SUSPENDED)
+			 (start "ball" ("colour" "red")))))
+
+
   #t)
 
 

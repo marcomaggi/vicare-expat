@@ -121,8 +121,8 @@
     XML_XmlDeclHandler
 
     ;; parsing status object
-    make-parsing-status			parsing-status?
-    parsing-status-parsing		parsing-status-final-buffer?)
+    make-xml-parser-status		xml-parser-status?
+    xml-parser-status-parsing		xml-parser-status-final-buffer?)
   (import (vicare)
     (vicare expat constants)
     (vicare syntactic-extensions)
@@ -201,14 +201,14 @@
 
 ;;; --------------------------------------------------------------------
 
-(define-struct parsing-status
+(define-struct xml-parser-status
   (parsing final-buffer?))
 
-(define (%struct-parsing-status-printer S port sub-printer)
+(define (%struct-xml-parser-status-printer S port sub-printer)
   (define-inline (%display thing)
     (display thing port))
-  (%display "#[expat-parsing-status")
-  (%display " parsing=")	(%display (let ((status (parsing-status-parsing S)))
+  (%display "#[expat-xml-parser-status")
+  (%display " parsing=")	(%display (let ((status (xml-parser-status-parsing S)))
 					    (cond ((= status XML_INITIALIZED)
 						   "XML_INITIALIZED")
 						  ((= status XML_PARSING)
@@ -217,8 +217,8 @@
 						   "XML_FINISHED")
 						  ((= status XML_SUSPENDED)
 						   "XML_SUSPENDED")
-						  (else "<unknown status>"))))
-  (%display " final-buffer?=")	(%display (parsing-status-final-buffer? S))
+						  (else status #;"<unknown status>"))))
+  (%display " final-buffer?=")	(%display (xml-parser-status-final-buffer? S))
   (%display "]"))
 
 
@@ -498,11 +498,15 @@
 	  (%parser-guardian rv)
 	(error who "error allocating Expat parser" encoding namespace-separator)))))
 
-(define (XML_ParserReset parser encoding)
-  (define who 'XML_ParserReset)
-  (with-arguments-validation (who)
-      ((false/encoding-symbol	encoding))
-    (foreign-call "ik_expat_parser_reset" parser encoding)))
+(define XML_ParserReset
+  (case-lambda
+   ((parser)
+    (XML_ParserReset parser #f))
+   ((parser encoding)
+    (define who 'XML_ParserReset)
+    (with-arguments-validation (who)
+	((false/encoding-symbol	encoding))
+      (foreign-call "ik_expat_parser_reset" parser encoding)))))
 
 (define (XML_ParserFree parser)
   (define who 'XML_ParserFree)
@@ -630,7 +634,7 @@
   (define who 'XML_GetParsingStatus)
   (with-arguments-validation (who)
       ((parser	parser))
-    (let ((status (make-parsing-status #f #f)))
+    (let ((status (make-xml-parser-status #f #f)))
       (foreign-call "ik_expat_get_parsing_status" parser status)
       status)))
 
@@ -718,7 +722,7 @@
 
 ;;;; done
 
-(set-rtd-printer! (type-descriptor parsing-status) %struct-parsing-status-printer)
+(set-rtd-printer! (type-descriptor xml-parser-status) %struct-xml-parser-status-printer)
 
 )
 

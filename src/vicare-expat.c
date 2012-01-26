@@ -201,7 +201,7 @@ ik_expat_set_encoding (ikptr s_parser, ikptr s_encoding)
 ikptr
 ik_expat_set_user_data (ikptr s_parser, ikptr s_pointer)
 {
-  XML_SetUserData(EX_PARSER(s_parser), IK_BYTEVECTOR_DATA_VOIDP(s_pointer));
+  XML_SetUserData(EX_PARSER(s_parser), IK_POINTER_DATA_VOIDP(s_pointer));
   return void_object;
 }
 ikptr
@@ -280,7 +280,7 @@ ik_expat_get_buffer (ikptr s_parser, ikptr s_buflen, ikpcb * pcb)
   int		buflen = ik_integer_to_int(s_buflen);
   void *	buffer;
   buffer = XML_GetBuffer(EX_PARSER(s_parser), buflen);
-  return ika_pointer_alloc(pcb, (ik_ulong)buffer);
+  return buffer? ika_pointer_alloc(pcb, (ik_ulong)buffer) : false_object;
 }
 ikptr
 ik_expat_parse_buffer (ikptr s_parser, ikptr s_buflen, ikptr s_is_final, ikpcb * pcb)
