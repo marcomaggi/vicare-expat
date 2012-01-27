@@ -69,10 +69,10 @@
       (let ((text (ffi.cstring->string cstr)))
 	(pretty-print (list 'comment text))))
 
-    (let ((parser		(XML_ParserCreate 'UTF-8))
-	  (start		(XML_StartElementHandler  start-callback))
+    (let ((parser	(XML_ParserCreate 'UTF-8))
+	  (start	(XML_StartElementHandler  start-callback))
 	  (end		(XML_EndElementHandler    end-callback))
-	  (cdata		(XML_CharacterDataHandler cdata-callback))
+	  (cdata	(XML_CharacterDataHandler cdata-callback))
 	  (comment	(XML_CommentHandler       comment-callback)))
       (XML_SetElementHandler       parser start end)
       (XML_SetCharacterDataHandler parser cdata)
@@ -86,6 +86,151 @@
     (flush-output-port (current-output-port))
 
     #f))
+
+
+;;;; start and end element handlers
+
+(when #f
+  (let ()
+
+    (define xml-utf8
+      (string->utf8
+       "<!-- this is a test document -->\
+    <stuff>\
+      <thing colour=\"yellow\">\
+        <alpha>one</alpha>\
+        <beta>two</beta>\
+      </thing>\
+      <thing>\
+        <alpha>123</alpha>\
+        <beta>456</beta>\
+      </thing>\
+    </stuff>"))
+
+    (define (start-callback data element attributes)
+      (pretty-print
+       (list 'start
+	     (ffi.cstring->string element)
+	     (ffi.argv->strings attributes))))
+
+    (define (end-callback data element)
+      (pretty-print
+       (list 'end
+	     (ffi.cstring->string element))))
+
+    (let ((parser  (XML_ParserCreate))
+	  (start   (XML_StartElementHandler start-callback))
+	  (end     (XML_EndElementHandler   end-callback)))
+      (XML_SetElementHandler parser start end)
+      (XML_Parse parser xml-utf8 #f #t)
+      (ffi.free-c-callback start)
+      (ffi.free-c-callback end)
+      (flush-output-port (current-output-port)))
+
+    #t))
+
+
+;;;; character data handlers
+
+(when #f
+  (let ()
+
+    (define xml-utf8
+      (string->utf8
+       "<!-- this is a test document -->\
+    <stuff>\
+      <thing colour=\"yellow\">\
+        <alpha>one</alpha>\
+        <beta>two</beta>\
+      </thing>\
+      <thing>\
+        <alpha>123</alpha>\
+        <beta>456</beta>\
+      </thing>\
+    </stuff>"))
+
+    (define (text-callback data buf.ptr buf.len)
+      (pretty-print
+       (list 'text
+	     (ffi.cstring->string buf.ptr buf.len))))
+
+    (let ((parser  (XML_ParserCreate))
+	  (text	(XML_CharacterDataHandler text-callback)))
+      (XML_SetCharacterDataHandler parser text)
+      (XML_Parse parser xml-utf8 #f #t)
+      (ffi.free-c-callback text)
+      (flush-output-port (current-output-port)))
+
+    #t))
+
+
+;;;; comment handlers
+
+(when #f
+  (let ()
+
+    (define xml-utf8
+      (string->utf8
+       "<!-- this is a test document -->\
+    <stuff>\
+      <thing colour=\"yellow\">\
+        <alpha>one</alpha>\
+        <beta>two</beta>\
+      </thing>\
+      <thing>\
+        <alpha>123</alpha>\
+        <beta>456</beta>\
+      </thing>\
+    </stuff>"))
+
+    (define (comment-callback data cstr)
+      (pretty-print
+       (list 'comment
+	     (ffi.cstring->string cstr))))
+
+    (let ((parser	(XML_ParserCreate))
+	  (comment	(XML_CommentHandler comment-callback)))
+      (XML_SetCommentHandler parser comment)
+      (XML_Parse parser xml-utf8 #f #t)
+      (ffi.free-c-callback comment)
+      (flush-output-port (current-output-port)))
+
+    #t))
+
+
+;;;; cdata handlers
+
+(when #t
+  (let ()
+
+    (define xml-utf8
+      (string->utf8
+       "<stuff><![CDATA[ <stuff> ]]></stuff>"))
+
+    (define (start-cdata-callback data)
+      (pretty-print '(start-cdata)))
+
+    (define (end-cdata-callback data)
+      (pretty-print '(end-cdata)))
+
+    (define (text-callback data buf.ptr buf.len)
+      (pretty-print
+       (list 'text
+	     (ffi.cstring->string buf.ptr buf.len))))
+
+    (let ((parser	(XML_ParserCreate))
+	  (start	(XML_StartCdataSectionHandler start-cdata-callback))
+	  (end		(XML_EndCdataSectionHandler   end-cdata-callback))
+	  (text		(XML_CharacterDataHandler     text-callback)))
+      (XML_SetCdataSectionHandler parser start end)
+      (XML_SetCharacterDataHandler parser text)
+      (XML_Parse parser xml-utf8 #f #t)
+      (ffi.free-c-callback start)
+      (ffi.free-c-callback end)
+      (ffi.free-c-callback text)
+      (flush-output-port (current-output-port)))
+
+    #t))
 
 
 ;;;; namespaces
