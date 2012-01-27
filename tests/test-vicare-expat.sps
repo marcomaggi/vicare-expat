@@ -188,6 +188,67 @@
   #t)
 
 
+(parametrise ((check-test-name	'namespaces))
+
+  (define (doit xml-utf8)
+    (with-result
+     (define (start-callback data element attributes)
+       (add-result (list 'start
+			 (ffi.cstring->string element)
+			 (ffi.argv->strings attributes))))
+     (define (end-callback data element)
+       (add-result (list 'end (ffi.cstring->string element))))
+     (let ((parser	(XML_ParserCreateNS 'UTF-8 #\:))
+	   (start	(XML_StartElementHandler  start-callback))
+	   (end		(XML_EndElementHandler    end-callback)))
+       (XML_SetElementHandler		parser start end)
+       (let ((rv (XML_Parse parser xml-utf8 #f #t)))
+	 (ffi.free-c-callback start)
+	 (ffi.free-c-callback end)
+	 rv))))
+
+  (check	;some namespaces
+      (doit (string->utf8
+	     "<?xml version='1.0'?>
+              <!DOCTYPE toys [
+                <!ELEMENT ball EMPTY>
+                <!ATTLIST ball colour CDATA #REQUIRED>
+              ]>
+             <toys xmlns:blue='http://localhost/blue'
+                   xmlns:red='http://localhost/red'>\
+               <blue:ball colour='yellow'/>\
+               <red:ball  colour='purple'/>\
+             </toys>"))
+    => (list XML_STATUS_OK
+	     '((start "toys" ())
+	       (start "http://localhost/blue:ball" ("colour" "yellow"))
+	       (end "http://localhost/blue:ball")
+	       (start "http://localhost/red:ball" ("colour" "purple"))
+	       (end "http://localhost/red:ball")
+	       (end "toys"))))
+
+  (check	;default namespace
+      (doit (string->utf8
+	     "<?xml version='1.0'?>
+              <!DOCTYPE toys [
+                <!ELEMENT ball EMPTY>
+                <!ATTLIST ball colour CDATA #REQUIRED>
+              ]>
+             <toys xmlns='http://localhost/blue'>
+               <ball colour='yellow'/>
+               <ball  colour='purple'/>
+             </toys>"))
+    => (list XML_STATUS_OK
+	     '((start "http://localhost/blue:toys" ())
+	       (start "http://localhost/blue:ball" ("colour" "yellow"))
+	       (end "http://localhost/blue:ball")
+	       (start "http://localhost/blue:ball" ("colour" "purple"))
+	       (end "http://localhost/blue:ball")
+	       (end "http://localhost/blue:toys"))))
+
+  #t)
+
+
 (parametrise ((check-test-name	'creation))
 
   (check

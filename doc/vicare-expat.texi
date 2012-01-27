@@ -276,6 +276,7 @@ which prints:
 * parsers create::              Creating parsers.
 * parsers external::            Creating external entities parsers.
 * parsers parsing::             Parsing data.
+* parsers namespaces::          Using namespaces.
 * parsers stop::                Stopping and resuming.
 * parsers status::              Parsing status.
 * parsers report::              Reporting errors.
@@ -302,19 +303,6 @@ The optional @var{encoding} must be one of the Scheme symbols:
 @code{UTF-8}, @code{UTF-16}, @code{ISO-8859-1}, @code{US-ASCII} or
 @false{}; when @var{encoding} is not used or it is @false{}: the parser
 will honour the encoding specification in the document.
-@end defun
-
-
-@defun XML_ParserCreateNS @var{encoding} @var{namespace-separator}
-@expatref{api create, XML_ParserCreateNS}.  Build a new parser, having
-namespace processing in effect, and return a pointer object referencing
-it.  Values returned by this function must be finalised with
-@func{XML_ParserFree}; this will happen automatically when the pointer
-object is garbage collected.
-
-@var{encoding} is as in @func{XML_ParserCreate}.
-@var{namespace-separator} must be a Scheme character in the @ascii{}
-range.
 @end defun
 
 
@@ -478,6 +466,124 @@ buffer:
   (ffi.memory-copy buffer 0 data 0 buflen)
   (XML_ParseBuffer parser buflen #t))
 @end example
+
+@c page
+@node parsers namespaces
+@section Using namespaces
+
+
+The use of namespaces in @axml{} 1.0 is defined in the recommendation
+at:
+
+@center @url{http://www.w3.org/TR/xml-names/}
+
+@noindent
+and allows to tag @axml{} elements with the same name as belonging to
+different sets.
+
+
+@defun XML_ParserCreateNS @var{encoding} @var{namespace-separator}
+@expatref{api create, XML_ParserCreateNS}.  Build a new parser, having
+namespace processing in effect, and return a pointer object referencing
+it.  Values returned by this function must be finalised with
+@func{XML_ParserFree}; this will happen automatically when the pointer
+object is garbage collected.
+
+@var{encoding} is as in @func{XML_ParserCreate}.
+@var{namespace-separator} must be a Scheme character in the @ascii{}
+range.
+@end defun
+
+
+The following examples show a simple use of namespace; first let's take
+the following as program preamble:
+
+@example
+#!r6rs
+(import (vicare)
+  (vicare expat)
+  (vicare expat constants)
+  (prefix (vicare ffi) ffi.))
+
+(define (doit xml-utf8)
+  (define (start-callback data element attributes)
+    (pretty-print
+     (list 'start
+           (ffi.cstring->string element)
+           (ffi.argv->strings attributes))))
+  (define (end-callback data element)
+    (pretty-print
+     (list 'end
+           (ffi.cstring->string element))))
+  (let ((parser  (XML_ParserCreateNS 'UTF-8 #\:))
+        (start   (XML_StartElementHandler start-callback))
+        (end     (XML_EndElementHandler   end-callback)))
+    (XML_SetElementHandler parser start end)
+    (XML_Parse parser xml-utf8 #f #t)
+    (ffi.free-c-callback start)
+    (ffi.free-c-callback end)
+    (flush-output-port (current-output-port))))
+@end example
+
+@noindent
+then the following form:
+
+@example
+(doit
+  (string->utf8
+   "<?xml version='1.0'?>
+    <!DOCTYPE toys [
+      <!ELEMENT ball EMPTY>
+      <!ATTLIST ball colour CDATA #REQUIRED>
+    ]>
+   <toys xmlns:blue='http://localhost/blue'
+         xmlns:red='http://localhost/red'>\
+   <blue:ball colour='yellow'/>\
+   <red:ball  colour='purple'/>\
+   </toys>"))
+@end example
+
+@noindent
+prints the output:
+
+@example
+(start "toys" ())
+(start "http://localhost/blue:ball" ("colour" "yellow"))
+(end "http://localhost/blue:ball")
+(start "http://localhost/red:ball" ("colour" "purple"))
+(end "http://localhost/red:ball")
+(end "toys")
+@end example
+
+@noindent
+the following form shows use of the default namespace:
+
+@example
+(doit
+  (string->utf8
+    "<?xml version='1.0'?>
+     <!DOCTYPE toys [
+       <!ELEMENT ball EMPTY>
+       <!ATTLIST ball colour CDATA #REQUIRED>
+     ]>
+     <toys xmlns='http://localhost/blue'>
+       <ball colour='yellow'/>
+       <ball  colour='purple'/>
+     </toys>"))
+@end example
+
+@noindent
+the output is:
+
+@example
+(start "http://localhost/blue:toys" ())
+(start "http://localhost/blue:ball" ("colour" "yellow"))
+(end "http://localhost/blue:ball")
+(start "http://localhost/blue:ball" ("colour" "purple"))
+(end "http://localhost/blue:ball")
+(end "http://localhost/blue:toys")
+@end example
+
 
 @c page
 @node parsers stop
@@ -708,17 +814,17 @@ if successful @code{XML_ERROR_NONE}.
 
 
 @defun XML_SetReturnNSTriplet @var{parser} @var{do-nst?}
-
+@expatref{api misc, XML_SetReturnNSTriplet}.
 @end defun
 
 
 @defun XML_DefaultCurrent @var{parser}
-
+@expatref{api misc, XML_DefaultCurrent}.
 @end defun
 
 
 @defun XML_FreeContentModel @var{parser} @var{model}
-
+@expatref{api misc, XML_FreeContentModel}.
 @end defun
 
 @c page
@@ -1017,9 +1123,14 @@ Expat can be found here:
 @center @url{http://expat.sourceforge.net/}
 
 @noindent
-the @axml{} specification is available from:
+the @axml{} 1.0 specification is available from:
 
 @center @url{http://www.w3.org/TR/REC-xml/}
+
+the recommendation on Namespaces in @axml{} 1.0 is available from:
+
+@center @url{<http://www.w3.org/TR/xml-names/}
+
 
 @c page
 @node concept index
