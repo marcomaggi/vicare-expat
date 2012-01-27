@@ -175,6 +175,36 @@
   #f)
 
 
+;;;; default handler
+
+(let ()
+
+  (define (doit xml-utf8)
+    (define (start-callback data element attributes)
+      (XML_DefaultCurrent data))
+    (define (end-callback data element)
+      (XML_DefaultCurrent data))
+    (define (default-callback user-data buf.ptr buf.len)
+      (pretty-print (list 'default (ffi.cstring->string buf.ptr buf.len))))
+    (let ((parser	(XML_ParserCreateNS 'UTF-8 #\:))
+	  (start	(XML_StartElementHandler start-callback))
+	  (end		(XML_EndElementHandler   end-callback))
+	  (default	(XML_DefaultHandler      default-callback)))
+      (XML_UseParserAsHandlerArg parser)
+      (XML_SetElementHandler parser start end)
+      (XML_SetDefaultHandler parser default)
+      (XML_Parse parser xml-utf8 #f #t)
+      (ffi.free-c-callback start)
+      (ffi.free-c-callback end)
+      (ffi.free-c-callback default)
+      (flush-output-port (current-output-port))))
+
+  (when #f
+    (doit (string->utf8 "<toys><ball colour='yellow'/></toys>")))
+
+  #t)
+
+
 ;;;; DTD attributes list
 
 (when #f

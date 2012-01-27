@@ -376,9 +376,14 @@ ik_expat_parser_create_mm (ikptr s_encoding, ikptr s_namespace_separator, ikpcb 
  ** ----------------------------------------------------------------- */
 
 ikptr
-ik_expat_default_current (ikptr s_parser)
+ik_expat_default_current (ikptr s_parser, ikpcb * pcb)
 {
-  XML_DefaultCurrent(EX_PARSER(s_parser));
+  ikptr			sk;
+  sk = ik_enter_c_function(pcb);
+  {
+    XML_DefaultCurrent(EX_PARSER(s_parser));
+  }
+  ik_leave_c_function(pcb, sk);
   return void_object;
 }
 ikptr
