@@ -541,6 +541,97 @@
   #t)
 
 
+(parametrise ((check-test-name	'comment-handler))
+
+  (define xml-utf8
+    (string->utf8
+     "<!-- this is a test document --><stuff></stuff>"))
+
+  (define (comment-callback data cstr)
+    (add-result
+     (list 'comment
+	   (ffi.cstring->string cstr))))
+
+  (define (doit xml-utf8)
+    (with-result
+     (let ((parser	(XML_ParserCreate))
+	   (comment	(XML_CommentHandler comment-callback)))
+       (XML_SetCommentHandler parser comment)
+       (let ((rv (XML_Parse parser xml-utf8 #f #t)))
+	 (ffi.free-c-callback comment)
+	 rv))))
+
+  (check
+      (doit xml-utf8)
+    => `(,XML_STATUS_OK
+	 ((comment " this is a test document "))))
+
+  #t)
+
+
+(parametrise ((check-test-name	'cdata-handler))
+
+  (define xml-utf8
+    (string->utf8
+     "<stuff><![CDATA[ <stuff> ]]></stuff>"))
+
+  (define (start-cdata-callback data)
+    (add-result '(start-cdata)))
+
+  (define (end-cdata-callback data)
+    (add-result '(end-cdata)))
+
+  (define (text-callback data buf.ptr buf.len)
+    (add-result
+     (list 'text
+	   (ffi.cstring->string buf.ptr buf.len))))
+
+  (define (doit xml-utf8)
+    (with-result
+     (let ((parser	(XML_ParserCreate))
+	   (start	(XML_StartCdataSectionHandler start-cdata-callback))
+	   (end		(XML_EndCdataSectionHandler   end-cdata-callback))
+	   (text	(XML_CharacterDataHandler     text-callback)))
+       (XML_SetCdataSectionHandler parser start end)
+       (XML_SetCharacterDataHandler parser text)
+       (let ((rv (XML_Parse parser xml-utf8 #f #t)))
+	 (ffi.free-c-callback start)
+	 (ffi.free-c-callback end)
+	 (ffi.free-c-callback text)
+	 rv))))
+
+  (define (doit-2 xml-utf8)
+    (with-result
+     (let ((parser	(XML_ParserCreate))
+	   (start	(XML_StartCdataSectionHandler start-cdata-callback))
+	   (end		(XML_EndCdataSectionHandler   end-cdata-callback))
+	   (text	(XML_CharacterDataHandler     text-callback)))
+       (XML_SetStartCdataSectionHandler parser start)
+       (XML_SetEndCdataSectionHandler   parser end)
+       (XML_SetCharacterDataHandler     parser text)
+       (let ((rv (XML_Parse parser xml-utf8 #f #t)))
+	 (ffi.free-c-callback start)
+	 (ffi.free-c-callback end)
+	 (ffi.free-c-callback text)
+	 rv))))
+
+  (check
+      (doit xml-utf8)
+    => `(,XML_STATUS_OK
+	 ((start-cdata)
+	  (text " <stuff> ")
+	  (end-cdata))))
+
+  (check
+      (doit-2 xml-utf8)
+    => `(,XML_STATUS_OK
+	 ((start-cdata)
+	  (text " <stuff> ")
+	  (end-cdata))))
+
+  #t)
+
+
 ;;;; done
 
 (check-report)
