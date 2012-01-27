@@ -134,10 +134,6 @@
 
 ;;;; arguments validation
 
-(define-argument-validation (boolean who obj)
-  (boolean? obj)
-  (assertion-violation who "expected boolean as argument" obj))
-
 (define-argument-validation (fixnum who obj)
   (fixnum? obj)
   (assertion-violation who "expected fixnum as argument" obj))
@@ -580,15 +576,13 @@
 (define (XML_UseForeignDTD parser use-dtd?)
   (define who 'XML_UseForeignDTD)
   (with-arguments-validation (who)
-      ((parser	parser)
-       (boolean	use-dtd?))
+      ((parser	parser))
     (foreign-call "ik_expat_user_foreign_dtd" parser use-dtd?)))
 
 (define (XML_SetReturnNSTriplet parser do-nst?)
   (define who 'XML_SetReturnNSTriplet)
   (with-arguments-validation (who)
-      ((parser	parser)
-       (boolean	do-nst?))
+      ((parser	parser))
     (foreign-call "ik_expat_set_return_ns_triplet" parser do-nst?)))
 
 ;;; --------------------------------------------------------------------
@@ -598,8 +592,7 @@
   (with-arguments-validation (who)
       ((parser				parser)
        (pointer/bytevector		buffer)
-       (false/non-negative-signed-int	buflen)
-       (boolean				final?))
+       (false/non-negative-signed-int	buflen))
     (foreign-call "ik_expat_parse" parser buffer buflen final?)))
 
 (define (XML_GetBuffer parser buflen)
@@ -613,8 +606,7 @@
   (define who 'XML_ParseBuffer)
   (with-arguments-validation (who)
       ((parser				parser)
-       (false/non-negative-signed-int	buflen)
-       (boolean				final?))
+       (false/non-negative-signed-int	buflen))
     (foreign-call "ik_expat_parse_buffer" parser buflen final?)))
 
 ;;; --------------------------------------------------------------------
@@ -622,8 +614,7 @@
 (define (XML_StopParser parser resumable?)
   (define who 'XML_StopParser)
   (with-arguments-validation (who)
-      ((parser	parser)
-       (boolean	resumable?))
+      ((parser	parser))
     (foreign-call "ik_expat_stop_parser" parser resumable?)))
 
 (define (XML_ResumeParser parser)

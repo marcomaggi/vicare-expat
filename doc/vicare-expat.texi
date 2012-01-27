@@ -416,12 +416,13 @@ document; return a fixnum representing a status code.
 
 @var{buffer} must be a bytevector or a pointer object.  @var{buflen}
 must be @false{} or a non--negative exact integer in the range of the
-@code{int} C language type.  @var{final?} must be a boolean object.
+@code{int} C language type.  If @var{buffer} is a pointer: @var{buflen}
+must be an integer representing the number bytes to consume from the
+buffer; if @var{buffer} is a bytevector: @var{buflen} is ignored and the
+whole bytevector is consumed.
 
-If @var{buffer} is a pointer: @var{buflen} must be an integer
-representing the number bytes to consume from the buffer; if
-@var{buffer} is a bytevector: @var{buflen} is ignored and the whole
-bytevector is consumed.
+If @var{final?} is true: expect this buffer to contain the end of the
+document.
 @end defun
 
 @c ------------------------------------------------------------
@@ -479,7 +480,8 @@ at:
 
 @noindent
 and allows to tag @axml{} elements with the same name as belonging to
-different sets.
+different sets.  When first learning about @axml{} namespaces, remember
+that: namespaces are @strong{not} for modular @dtd{} composition.
 
 
 @defun XML_ParserCreateNS @var{encoding} @var{namespace-separator}
@@ -492,6 +494,14 @@ object is garbage collected.
 @var{encoding} is as in @func{XML_ParserCreate}.
 @var{namespace-separator} must be a Scheme character in the @ascii{}
 range.
+@end defun
+
+
+@defun XML_SetReturnNSTriplet @var{parser} @var{do-nst?}
+@expatref{api misc, XML_SetReturnNSTriplet}.  If @var{do-nst?} is true:
+turn on returning namespace qualified names as triplets: @uri{}, local
+name, prefix, rather than the default pairs: @uri{}, local name; if
+@var{do-nst?} is false: turn this off.
 @end defun
 
 
@@ -584,6 +594,61 @@ the output is:
 (end "http://localhost/blue:toys")
 @end example
 
+@noindent
+now let's define the following function which makes use of
+@func{XML_SetReturnNSTriplet}:
+
+@example
+(define (doit-with-triplet xml-utf8)
+  (define (start-callback data element attributes)
+    (pretty-print
+     (list 'start
+           (ffi.cstring->string element)
+           (ffi.argv->strings attributes))))
+  (define (end-callback data element)
+    (pretty-print
+     (list 'end
+           (ffi.cstring->string element))))
+  (let ((parser  (XML_ParserCreateNS 'UTF-8 #\:))
+        (start   (XML_StartElementHandler start-callback))
+        (end     (XML_EndElementHandler   end-callback)))
+    (XML_SetReturnNSTriplet parser #t)
+    (XML_SetElementHandler parser start end)
+    (XML_Parse parser xml-utf8 #f #t)
+    (ffi.free-c-callback start)
+    (ffi.free-c-callback end)
+    (flush-output-port (current-output-port))))
+@end example
+
+@noindent
+the following form:
+
+@example
+(doit-with-triplet
+ (string->utf8
+  "<?xml version='1.0'?>
+   <!DOCTYPE toys [
+     <!ELEMENT ball EMPTY>
+     <!ATTLIST ball colour CDATA #REQUIRED>
+   ]>
+   <toys xmlns:blue='http://localhost/blue'
+         xmlns:red='http://localhost/red'>
+   <blue:ball colour='yellow'/>
+   <red:ball  colour='purple'/>
+   </toys>")))
+@end example
+
+@noindent
+prints the output:
+
+@example
+(start "toys" ())
+(start "http://localhost/blue:ball:blue" ("colour" "yellow"))
+(end "http://localhost/blue:ball:blue")
+(start "http://localhost/red:ball:red" ("colour" "purple"))
+(end "http://localhost/red:ball:red")
+(end "toys")
+@end example
 
 @c page
 @node parsers stop
@@ -597,8 +662,9 @@ pointer object referencing the parser.
 
 @defun XML_StopParser @var{parser} @var{resumable?}
 @expatref{api parse, XML_StopParser}.  Stop parsing causing the parse
-function to return; return a fixnum representing a status code.
-@var{resumable?} must be a boolean object.
+function to return; return a fixnum representing a status code.  If
+@var{resumable?} is true: suspend the parsing for later resumption; if
+@var{resumable?} is false: abort the parsing.
 @end defun
 
 
@@ -807,14 +873,9 @@ documentation.
 
 
 @defun XML_UseForeignDTD @var{parser} @var{use-dtd?}
-@expatref{api misc, XML_UseForeignDTD}.  Allow the application to
-provide an external @dtd{}.  Return a fixnum representing an error code,
-if successful @code{XML_ERROR_NONE}.
-@end defun
-
-
-@defun XML_SetReturnNSTriplet @var{parser} @var{do-nst?}
-@expatref{api misc, XML_SetReturnNSTriplet}.
+@expatref{api misc, XML_UseForeignDTD}.  If @var{use-dtd?} is true:
+allow the application to provide an external @dtd{}.  Return a fixnum
+representing an error code, if successful @code{XML_ERROR_NONE}.
 @end defun
 
 

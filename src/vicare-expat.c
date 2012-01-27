@@ -40,9 +40,9 @@
 
 #define EX_CALLBACK(CALLBACK)	IK_POINTER_DATA_VOIDP(CALLBACK)
 
-#define EX_BOOLEAN(BOOL)	((true_object == (BOOL))? XML_TRUE : XML_FALSE)
+#define EX_BOOLEAN(BOOL)	((false_object == (BOOL))? XML_FALSE : XML_TRUE)
 
-#define BOOLEAN_TO_INT(BOOL)	((true_object == (BOOL))? 1 : 0)
+#define BOOLEAN_TO_INT(BOOL)	((false_object == (BOOL))? 0 : 1)
 
 
 /** --------------------------------------------------------------------
