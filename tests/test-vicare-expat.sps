@@ -42,7 +42,7 @@
 
 (define (%print-parser-error-maybe parser rv)
   (unless (= XML_STATUS_OK rv)
-    (printf "error: ~a\n" (XML_ErrorString (XML_GetErrorCode parser)))))
+    (fprintf (current-error-port) "error: ~a\n" (XML_ErrorString (XML_GetErrorCode parser)))))
 
 
 (parametrise ((check-test-name	'parsing-basic))
@@ -411,6 +411,106 @@
   #t)
 
 
+(parametrise ((check-test-name	'xml-decl-handler))
+
+  (define (%process-standalone standalone)
+    (case standalone
+      ((-1)	'unspecified)
+      ((0)	'non-standalone)
+      ((1)	'standalone)
+      (else	#f)))
+
+  (define (xml-decl-callback user-data version encoding standalone)
+    (add-result
+     (list 'xml-decl
+	   (or (ffi.pointer-null? version)  (ffi.cstring->string version))
+	   (or (ffi.pointer-null? encoding) (ffi.cstring->string encoding))
+	   (%process-standalone standalone))))
+
+  (define (doit xml-utf8)
+    (with-result
+     (let ((parser	(XML_ParserCreate))
+	   (xml-decl	(XML_XmlDeclHandler xml-decl-callback)))
+       (XML_SetXmlDeclHandler parser xml-decl)
+       (let ((rv (XML_Parse parser xml-utf8 #f #t)))
+	 (%print-parser-error-maybe parser rv)
+	 (ffi.free-c-callback xml-decl)
+	 rv))))
+
+;;; --------------------------------------------------------------------
+
+  (define dtd-utf8
+    (string->utf8
+     "<?xml version='1.0' encoding='utf-8'?>
+      <!ELEMENT ball EMPTY>
+      <!ATTLIST ball colour CDATA #REQUIRED>"))
+
+  (define (external-entity-callback parser context base system-id public-id)
+    (add-result
+     (list 'external-entity
+	   (or (ffi.pointer-null? context)     (ffi.cstring->string context))
+	   (or (ffi.pointer-null? base)        (ffi.cstring->string base))
+	   (ffi.cstring->string system-id)
+	   (or (ffi.pointer-null? public-id)   (ffi.cstring->string public-id))))
+    (let* ((parser	(XML_ExternalEntityParserCreate parser context 'UTF-8))
+	   (xml-decl	(XML_XmlDeclHandler xml-decl-callback)))
+      (XML_SetXmlDeclHandler parser xml-decl)
+      (let ((rv (XML_Parse parser dtd-utf8 #f #t)))
+	(ffi.free-c-callback xml-decl)
+	(%print-parser-error-maybe parser rv)
+	rv)))
+
+  (define (doit-with-external-entity xml-utf8)
+    (with-result
+     (let* ((parser	(XML_ParserCreate))
+	    (xml-decl	(XML_XmlDeclHandler xml-decl-callback))
+	    (ext-ent	(XML_ExternalEntityRefHandler external-entity-callback)))
+       (XML_SetParamEntityParsing parser XML_PARAM_ENTITY_PARSING_ALWAYS)
+       (XML_SetXmlDeclHandler parser xml-decl)
+       (XML_SetExternalEntityRefHandler parser ext-ent)
+       (let ((rv (XML_Parse parser xml-utf8 #f #t)))
+	 (ffi.free-c-callback xml-decl)
+	 (ffi.free-c-callback ext-ent)
+	 rv))))
+
+;;; --------------------------------------------------------------------
+
+  (check
+      (doit (string->utf8 "<?xml version='1.0'?><toys><ball colour='red'/></toys>"))
+    => `(,XML_STATUS_OK
+	 ((xml-decl "1.0" #t unspecified))))
+
+  (check
+      (doit (string->utf8 "<?xml version='1.0' encoding='utf-8'?><toys><ball colour='red'/></toys>"))
+    => `(,XML_STATUS_OK
+	 ((xml-decl "1.0" "utf-8" unspecified))))
+
+  (check
+      (doit (string->utf8 "<?xml version='1.0' standalone='yes'?><toys><ball colour='red'/></toys>"))
+    => `(,XML_STATUS_OK
+	 ((xml-decl "1.0" #t standalone))))
+
+  (check
+      (doit (string->utf8 "<?xml version='1.0' standalone='no'?><toys><ball colour='red'/></toys>"))
+    => `(,XML_STATUS_OK
+	 ((xml-decl "1.0" #t non-standalone))))
+
+;;; --------------------------------------------------------------------
+
+  (check
+      (doit-with-external-entity
+       (string->utf8
+	"<?xml version='1.0'?>
+         <!DOCTYPE toys SYSTEM 'http://localhost/toys'>
+         <toys><ball colour='red'/></toys>"))
+    => `(,XML_STATUS_OK
+	 ((xml-decl "1.0" #t unspecified)
+	  (external-entity #t #t "http://localhost/toys" #t)
+	  (xml-decl "1.0" "utf-8" unspecified))))
+
+  #t)
+
+
 (parametrise ((check-test-name	'default-handler))
 
   (define (doit xml-utf8)
@@ -483,7 +583,6 @@
 	 ((external-entity ,XML_STATUS_OK #t #t "http://localhost/toys" #t))))
 
   #t)
-
 
 
 (parametrise ((check-test-name	'dtd-attlist-handler))

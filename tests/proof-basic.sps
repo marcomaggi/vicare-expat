@@ -88,6 +88,94 @@
     #f))
 
 
+;;;; XML declarations
+
+(let ()
+
+  (define (%process-standalone standalone)
+    (case standalone
+      ((-1)	'unspecified)
+      ((0)	'non-standalone)
+      ((1)	'standalone)
+      (else	#f)))
+
+  (define (xml-decl-callback user-data version encoding standalone)
+    (pretty-print
+     (list 'xml-decl
+	   (or (ffi.pointer-null? version)  (ffi.cstring->string version))
+	   (or (ffi.pointer-null? encoding) (ffi.cstring->string encoding))
+	   (%process-standalone standalone))))
+
+  (define (doit xml-utf8)
+    (let ((parser	(XML_ParserCreate))
+	  (xml-decl	(XML_XmlDeclHandler xml-decl-callback)))
+      (XML_SetXmlDeclHandler parser xml-decl)
+      (XML_Parse parser xml-utf8 #f #t)
+      (ffi.free-c-callback xml-decl)
+      (flush-output-port (current-output-port))))
+
+;;; --------------------------------------------------------------------
+
+  (define dtd-utf8
+    (string->utf8
+     "<?xml version='1.0' encoding='utf-8'?>
+      <!ELEMENT ball EMPTY>
+      <!ATTLIST ball colour CDATA #REQUIRED>"))
+
+  (define (external-entity-callback parser context base system-id public-id)
+    (pretty-print
+     (list 'external-entity
+	   (or (ffi.pointer-null? context)     (ffi.cstring->string context))
+	   (or (ffi.pointer-null? base)        (ffi.cstring->string base))
+	   (ffi.cstring->string system-id)
+	   (or (ffi.pointer-null? public-id)   (ffi.cstring->string public-id))))
+    (let* ((parser	(XML_ExternalEntityParserCreate parser context 'UTF-8))
+	   (xml-decl	(XML_XmlDeclHandler xml-decl-callback)))
+      (XML_SetXmlDeclHandler parser xml-decl)
+      (let ((rv (XML_Parse parser dtd-utf8 #f #t)))
+	(ffi.free-c-callback xml-decl)
+	rv)))
+
+  (define (doit-with-external-entity xml-utf8)
+    (let* ((parser	(XML_ParserCreate))
+	   (xml-decl	(XML_XmlDeclHandler xml-decl-callback))
+	   (ext-ent	(XML_ExternalEntityRefHandler external-entity-callback)))
+      (XML_SetParamEntityParsing parser XML_PARAM_ENTITY_PARSING_ALWAYS)
+      (XML_SetXmlDeclHandler parser xml-decl)
+      (XML_SetExternalEntityRefHandler parser ext-ent)
+      (XML_Parse parser xml-utf8 #f #t)
+      (ffi.free-c-callback xml-decl)
+      (ffi.free-c-callback ext-ent)
+      (flush-output-port (current-output-port))))
+
+;;; --------------------------------------------------------------------
+;;; XML declaration
+
+  (when #f
+    (doit (string->utf8 "<?xml version='1.0'?><toys><ball colour='red'/></toys>")))
+
+  (when #f
+    (doit (string->utf8 "<?xml version='1.0' encoding='utf-8'?><toys><ball colour='red'/></toys>")))
+
+  (when #f
+    (doit (string->utf8 "<?xml version='1.0' standalone='yes'?><toys><ball colour='red'/></toys>")))
+
+  (when #f
+    (doit (string->utf8 "<?xml version='1.0' standalone='no'?><toys><ball colour='red'/></toys>")))
+
+;;; --------------------------------------------------------------------
+;;; external entity
+
+  (when #f
+    (doit-with-external-entity
+     (string->utf8
+      "<?xml version='1.0'?>
+       <!DOCTYPE toys SYSTEM 'http://localhost/toys'>
+       <toys><ball colour='red'/></toys>")))
+
+  #t)
+
+
 ;;;; start and end element handlers
 
 (when #f
@@ -200,7 +288,7 @@
 
 ;;;; cdata handlers
 
-(when #t
+(when #f
   (let ()
 
     (define xml-utf8

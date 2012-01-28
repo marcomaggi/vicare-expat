@@ -899,6 +899,7 @@ C pointers become pointer objects, C integers become Scheme exact
 intgers, and so on.
 
 @menu
+* handlers xml decl::           @axml{} declaration handler.
 * handlers dtd element::        @dtd{} element declaration.
 * handlers dtd attlist::        @dtd{} attribute lists declaration.
 * handlers element::            Element handlers.
@@ -908,6 +909,175 @@ intgers, and so on.
 * handlers default::            Default handler.
 * handlers misc::               Miscellaneous handlers.
 @end menu
+
+@c page
+@node handlers xml decl
+@section @axml{} declaration handler
+
+
+All the following bindings are exported by the @library{vicare expat}
+library.
+
+
+@defun XML_XmlDeclHandler @var{scheme-callback}
+@defunx XML_SetXmlDeclHandler @var{parser} @var{c-callback}
+@expatref{api misc, XML_XmlDeclHandler}.  Maker and setter for @axml{}
+declaration handlers and text declaration handlers.
+@end defun
+
+
+Given the following program preamble:
+
+@example
+#!r6rs
+(import (vicare)
+  (vicare expat)
+  (vicare expat constants)
+  (prefix (vicare ffi) ffi.))
+
+(define (%process-standalone standalone)
+  (case standalone
+    ((-1)     'unspecified)
+    ((0)      'non-standalone)
+    ((1)      'standalone)
+    (else     #f)))
+
+(define (xml-decl-callback user-data version
+                           encoding standalone)
+  (pretty-print
+   (list 'xml-decl
+         (or (ffi.pointer-null?   version)
+             (ffi.cstring->string version))
+         (or (ffi.pointer-null?   encoding)
+             (ffi.cstring->string encoding))
+         (%process-standalone standalone))))
+
+(define (doit xml-utf8)
+  (let ((parser       (XML_ParserCreate))
+        (xml-decl     (XML_XmlDeclHandler xml-decl-callback)))
+    (XML_SetXmlDeclHandler parser xml-decl)
+    (XML_Parse parser xml-utf8 #f #t)
+    (ffi.free-c-callback xml-decl)
+    (flush-output-port (current-output-port))))
+@end example
+
+@noindent
+@axml{} declarations generate the following symbolic expressions:
+
+@example
+(doit
+  (string->utf8
+    "<?xml version='1.0'?>
+     <toys><ball colour='red'/></toys>"))
+@print{} (xml-decl "1.0" #t unspecified)
+
+(doit
+  (string->utf8
+    "<?xml version='1.0' encoding='utf-8'?>
+     <toys><ball colour='red'/></toys>"))
+@print{} (xml-decl "1.0" "utf-8" unspecified)
+
+(doit
+  (string->utf8
+    "<?xml version='1.0' standalone='yes'?>
+     <toys><ball colour='red'/></toys>"))
+@print{} (xml-decl "1.0" #t standalone)
+
+(doit
+  (string->utf8
+    "<?xml version='1.0' standalone='no'?>
+    <toys><ball colour='red'/></toys>"))
+@print{} (xml-decl "1.0" #t non-standalone)
+@end example
+
+Now let's consider a program preamble in which an external @dtd{} is
+expected and defined:
+
+@example
+#!r6rs
+(import (vicare)
+  (vicare expat)
+  (vicare expat constants)
+  (prefix (vicare ffi) ffi.))
+
+(define (%process-standalone standalone)
+  (case standalone
+    ((-1)     'unspecified)
+    ((0)      'non-standalone)
+    ((1)      'standalone)
+    (else     #f)))
+
+(define (xml-decl-callback user-data version encoding standalone)
+  (pretty-print
+   (list 'xml-decl
+         (or (ffi.pointer-null?   version)
+             (ffi.cstring->string version))
+         (or (ffi.pointer-null?   encoding)
+             (ffi.cstring->string encoding))
+         (%process-standalone standalone))))
+
+(define dtd-utf8
+  (string->utf8
+   "<?xml version='1.0' encoding='utf-8'?>
+    <!ELEMENT ball EMPTY>
+    <!ATTLIST ball colour CDATA #REQUIRED>"))
+
+(define (external-entity-callback parser context base
+                                  system-id public-id)
+  (pretty-print
+    (list 'external-entity
+          (or (ffi.pointer-null?   context)
+              (ffi.cstring->string context))
+          (or (ffi.pointer-null?   base)
+              (ffi.cstring->string base))
+          (ffi.cstring->string system-id)
+          (or (ffi.pointer-null?   public-id)
+              (ffi.cstring->string public-id))))
+  (let* ((parser   (XML_ExternalEntityParserCreate
+                     parser context 'UTF-8))
+         (xml-decl (XML_XmlDeclHandler xml-decl-callback)))
+    (XML_SetXmlDeclHandler parser xml-decl)
+    (let ((rv (XML_Parse parser dtd-utf8 #f #t)))
+      (ffi.free-c-callback xml-decl)
+      rv)))
+
+(define (doit-with-external-entity xml-utf8)
+  (let* ((parser   (XML_ParserCreate))
+         (xml-decl (XML_XmlDeclHandler xml-decl-callback))
+         (ext-ent  (XML_ExternalEntityRefHandler
+                      external-entity-callback)))
+    (XML_SetParamEntityParsing parser
+       XML_PARAM_ENTITY_PARSING_ALWAYS)
+    (XML_SetXmlDeclHandler parser xml-decl)
+    (XML_SetExternalEntityRefHandler parser ext-ent)
+    (XML_Parse parser xml-utf8 #f #t)
+    (ffi.free-c-callback xml-decl)
+    (ffi.free-c-callback ext-ent)
+    (flush-output-port (current-output-port))))
+@end example
+
+@noindent
+the following form:
+
+@example
+(doit-with-external-entity
+  (string->utf8
+    "<?xml version='1.0'?>
+     <!DOCTYPE toys SYSTEM 'http://localhost/toys'>
+     <toys><ball colour='red'/></toys>"))
+@end example
+
+@noindent
+prints:
+
+@example
+(xml-decl "1.0" #t unspecified)
+(external-entity #t #t "http://localhost/toys" #t)
+(xml-decl "1.0" "utf-8" unspecified)
+@end example
+
+@noindent
+showing the @axml{} declaration handler called twice.
 
 @c page
 @node handlers dtd element
@@ -1443,9 +1613,6 @@ element.
 @end defun
 
 
-@defun XML_XmlDeclHandler @var{scheme-callback}
-@defunx XML_SetXmlDeclHandler @var{parser} @var{c-callback}
-@end defun
 
 @c page
 @node version
