@@ -511,6 +511,65 @@
   #t)
 
 
+(parametrise ((check-test-name	'dtd-doctype-handler))
+
+  (define (doit xml-utf8)
+    (with-result
+     (define (start-doctype-callback data doctype-name sysid pubid has-internal-subset)
+       (add-result
+	(list 'doctype-start
+	      (ffi.cstring->string doctype-name)
+	      (or (ffi.pointer-null? sysid) (ffi.cstring->string sysid))
+	      (or (ffi.pointer-null? pubid) (ffi.cstring->string pubid))
+	      has-internal-subset)))
+     (define (end-doctype-callback data)
+       (add-result '(doctype-end)))
+     (let ((parser	(XML_ParserCreate))
+	   (start	(XML_StartDoctypeDeclHandler start-doctype-callback))
+	   (end		(XML_EndDoctypeDeclHandler   end-doctype-callback)))
+       (XML_SetDoctypeDeclHandler parser start end)
+       (let ((rv (XML_Parse parser xml-utf8 #f #t)))
+;;;	 (%print-parser-error-maybe parser rv)
+	 (ffi.free-c-callback start)
+	 (ffi.free-c-callback end)
+	 rv))))
+
+  (check
+      (doit
+       (string->utf8
+	"<?xml version='1.0'?>
+         <!DOCTYPE toys SYSTEM 'http://localhost/toys'>
+         <toys><ball colour='yellow'/></toys>"))
+    => (list XML_STATUS_OK
+	     '((doctype-start "toys" "http://localhost/toys" #t 0)
+	       (doctype-end))))
+
+  (check
+      (doit
+       (string->utf8
+	"<?xml version='1.0'?>
+         <!DOCTYPE toys PUBLIC 'The Toys' 'http://localhost/toys'>
+         <toys><ball colour='yellow'/></toys>"))
+    => (list XML_STATUS_OK
+	     '((doctype-start "toys" "http://localhost/toys" "The Toys" 0)
+	       (doctype-end))))
+
+  (check
+      (doit
+       (string->utf8
+	"<?xml version='1.0'?>
+         <!DOCTYPE toys [
+           <!ELEMENT ball EMPTY>
+           <!ATTLIST ball colour CDATA #REQUIRED>
+         ]>
+         <toys><ball colour='yellow'/></toys>"))
+    => (list XML_STATUS_OK
+	     '((doctype-start "toys" #t #t 1)
+	       (doctype-end))))
+
+  #t)
+
+
 (parametrise ((check-test-name	'default-handler))
 
   (define (doit xml-utf8)

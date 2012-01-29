@@ -176,6 +176,58 @@
   #t)
 
 
+;;; DTD doctype handler
+
+(let ()
+
+  (define (start-doctype-callback data doctype-name sysid pubid has-internal-subset)
+    (pretty-print
+     (list 'doctype-start
+	   (ffi.cstring->string doctype-name)
+	   (or (ffi.pointer-null? sysid) (ffi.cstring->string sysid))
+	   (or (ffi.pointer-null? pubid) (ffi.cstring->string pubid))
+	   has-internal-subset)))
+
+  (define (end-doctype-callback data)
+    (pretty-print '(doctype-end)))
+
+  (define (doit xml-utf8)
+    (let ((parser	(XML_ParserCreate))
+	  (start	(XML_StartDoctypeDeclHandler start-doctype-callback))
+	  (end		(XML_EndDoctypeDeclHandler   end-doctype-callback)))
+      (XML_SetDoctypeDeclHandler parser start end)
+      (XML_Parse parser xml-utf8 #f #t)
+      (ffi.free-c-callback start)
+      (ffi.free-c-callback end)
+      (flush-output-port (current-output-port))))
+
+  (when #f
+    (doit
+     (string->utf8
+      "<?xml version='1.0'?>
+       <!DOCTYPE toys SYSTEM 'http://localhost/toys'>
+       <toys><ball colour='yellow'/></toys>")))
+
+  (when #f
+    (doit
+     (string->utf8
+      "<?xml version='1.0'?>
+       <!DOCTYPE toys PUBLIC 'The Toys' 'http://localhost/toys'>
+       <toys><ball colour='yellow'/></toys>")))
+
+  (when #f
+    (doit
+     (string->utf8
+      "<?xml version='1.0'?>
+       <!DOCTYPE toys [
+         <!ELEMENT ball EMPTY>
+         <!ATTLIST ball colour CDATA #REQUIRED>
+       ]>
+       <toys><ball colour='yellow'/></toys>")))
+
+  #t)
+
+
 ;;;; start and end element handlers
 
 (when #f
