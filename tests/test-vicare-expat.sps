@@ -511,6 +511,152 @@
   #t)
 
 
+(parametrise ((check-test-name	'non-standalone-handler))
+
+  (define (%process-standalone standalone)
+    (case standalone
+      ((-1)	'unspecified)
+      ((0)	'non-standalone)
+      ((1)	'standalone)
+      (else	#f)))
+
+  (define (xml-decl-callback user-data version encoding standalone)
+    (add-result
+     (list 'xml-decl (%process-standalone standalone))))
+
+  (define (not-stand-callback user-data)
+    (add-result '(not-standalone))
+    XML_STATUS_OK)
+
+  (define (start-doctype-callback data doctype-name sysid pubid has-internal-subset)
+    (add-result
+     (list 'doctype-start has-internal-subset)))
+
+  (define (end-doctype-callback data)
+    (add-result '(doctype-end)))
+
+  (define (doit xml-utf8)
+    (with-result
+     (let ((parser	(XML_ParserCreate))
+	   (xml-decl	(XML_XmlDeclHandler xml-decl-callback))
+	   (not-stand	(XML_NotStandaloneHandler not-stand-callback))
+	   (dt-start	(XML_StartDoctypeDeclHandler start-doctype-callback))
+	   (dt-end	(XML_EndDoctypeDeclHandler end-doctype-callback)))
+       (XML_SetXmlDeclHandler parser xml-decl)
+       (XML_SetNotStandaloneHandler parser not-stand)
+       (XML_SetStartDoctypeDeclHandler parser dt-start)
+       (XML_SetEndDoctypeDeclHandler   parser dt-end)
+       (let ((rv (XML_Parse parser xml-utf8 #f #t)))
+	 (%print-parser-error-maybe parser rv)
+	 (ffi.free-c-callback xml-decl)
+	 (ffi.free-c-callback not-stand)
+	 (ffi.free-c-callback dt-start)
+	 (ffi.free-c-callback dt-end)
+	 rv))))
+
+;;; --------------------------------------------------------------------
+
+  (check
+      (doit
+       (string->utf8
+	"<?xml version='1.0'?>
+         <toys><ball colour='red'/></toys>"))
+    => `(,XML_STATUS_OK
+	 ((xml-decl unspecified))))
+
+  (check
+      (doit
+       (string->utf8
+	"<?xml version='1.0'?>
+         <!DOCTYPE toys SYSTEM 'http://localhost/toys'>
+         <toys><ball colour='red'/></toys>"))
+    => `(,XML_STATUS_OK
+	 ((xml-decl unspecified)
+	  (not-standalone)
+	  (doctype-start 0)
+	  (doctype-end))))
+
+  (check
+      (doit
+       (string->utf8
+	"<?xml version='1.0'?>
+         <!DOCTYPE toys PUBLIC 'The Toys' 'http://localhost/toys'>
+         <toys><ball colour='red'/></toys>"))
+    => `(,XML_STATUS_OK
+	 ((xml-decl unspecified)
+	  (not-standalone)
+	  (doctype-start 0)
+	  (doctype-end))))
+
+;;; --------------------------------------------------------------------
+
+  (check
+      (doit
+       (string->utf8
+	"<?xml version='1.0' standalone='no'?>
+         <toys><ball colour='red'/></toys>"))
+    => `(,XML_STATUS_OK
+	 ((xml-decl non-standalone))))
+
+  (check
+      (doit
+       (string->utf8
+	"<?xml version='1.0' standalone='no'?>
+         <!DOCTYPE toys SYSTEM 'http://localhost/toys'>
+         <toys><ball colour='red'/></toys>"))
+    => `(,XML_STATUS_OK
+	 ((xml-decl non-standalone)
+	  (not-standalone)
+	  (doctype-start 0)
+	  (doctype-end))))
+
+  (check
+      (doit
+       (string->utf8
+	"<?xml version='1.0' standalone='no'?>
+         <!DOCTYPE toys PUBLIC 'The Toys' 'http://localhost/toys'>
+         <toys><ball colour='red'/></toys>"))
+    => `(,XML_STATUS_OK
+	 ((xml-decl non-standalone)
+	  (not-standalone)
+	  (doctype-start 0)
+	  (doctype-end))))
+
+;;; --------------------------------------------------------------------
+
+  (check
+      (doit
+       (string->utf8
+	"<?xml version='1.0' standalone='yes'?>
+         <toys><ball colour='red'/></toys>"))
+    => `(,XML_STATUS_OK
+	 ((xml-decl standalone))))
+
+  (check
+      (doit
+       (string->utf8
+	"<?xml version='1.0' standalone='yes'?>
+         <!DOCTYPE toys SYSTEM 'http://localhost/toys'>
+         <toys><ball colour='red'/></toys>"))
+    => `(,XML_STATUS_OK
+	 ((xml-decl standalone)
+	  (doctype-start 0)
+	  (doctype-end))))
+
+  (check
+      (doit
+       (string->utf8
+	"<?xml version='1.0' standalone='yes'?>
+         <!DOCTYPE toys PUBLIC 'The Toys' 'http://localhost/toys'>
+         <toys><ball colour='red'/></toys>"))
+    => `(,XML_STATUS_OK
+	 ((xml-decl standalone)
+	  (doctype-start 0)
+	  (doctype-end))))
+
+  #t)
+
+
 (parametrise ((check-test-name	'dtd-doctype-handler))
 
   (define (doit xml-utf8)

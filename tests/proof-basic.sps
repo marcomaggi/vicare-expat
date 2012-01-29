@@ -228,6 +228,119 @@
   #t)
 
 
+;;;; not standalone handler
+
+(let ()
+
+  (define (%process-standalone standalone)
+    (case standalone
+      ((-1)	'unspecified)
+      ((0)	'non-standalone)
+      ((1)	'standalone)
+      (else	#f)))
+
+  (define (xml-decl-callback user-data version encoding standalone)
+    (pretty-print
+     (list 'xml-decl (%process-standalone standalone))))
+
+  (define (not-stand-callback user-data)
+    (pretty-print '(not-standalone))
+    XML_STATUS_OK)
+
+  (define (start-doctype-callback data doctype-name sysid pubid has-internal-subset)
+    (pretty-print
+     (list 'doctype-start has-internal-subset)))
+
+  (define (end-doctype-callback data)
+    (pretty-print '(doctype-end)))
+
+  (define (doit xml-utf8)
+    (let ((parser	(XML_ParserCreate))
+	  (xml-decl	(XML_XmlDeclHandler xml-decl-callback))
+	  (not-stand	(XML_NotStandaloneHandler not-stand-callback))
+	  (dt-start	(XML_StartDoctypeDeclHandler start-doctype-callback))
+	  (dt-end	(XML_EndDoctypeDeclHandler end-doctype-callback)))
+      (XML_SetXmlDeclHandler parser xml-decl)
+      (XML_SetNotStandaloneHandler parser not-stand)
+      (XML_SetStartDoctypeDeclHandler parser dt-start)
+      (XML_SetEndDoctypeDeclHandler   parser dt-end)
+      (XML_Parse parser xml-utf8 #f #t)
+      (ffi.free-c-callback xml-decl)
+      (ffi.free-c-callback not-stand)
+      (ffi.free-c-callback dt-start)
+      (ffi.free-c-callback dt-end)
+      (flush-output-port (current-output-port))))
+
+;;; --------------------------------------------------------------------
+
+  (when #f
+    (doit
+     (string->utf8
+      "<?xml version='1.0'?>
+       <toys><ball colour='red'/></toys>")))
+
+  (when #f
+    (doit
+     (string->utf8
+      "<?xml version='1.0'?>
+       <!DOCTYPE toys SYSTEM 'http://localhost/toys'>
+       <toys><ball colour='red'/></toys>")))
+
+  (when #f
+    (doit
+     (string->utf8
+      "<?xml version='1.0'?>
+       <!DOCTYPE toys PUBLIC 'The Toys' 'http://localhost/toys'>
+       <toys><ball colour='red'/></toys>")))
+
+;;; --------------------------------------------------------------------
+
+  (when #f
+    (doit
+     (string->utf8
+      "<?xml version='1.0' standalone='no'?>
+       <toys><ball colour='red'/></toys>")))
+
+
+  (when #f
+    (doit
+     (string->utf8
+      "<?xml version='1.0' standalone='no'?>
+       <!DOCTYPE toys SYSTEM 'http://localhost/toys'>
+       <toys><ball colour='red'/></toys>")))
+
+  (when #f
+    (doit
+     (string->utf8
+      "<?xml version='1.0' standalone='no'?>
+       <!DOCTYPE toys PUBLIC 'The Toys' 'http://localhost/toys'>
+       <toys><ball colour='red'/></toys>")))
+
+;;; --------------------------------------------------------------------
+
+  (when #f
+    (doit
+     (string->utf8
+      "<?xml version='1.0' standalone='yes'?>
+       <toys><ball colour='red'/></toys>")))
+
+  (when #f
+    (doit
+     (string->utf8
+      "<?xml version='1.0' standalone='yes'?>
+       <!DOCTYPE toys SYSTEM 'http://localhost/toys'>
+       <toys><ball colour='red'/></toys>")))
+
+  (when #f
+    (doit
+     (string->utf8
+      "<?xml version='1.0' standalone='yes'?>
+       <!DOCTYPE toys PUBLIC 'The Toys' 'http://localhost/toys'>
+       <toys><ball colour='red'/></toys>")))
+
+  #t)
+
+
 ;;;; start and end element handlers
 
 (when #f
