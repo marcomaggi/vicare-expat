@@ -845,6 +845,71 @@
   #t)
 
 
+(parametrise ((check-test-name	'dtd-notation-handler))
+
+  (define (%false-or-string thing)
+    (if (ffi.pointer-null? thing)
+	#f
+      (ffi.cstring->string thing)))
+
+  (define (notation-callback data notation-name base system-id public-id)
+    (add-result
+     (list 'notation
+	   (%false-or-string notation-name)
+	   (%false-or-string base)
+	   (%false-or-string system-id)
+	   (%false-or-string public-id))))
+
+  (define (doit xml-utf8)
+    (with-result
+     (let* ((parser	(XML_ParserCreate))
+	    (notation	(XML_NotationDeclHandler notation-callback)))
+       (XML_SetNotationDeclHandler parser notation)
+       (let ((rv (XML_Parse parser xml-utf8 #f #t)))
+	 (ffi.free-c-callback notation)
+	 rv))))
+
+;;; --------------------------------------------------------------------
+
+  (check
+      (doit (string->utf8
+	     "<?xml version='1.0'?>
+              <!DOCTYPE toys [
+               <!NOTATION bouncing SYSTEM 'http://localhost/bouncer'>
+               <!ELEMENT ball EMPTY>
+               <!ATTLIST ball colour CDATA #REQUIRED>
+             ]>
+             <toys><ball colour='red' /></toys>"))
+    => `(,XML_STATUS_OK
+	 ((notation "bouncing" #f "http://localhost/bouncer" #f))))
+
+  (check
+      (doit (string->utf8
+	     "<?xml version='1.0'?>
+              <!DOCTYPE toys [
+               <!NOTATION bouncing PUBLIC 'The Bouncer'>
+               <!ELEMENT ball EMPTY>
+               <!ATTLIST ball colour CDATA #REQUIRED>
+             ]>
+             <toys><ball colour='red' /></toys>"))
+    => `(,XML_STATUS_OK
+	 ((notation "bouncing" #f #f "The Bouncer"))))
+
+  (check
+      (doit (string->utf8
+	     "<?xml version='1.0'?>
+              <!DOCTYPE toys [
+               <!NOTATION bouncing PUBLIC 'The Bouncer' 'http://localhost/bouncer'>
+               <!ELEMENT ball EMPTY>
+               <!ATTLIST ball colour CDATA #REQUIRED>
+             ]>
+             <toys><ball colour='red' /></toys>"))
+    => `(,XML_STATUS_OK
+	 ((notation "bouncing" #f "http://localhost/bouncer" "The Bouncer"))))
+
+  #t)
+
+
 (parametrise ((check-test-name	'comment-handler))
 
   (define xml-utf8

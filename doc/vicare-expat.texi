@@ -923,6 +923,7 @@ intgers, and so on.
 * handlers dtd doctype::        @dtd{} document type declaration.
 * handlers dtd element::        @dtd{} element declaration.
 * handlers dtd attlist::        @dtd{} attribute lists declaration.
+* handlers dtd notation::       @dtd{} notation declaration.
 * handlers element::            Element handlers.
 * handlers char data::          Character data handlers.
 * handlers comment::            Comment handlers.
@@ -1353,6 +1354,13 @@ All the following bindings are exported by the @library{vicare expat}
 library.
 
 
+@defun XML_ElementDeclHandler @var{scheme-callback}
+@defunx XML_SetElementDeclHandler @var{parser} @var{c-callback}
+@expatref{api handlers, XML_ElementDeclHandler}.  Maker and setter for
+the @dtd{} element declaration handlers.
+@end defun
+
+
 @defun XML_FreeContentModel @var{parser} @var{model}
 @expatref{api misc, XML_FreeContentModel}.  Release the @var{model}
 arugment for the @code{XML_ElementDeclHandler}.
@@ -1417,6 +1425,94 @@ prints:
 ("ball" "colour" "CDATA" NULL 1)
 @end example
 @end defun
+
+@c page
+@node handlers dtd notation
+@section @dtd{} notation declaration
+
+
+All the following bindings are exported by the @library{vicare expat}
+library.
+
+
+@defun XML_NotationDeclHandler @var{scheme-callback}
+@defunx XML_SetNotationDeclHandler @var{parser} @var{c-callback}
+@expatref{api handlers, XML_NotationDeclHandler}.  Maker and setter for
+@dtd{} notation handlers.
+@end defun
+
+
+Given the following program preamble:
+
+@example
+#!r6rs
+(import (vicare)
+  (vicare expat)
+  (vicare expat constants)
+  (prefix (vicare ffi) ffi.))
+
+(define (%false-or-string thing)
+  (if (ffi.pointer-null? thing)
+      #f
+    (ffi.cstring->string thing)))
+
+(define (notation-callback data notation-name
+                           base system-id public-id)
+  (pretty-print
+   (list 'notation
+         (%false-or-string notation-name)
+         (%false-or-string base)
+         (%false-or-string system-id)
+         (%false-or-string public-id))))
+
+(define (doit xml-utf8)
+  (let* ((parser      (XML_ParserCreate))
+         (notation    (XML_NotationDeclHandler
+                        notation-callback)))
+    (XML_SetNotationDeclHandler parser notation)
+    (XML_Parse parser xml-utf8 #f #t)
+    (ffi.free-c-callback notation)
+    (flush-output-port (current-output-port))))
+@end example
+
+@noindent
+the following forms print symbolic expressions:
+
+@example
+(doit (string->utf8
+  "<?xml version='1.0'?>
+   <!DOCTYPE toys [
+     <!NOTATION bouncing SYSTEM
+       'http://localhost/bouncer'>
+     <!ELEMENT ball EMPTY>
+     <!ATTLIST ball colour CDATA #REQUIRED>
+   ]>
+   <toys><ball colour='red' /></toys>"))
+@print{} (notation "bouncing" #f "http://localhost/bouncer" #f)
+
+(doit (string->utf8
+  "<?xml version='1.0'?>
+   <!DOCTYPE toys [
+     <!NOTATION bouncing PUBLIC 'The Bouncer'>
+     <!ELEMENT ball EMPTY>
+     <!ATTLIST ball colour CDATA #REQUIRED>
+   ]>
+   <toys><ball colour='red' /></toys>"))
+@print{} (notation "bouncing" #f #f "The Bouncer")
+
+(doit (string->utf8
+  "<?xml version='1.0'?>
+   <!DOCTYPE toys [
+     <!NOTATION bouncing PUBLIC 'The Bouncer'
+       'http://localhost/bouncer'>
+     <!ELEMENT ball EMPTY>
+     <!ATTLIST ball colour CDATA #REQUIRED>
+   ]>
+   <toys><ball colour='red' /></toys>"))
+@print{} (notation "bouncing" #f
+    "http://localhost/bouncer" "The Bouncer")
+@end example
+
 
 @c page
 @node handlers element
@@ -1939,19 +2035,8 @@ element.
 @section Miscellaneous handlers
 
 
-@defun XML_ElementDeclHandler @var{scheme-callback}
-@defunx XML_SetElementDeclHandler @var{parser} @var{c-callback}
-@end defun
-
-@c ------------------------------------------------------------
-
 @defun XML_EntityDeclHandler @var{scheme-callback}
 @defunx XML_SetEntityDeclHandler @var{parser} @var{c-callback}
-@end defun
-
-
-@defun XML_NotationDeclHandler @var{scheme-callback}
-@defunx XML_SetNotationDeclHandler @var{parser} @var{c-callback}
 @end defun
 
 

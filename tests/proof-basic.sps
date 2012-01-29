@@ -228,6 +228,66 @@
   #t)
 
 
+;;;; DTD notation handler
+
+(let ()
+
+  (define (%false-or-string thing)
+    (if (ffi.pointer-null? thing)
+	#f
+      (ffi.cstring->string thing)))
+
+  (define (notation-callback data notation-name base system-id public-id)
+    (pretty-print
+     (list 'notation
+	   (%false-or-string notation-name)
+	   (%false-or-string base)
+	   (%false-or-string system-id)
+	   (%false-or-string public-id))))
+
+  (define (doit xml-utf8)
+    (let* ((parser	(XML_ParserCreate))
+	   (notation	(XML_NotationDeclHandler notation-callback)))
+      (XML_SetNotationDeclHandler parser notation)
+      (XML_Parse parser xml-utf8 #f #t)
+      (ffi.free-c-callback notation)
+      (flush-output-port (current-output-port))))
+
+;;; --------------------------------------------------------------------
+
+  (when #f
+    (doit (string->utf8
+	   "<?xml version='1.0'?>
+            <!DOCTYPE toys [
+              <!NOTATION bouncing SYSTEM 'http://localhost/bouncer'>
+              <!ELEMENT ball EMPTY>
+              <!ATTLIST ball colour CDATA #REQUIRED>
+            ]>
+            <toys><ball colour='red' /></toys>")))
+
+  (when #f
+    (doit (string->utf8
+	   "<?xml version='1.0'?>
+            <!DOCTYPE toys [
+              <!NOTATION bouncing PUBLIC 'The Bouncer'>
+              <!ELEMENT ball EMPTY>
+              <!ATTLIST ball colour CDATA #REQUIRED>
+            ]>
+            <toys><ball colour='red' /></toys>")))
+
+  (when #f
+    (doit (string->utf8
+	   "<?xml version='1.0'?>
+            <!DOCTYPE toys [
+              <!NOTATION bouncing PUBLIC 'The Bouncer' 'http://localhost/bouncer'>
+              <!ELEMENT ball EMPTY>
+              <!ATTLIST ball colour CDATA #REQUIRED>
+            ]>
+            <toys><ball colour='red' /></toys>")))
+
+  #t)
+
+
 ;;;; not standalone handler
 
 (let ()
