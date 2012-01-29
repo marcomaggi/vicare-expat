@@ -790,6 +790,94 @@
   #t)
 
 
+(parametrise ((check-test-name	'namespace-handler))
+
+  (define (start-element-callback data element attributes)
+    (add-result
+     (list 'element-start
+	   (ffi.cstring->string element)
+	   (ffi.argv->strings attributes))))
+
+  (define (end-element-callback data element)
+    (add-result
+     (list 'element-end
+	   (ffi.cstring->string element))))
+
+  (define (start-xmlns-callback data prefix uri)
+    (add-result
+     (list 'xmlns-start
+	   (or (ffi.pointer-null? prefix) (ffi.cstring->string prefix))
+	   (or (ffi.pointer-null? uri)    (ffi.cstring->string uri)))))
+
+  (define (end-xmlns-callback data prefix)
+    (add-result
+     (list 'xmlns-end
+	   (or (ffi.pointer-null? prefix) (ffi.cstring->string prefix)))))
+
+  (define (doit xml-utf8)
+    (with-result
+     (let ((parser	(XML_ParserCreateNS 'UTF-8 #\:))
+	   (start-elm	(XML_StartElementHandler  start-element-callback))
+	   (end-elm	(XML_EndElementHandler    end-element-callback))
+	   (start-ns	(XML_StartNamespaceDeclHandler  start-xmlns-callback))
+	   (end-ns	(XML_EndNamespaceDeclHandler    end-xmlns-callback)))
+       (XML_SetElementHandler		parser start-elm end-elm)
+       (XML_SetNamespaceDeclHandler	parser start-ns  end-ns)
+       (let ((rv (XML_Parse parser xml-utf8 #f #t)))
+	 (ffi.free-c-callback start-elm)
+	 (ffi.free-c-callback end-elm)
+	 (ffi.free-c-callback start-ns)
+	 (ffi.free-c-callback end-ns)
+	 rv))))
+
+  (check	;some namespaces
+      (doit (string->utf8
+	     "<?xml version='1.0'?>
+              <!DOCTYPE toys [
+                <!ELEMENT ball EMPTY>
+                <!ATTLIST ball colour CDATA #REQUIRED>
+              ]>
+             <toys xmlns:blue='http://localhost/blue'
+                   xmlns:red='http://localhost/red'>\
+               <blue:ball colour='yellow'/>\
+               <red:ball  colour='purple'/>\
+             </toys>"))
+    => (list XML_STATUS_OK
+	     '((xmlns-start "blue" "http://localhost/blue")
+	       (xmlns-start "red" "http://localhost/red")
+	       (element-start "toys" ())
+	       (element-start "http://localhost/blue:ball" ("colour" "yellow"))
+	       (element-end "http://localhost/blue:ball")
+	       (element-start "http://localhost/red:ball" ("colour" "purple"))
+	       (element-end "http://localhost/red:ball")
+	       (element-end "toys")
+	       (xmlns-end "red")
+	       (xmlns-end "blue"))))
+
+  (check	;default namespace
+      (doit (string->utf8
+	     "<?xml version='1.0'?>
+              <!DOCTYPE toys [
+                <!ELEMENT ball EMPTY>
+                <!ATTLIST ball colour CDATA #REQUIRED>
+              ]>
+             <toys xmlns='http://localhost/blue'>
+               <ball colour='yellow'/>
+               <ball  colour='purple'/>
+             </toys>"))
+    => (list XML_STATUS_OK
+	     '((xmlns-start #t "http://localhost/blue")
+	       (element-start "http://localhost/blue:toys" ())
+	       (element-start "http://localhost/blue:ball" ("colour" "yellow"))
+	       (element-end "http://localhost/blue:ball")
+	       (element-start "http://localhost/blue:ball" ("colour" "purple"))
+	       (element-end "http://localhost/blue:ball")
+	       (element-end "http://localhost/blue:toys")
+	       (xmlns-end #t))))
+
+  #t)
+
+
 ;;;; done
 
 (check-report)

@@ -907,6 +907,7 @@ intgers, and so on.
 * handlers char data::          Character data handlers.
 * handlers comment::            Comment handlers.
 * handlers cdata::              Cdata handler.
+* handlers namespace::          Namespace handlers.
 * handlers default::            Default handler.
 * handlers misc::               Miscellaneous handlers.
 @end menu
@@ -1174,7 +1175,6 @@ the following forms print symbolic expressions:
 @print{} (doctype-start "toys" #t #t 1)
 @print{} (doctype-end)
 @end example
-
 
 @c page
 @node handlers dtd element
@@ -1541,6 +1541,143 @@ prints:
 @end example
 
 @c page
+@node handlers namespace
+@section Namespace handlers
+
+
+All the following bindings are exported by the @library{vicare expat}
+library.
+
+
+@defun XML_EndNamespaceDeclHandler @var{scheme-callback}
+@defunx XML_SetEndNamespaceDeclHandler @var{parser} @var{c-callback}
+@expatref{api handlers, XML_EndNamespaceDeclHandler}.  Maker and setter
+for the end--of--namespace handler.
+@end defun
+
+
+@defun XML_StartNamespaceDeclHandler @var{scheme-callback}
+@defunx XML_SetStartNamespaceDeclHandler @var{parser} @var{c-callback}
+@expatref{api handlers, XML_StartNamespaceDeclHandler}.  Maker and
+setter for the start--of--namespace handler.
+@end defun
+
+
+@defun XML_SetNamespaceDeclHandler @var{parser} @var{start-c-callback} @var{end-c-callback}
+@expatref{api handlers, XML_SetNamespaceDeclHandler}.  Setter for both
+the start and end of namespace handlers.
+@end defun
+
+
+Given the following program preamble:
+
+@example
+#!r6rs
+(import (vicare)
+  (vicare expat)
+  (vicare expat constants)
+  (prefix (vicare ffi) ffi.))
+
+(define (start-element-callback data element attributes)
+  (pretty-print
+   (list 'element-start
+         (ffi.cstring->string element)
+         (ffi.argv->strings attributes))))
+
+(define (end-element-callback data element)
+  (pretty-print
+   (list 'element-end
+         (ffi.cstring->string element))))
+
+(define (start-xmlns-callback data prefix uri)
+  (pretty-print
+   (list 'xmlns-start
+         (or (ffi.pointer-null? prefix)
+             (ffi.cstring->string prefix))
+         (or (ffi.pointer-null? uri)
+             (ffi.cstring->string uri)))))
+
+(define (end-xmlns-callback data prefix)
+  (pretty-print
+   (list 'xmlns-end
+         (or (ffi.pointer-null? prefix)
+             (ffi.cstring->string prefix)))))
+
+(define (doit xml-utf8)
+  (let ((parser (XML_ParserCreateNS 'UTF-8 #\:))
+        (start-elm
+         (XML_StartElementHandler start-element-callback))
+        (end-elm
+         (XML_EndElementHandler end-element-callback))
+        (start-ns
+         (XML_StartNamespaceDeclHandler start-xmlns-callback))
+        (end-ns
+         (XML_EndNamespaceDeclHandler end-xmlns-callback)))
+    (XML_SetElementHandler parser start-elm end-elm)
+    (XML_SetNamespaceDeclHandler parser start-ns  end-ns)
+    (XML_Parse parser xml-utf8 #f #t)
+    (ffi.free-c-callback start-elm)
+    (ffi.free-c-callback end-elm)
+    (ffi.free-c-callback start-ns)
+    (ffi.free-c-callback end-ns)
+    (flush-output-port (current-output-port))))
+@end example
+
+@noindent
+the following forms print symbolic expressions:
+
+@example
+;; some namespaces
+(doit
+  (string->utf8
+    "<?xml version='1.0'?>
+     <!DOCTYPE toys [
+       <!ELEMENT ball EMPTY>
+       <!ATTLIST ball colour CDATA #REQUIRED>
+     ]>
+     <toys xmlns:blue='http://localhost/blue'
+           xmlns:red='http://localhost/red'>\
+       <blue:ball colour='yellow'/>\
+       <red:ball  colour='purple'/>\
+     </toys>"))
+@print{} (xmlns-start "blue" "http://localhost/blue")
+@print{} (xmlns-start "red" "http://localhost/red")
+@print{} (element-start "toys" ())
+@print{} (element-start "http://localhost/blue:ball"
+@print{}    ("colour" "yellow"))
+@print{} (element-end "http://localhost/blue:ball")
+@print{} (element-start "http://localhost/red:ball"
+@print{}    ("colour" "purple"))
+@print{} (element-end "http://localhost/red:ball")
+@print{} (element-end "toys")
+@print{} (xmlns-end "red")
+@print{} (xmlns-end "blue")
+
+;; default namespace
+(doit
+  (string->utf8
+    "<?xml version='1.0'?>
+     <!DOCTYPE toys [
+       <!ELEMENT ball EMPTY>
+       <!ATTLIST ball colour CDATA #REQUIRED>
+     ]>
+     <toys xmlns='http://localhost/blue'>
+       <ball colour='yellow'/>
+       <ball  colour='purple'/>
+     </toys>"))
+@print{} (xmlns-start #t "http://localhost/blue")
+@print{} (element-start "http://localhost/blue:toys" ())
+@print{} (element-start "http://localhost/blue:ball"
+@print{}    ("colour" "yellow"))
+@print{} (element-end "http://localhost/blue:ball")
+@print{} (element-start "http://localhost/blue:ball"
+@print{}    ("colour" "purple"))
+@print{} (element-end "http://localhost/blue:ball")
+@print{} (element-end "http://localhost/blue:toys")
+@print{} (xmlns-end #t)
+@end example
+
+@c page
 @node handlers default
 @section Default handler
 
@@ -1641,16 +1778,6 @@ element.
 @c ------------------------------------------------------------
 
 
-@c ------------------------------------------------------------
-
-@defun XML_SetNamespaceDeclHandler @var{parser} @var{start-c-callback} @var{end-c-callback}
-
-@end defun
-
-
-@defun XML_EndNamespaceDeclHandler @var{scheme-callback}
-@defunx XML_SetEndNamespaceDeclHandler @var{parser} @var{c-callback}
-@end defun
 
 
 @defun XML_EntityDeclHandler @var{scheme-callback}
@@ -1685,9 +1812,6 @@ element.
 
 
 
-@defun XML_StartNamespaceDeclHandler @var{scheme-callback}
-@defunx XML_SetStartNamespaceDeclHandler @var{parser} @var{c-callback}
-@end defun
 
 
 @defun XML_UnknownEncodingHandler @var{scheme-callback}

@@ -460,6 +460,76 @@
   #f)
 
 
+;;;; namespace handlers
+
+(let ()
+  (define (start-element-callback data element attributes)
+    (pretty-print
+     (list 'element-start
+	   (ffi.cstring->string element)
+	   (ffi.argv->strings attributes))))
+
+  (define (end-element-callback data element)
+    (pretty-print
+     (list 'element-end
+	   (ffi.cstring->string element))))
+
+  (define (start-xmlns-callback data prefix uri)
+    (pretty-print
+     (list 'xmlns-start
+	   (or (ffi.pointer-null? prefix) (ffi.cstring->string prefix))
+	   (or (ffi.pointer-null? uri)    (ffi.cstring->string uri)))))
+
+  (define (end-xmlns-callback data prefix)
+    (pretty-print
+     (list 'xmlns-end
+	   (or (ffi.pointer-null? prefix) (ffi.cstring->string prefix)))))
+
+  (define (doit xml-utf8)
+    (let ((parser	(XML_ParserCreateNS 'UTF-8 #\:))
+	  (start-elm	(XML_StartElementHandler	start-element-callback))
+	  (end-elm	(XML_EndElementHandler		end-element-callback))
+	  (start-ns	(XML_StartNamespaceDeclHandler	start-xmlns-callback))
+	  (end-ns	(XML_EndNamespaceDeclHandler	end-xmlns-callback)))
+      (XML_SetElementHandler		parser start-elm end-elm)
+      (XML_SetNamespaceDeclHandler	parser start-ns  end-ns)
+      (XML_Parse parser xml-utf8 #f #t)
+      (ffi.free-c-callback start-elm)
+      (ffi.free-c-callback end-elm)
+      (ffi.free-c-callback start-ns)
+      (ffi.free-c-callback end-ns)
+      (flush-output-port (current-output-port))))
+
+  (when #f	;some namespaces
+    (doit
+     (string->utf8
+      "<?xml version='1.0'?>
+       <!DOCTYPE toys [
+         <!ELEMENT ball EMPTY>
+         <!ATTLIST ball colour CDATA #REQUIRED>
+       ]>
+       <toys xmlns:blue='http://localhost/blue'
+             xmlns:red='http://localhost/red'>\
+         <blue:ball colour='yellow'/>\
+         <red:ball  colour='purple'/>\
+       </toys>")))
+
+  (when #f	;default namespace
+    (doit
+     (string->utf8
+      "<?xml version='1.0'?>
+       <!DOCTYPE toys [
+         <!ELEMENT ball EMPTY>
+         <!ATTLIST ball colour CDATA #REQUIRED>
+       ]>
+       <toys xmlns='http://localhost/blue'>
+         <ball colour='yellow'/>
+         <ball  colour='purple'/>
+       </toys>")))
+
+  #t)
+
+
 ;;;; default handler
 
 (let ()
