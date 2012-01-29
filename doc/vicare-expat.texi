@@ -365,6 +365,13 @@ be a pointer object.  @var{encoding} is as in @func{XML_ParserCreate}.
 @end defun
 
 
+@defun XML_ExternalEntityRefHandler @var{scheme-callback}
+@defunx XML_SetExternalEntityRefHandler @var{parser} @var{c-callback}
+@expatref{api handlers, XML_ExternalEntityRefHandler}.  Maker and setter
+for external entity handler.
+@end defun
+
+
 The following is a skeleton program showing how to parse an external
 @dtd{}:
 
@@ -375,29 +382,41 @@ The following is a skeleton program showing how to parse an external
   (vicare expat constants)
   (prefix (vicare ffi) ffi.))
 
-(define xml-utf8
-  (string->utf8
-    "<!DOCTYPE toys SYSTEM 'http://localhost/toys'>
-     <toys><ball colour='red'/></toys>"))
-
 (define dtd-utf8
-  (string->utf8
-    "<!ELEMENT ball EMPTY>
-     <!ATTLIST ball colour CDATA #REQUIRED>"))
+  (string->utf8 "<!ELEMENT ball EMPTY>
+                 <!ATTLIST ball colour CDATA #REQUIRED>"))
 
-(define (handler parser context base system-id public-id)
-  (let ((parser (XML_ExternalEntityParserCreate
-                   parser context 'UTF-8)))
-    (XML_Parse parser dtd-utf8 #f #t)
+(define (ext-callback parser context base
+                      system-id public-id)
+  (let* ((parser (XML_ExternalEntityParserCreate parser context 'UTF-8))
+         (rv     (XML_Parse parser dtd-utf8 #f #t)))
+    (pretty-print
+     (list 'external-entity rv
+           (ffi.pointer-null? context)
+           (ffi.pointer-null? base)
+           (ffi.cstring->string system-id)
+           (ffi.pointer-null? public-id)))
     XML_STATUS_OK))
 
-(let* ((parser  (XML_ParserCreate 'UTF-8))
-       (cb      (XML_ExternalEntityRefHandler scheme-callback)))
-  (XML_SetParamEntityParsing parser
-     XML_PARAM_ENTITY_PARSING_ALWAYS)
-  (XML_SetExternalEntityRefHandler parser cb)
-  (XML_Parse parser xml-utf8 #f #t)
-  (ffi.free-c-callback cb))
+(define (doit xml-utf8)
+  (let* ((parser (XML_ParserCreate))
+         (ext    (XML_ExternalEntityRefHandler ext-callback)))
+    (XML_SetParamEntityParsing parser
+       XML_PARAM_ENTITY_PARSING_ALWAYS)
+    (XML_SetExternalEntityRefHandler parser ext)
+    (XML_Parse parser xml-utf8 #f #t)
+    (ffi.free-c-callback ext)
+    (flush-output-port (current-output-port))))
+
+(doit (string->utf8
+  "<!DOCTYPE toys SYSTEM 'http://localhost/toys'>
+   <toys><ball colour='red'/></toys>"))
+@print{} (external-entity 1 #t #t "http://localhost/toys" #t)
+
+(doit (string->utf8
+  "<!DOCTYPE toys PUBLIC 'The Toys' 'http://localhost/toys'>
+   <toys><ball colour='red'/></toys>"))
+@print{} (external-entity 1 #t #t "http://localhost/toys" #f)
 @end smallexample
 
 @c page
@@ -1926,16 +1945,8 @@ element.
 
 @c ------------------------------------------------------------
 
-
-
-
 @defun XML_EntityDeclHandler @var{scheme-callback}
 @defunx XML_SetEntityDeclHandler @var{parser} @var{c-callback}
-@end defun
-
-
-@defun XML_ExternalEntityRefHandler @var{scheme-callback}
-@defunx XML_SetExternalEntityRefHandler @var{parser} @var{c-callback}
 @end defun
 
 

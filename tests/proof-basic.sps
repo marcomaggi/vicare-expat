@@ -341,6 +341,47 @@
   #t)
 
 
+;;;; external entity parsing
+
+(let ()
+
+  (define dtd-utf8
+    (string->utf8 "<!ELEMENT ball EMPTY>
+                   <!ATTLIST ball colour CDATA #REQUIRED>"))
+
+  (define (ext-callback parser context base system-id public-id)
+    (let* ((parser (XML_ExternalEntityParserCreate parser context 'UTF-8))
+	   (rv     (XML_Parse parser dtd-utf8 #f #t)))
+      (pretty-print
+       (list 'external-entity rv
+	     (ffi.pointer-null? context)
+	     (ffi.pointer-null? base)
+	     (ffi.cstring->string system-id)
+	     (ffi.pointer-null? public-id)))
+      XML_STATUS_OK))
+
+  (define (doit xml-utf8)
+    (let* ((parser	(XML_ParserCreate))
+	   (ext		(XML_ExternalEntityRefHandler ext-callback)))
+      (XML_SetParamEntityParsing parser XML_PARAM_ENTITY_PARSING_ALWAYS)
+      (XML_SetExternalEntityRefHandler parser ext)
+      (XML_Parse parser xml-utf8 #f #t)
+      (ffi.free-c-callback ext)
+      (flush-output-port (current-output-port))))
+
+  (when #f
+    (doit (string->utf8
+	   "<!DOCTYPE toys SYSTEM 'http://localhost/toys'>
+            <toys><ball colour='red'/></toys>")))
+
+  (when #f
+    (doit (string->utf8
+	   "<!DOCTYPE toys PUBLIC 'The Toys' 'http://localhost/toys'>
+            <toys><ball colour='red'/></toys>")))
+
+  #t)
+
+
 ;;;; start and end element handlers
 
 (when #f
