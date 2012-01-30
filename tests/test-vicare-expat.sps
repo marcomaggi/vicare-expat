@@ -790,6 +790,157 @@
   #t)
 
 
+(parametrise ((check-test-name	'dtd-element-handler))
+
+  (define (doit xml)
+    (with-result
+     (let ((xml-utf8	(string->utf8 xml))
+	   (parser	(XML_ParserCreate))
+	   (dtd-elm	(XML_ElementDeclHandler dtd-elm-callback)))
+       (XML_UseParserAsHandlerArg parser)
+       (XML_SetElementDeclHandler parser dtd-elm)
+       (let ((rv (XML_Parse parser xml-utf8 #f #t)))
+	 (%print-parser-error-maybe parser rv)
+	 (ffi.free-c-callback dtd-elm)
+	 rv))))
+
+  (define (dtd-elm-callback data name model)
+    (add-result
+     (list 'dtd-element
+	   (ffi.cstring->string name)
+	   (xml-content->list (pointer->xml-content model))))
+    (XML_FreeContentModel data model))
+
+;;; --------------------------------------------------------------------
+
+  (check
+      (doit "<!DOCTYPE toys [
+               <!ELEMENT ball EMPTY>
+               <!ATTLIST ball>
+             ]>
+             <toys><ball/></toys>")
+    => `(,XML_STATUS_OK
+  	 ((dtd-element "ball" (,XML_CTYPE_EMPTY ,XML_CQUANT_NONE #f 0 #f)))))
+
+  (check
+      (doit "<!DOCTYPE toys [
+               <!ELEMENT ball ANY>
+               <!ATTLIST ball>
+             ]>
+             <toys><ball/></toys>")
+    => `(,XML_STATUS_OK
+  	 ((dtd-element "ball" (,XML_CTYPE_ANY ,XML_CQUANT_NONE #f 0 #f)))))
+
+  (check
+      (doit "<!DOCTYPE toys [
+               <!ELEMENT toys (ball)>
+               <!ATTLIST toys>
+               <!ELEMENT ball EMPTY>
+               <!ATTLIST ball>
+             ]>
+             <toys><ball/></toys>")
+    => `(,XML_STATUS_OK
+  	 ((dtd-element "toys" ( ;;
+			       ,XML_CTYPE_SEQ ,XML_CQUANT_NONE #f 1
+			       #((,XML_CTYPE_NAME ,XML_CQUANT_NONE "ball" 0 #f))))
+	  (dtd-element "ball" (,XML_CTYPE_EMPTY ,XML_CQUANT_NONE #f 0 #f)))))
+
+  (check
+      (doit "<!DOCTYPE outer [
+               <!ELEMENT outer (middle)>
+               <!ATTLIST outer>
+               <!ELEMENT middle (inner)>
+               <!ATTLIST middle>
+               <!ELEMENT inner EMPTY>
+               <!ATTLIST inner>
+             ]>
+             <outer><middle><inner/></middle></outer>")
+    => `(,XML_STATUS_OK
+  	 ((dtd-element "outer" ( ;;
+				,XML_CTYPE_SEQ ,XML_CQUANT_NONE #f 1
+				#((,XML_CTYPE_NAME ,XML_CQUANT_NONE "middle" 0 #f))))
+	  (dtd-element "middle" ( ;;
+				 ,XML_CTYPE_SEQ ,XML_CQUANT_NONE #f 1
+				 #((,XML_CTYPE_NAME ,XML_CQUANT_NONE "inner" 0 #f))))
+	  (dtd-element "inner" (,XML_CTYPE_EMPTY ,XML_CQUANT_NONE #f 0 #f)))))
+
+  (check
+      (doit "<!DOCTYPE this [
+               <!ELEMENT this (#PCDATA)>
+               <!ATTLIST this>
+             ]>
+             <this>ciao</this>")
+    => `(,XML_STATUS_OK
+  	 ((dtd-element "this" (,XML_CTYPE_MIXED ,XML_CQUANT_NONE #f 0 #f)))))
+
+  (check
+      (doit "<!DOCTYPE this [
+               <!ELEMENT this (#PCDATA|that)*>
+               <!ATTLIST this>
+               <!ELEMENT that EMPTY>
+               <!ATTLIST that>
+             ]>
+             <this><that/></this>")
+    => `(,XML_STATUS_OK
+  	 ((dtd-element "this" ( ;;
+			       ,XML_CTYPE_MIXED ,XML_CQUANT_REP #f 1
+						#((,XML_CTYPE_NAME ,XML_CQUANT_NONE "that" 0 #f))))
+	  (dtd-element "that" (,XML_CTYPE_EMPTY ,XML_CQUANT_NONE #f 0 #f)))))
+
+;;; --------------------------------------------------------------------
+;;; quantifiers
+
+  (check
+      (doit "<!DOCTYPE toys [
+               <!ELEMENT toys (ball)>  <!ATTLIST toys>
+               <!ELEMENT ball EMPTY>   <!ATTLIST ball>
+             ]>
+             <toys><ball/></toys>")
+    => `(,XML_STATUS_OK
+  	 ((dtd-element "toys" ( ;;
+			       ,XML_CTYPE_SEQ ,XML_CQUANT_NONE #f 1
+			       #((,XML_CTYPE_NAME ,XML_CQUANT_NONE "ball" 0 #f))))
+	  (dtd-element "ball" (,XML_CTYPE_EMPTY ,XML_CQUANT_NONE #f 0 #f)))))
+
+  (check
+      (doit "<!DOCTYPE toys [
+               <!ELEMENT toys (ball)*> <!ATTLIST toys>
+               <!ELEMENT ball EMPTY>   <!ATTLIST ball>
+             ]>
+             <toys><ball/></toys>")
+    => `(,XML_STATUS_OK
+  	 ((dtd-element "toys" ( ;;
+			       ,XML_CTYPE_SEQ ,XML_CQUANT_REP #f 1
+			       #((,XML_CTYPE_NAME ,XML_CQUANT_NONE "ball" 0 #f))))
+	  (dtd-element "ball" (,XML_CTYPE_EMPTY ,XML_CQUANT_NONE #f 0 #f)))))
+
+  (check
+      (doit "<!DOCTYPE toys [
+               <!ELEMENT toys (ball)?> <!ATTLIST toys>
+               <!ELEMENT ball EMPTY>   <!ATTLIST ball>
+             ]>
+             <toys><ball/></toys>")
+    => `(,XML_STATUS_OK
+  	 ((dtd-element "toys" ( ;;
+			       ,XML_CTYPE_SEQ ,XML_CQUANT_OPT #f 1
+			       #((,XML_CTYPE_NAME ,XML_CQUANT_NONE "ball" 0 #f))))
+	  (dtd-element "ball" (,XML_CTYPE_EMPTY ,XML_CQUANT_NONE #f 0 #f)))))
+
+  (check
+      (doit "<!DOCTYPE toys [
+               <!ELEMENT toys (ball)+> <!ATTLIST toys>
+               <!ELEMENT ball EMPTY>   <!ATTLIST ball>
+             ]>
+             <toys><ball/></toys>")
+    => `(,XML_STATUS_OK
+  	 ((dtd-element "toys" ( ;;
+			       ,XML_CTYPE_SEQ ,XML_CQUANT_PLUS #f 1
+			       #((,XML_CTYPE_NAME ,XML_CQUANT_NONE "ball" 0 #f))))
+	  (dtd-element "ball" (,XML_CTYPE_EMPTY ,XML_CQUANT_NONE #f 0 #f)))))
+
+  #t)
+
+
 (parametrise ((check-test-name	'dtd-attlist-handler))
 
   (define (scheme-callback user-data element-name attribute-name

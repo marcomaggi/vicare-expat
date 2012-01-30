@@ -531,4 +531,41 @@ ik_expat_get_feature_list (ikpcb * pcb)
   return s_feats;
 }
 
+
+/** --------------------------------------------------------------------
+ ** XML_Content structure accessors.
+ ** ----------------------------------------------------------------- */
+
+ikptr
+ik_expat_xml_content_type_ref (ikptr s_pointer)
+{
+  XML_Content *	pointer = IK_POINTER_DATA_VOIDP(s_pointer);
+  return IK_FIX(pointer->type);
+}
+ikptr
+ik_expat_xml_content_quant_ref (ikptr s_pointer)
+{
+  XML_Content *	pointer = IK_POINTER_DATA_VOIDP(s_pointer);
+  return IK_FIX(pointer->quant);
+}
+ikptr
+ik_expat_xml_content_name_ref (ikptr s_pointer, ikpcb * pcb)
+{
+  XML_Content *	pointer = IK_POINTER_DATA_VOIDP(s_pointer);
+  return ika_pointer_alloc(pcb, (ik_ulong)pointer->name);
+}
+ikptr
+ik_expat_xml_content_numchildren_ref (ikptr s_pointer, ikpcb * pcb)
+{
+  XML_Content *	pointer = IK_POINTER_DATA_VOIDP(s_pointer);
+  return ika_integer_from_uint(pcb, pointer->numchildren);
+}
+ikptr
+ik_expat_xml_content_children_ref (ikptr s_pointer, ikptr s_index, ikpcb * pcb)
+{
+  XML_Content *	pointer = IK_POINTER_DATA_VOIDP(s_pointer);
+  long		idx     = IK_UNFIX(s_index);
+  return ika_pointer_alloc(pcb, (ik_ulong)&(pointer->children[idx]));
+}
+
 /* end of file */

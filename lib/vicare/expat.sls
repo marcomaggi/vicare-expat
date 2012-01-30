@@ -124,7 +124,14 @@
 
     ;; parsing status object
     make-xml-parser-status		xml-parser-status?
-    xml-parser-status-parsing		xml-parser-status-final-buffer?)
+    xml-parser-status-parsing		xml-parser-status-final-buffer?
+
+    ;; DTD element declaration model structure
+    make-xml-content			xml-content?
+    pointer->xml-content		xml-content->list
+    xml-content-type			xml-content-quant
+    xml-content-name			xml-content-numchildren
+    xml-content-children)
   (import (vicare)
     (vicare expat constants)
     (vicare syntactic-extensions)
@@ -205,7 +212,7 @@
 (define (%struct-xml-parser-status-printer S port sub-printer)
   (define-inline (%display thing)
     (display thing port))
-  (%display "#[expat-xml-parser-status")
+  (%display "#[expat:xml-parser-status")
   (%display " parsing=")	(%display (let ((status (xml-parser-status-parsing S)))
 					    (cond ((= status XML_INITIALIZED)
 						   "XML_INITIALIZED")
@@ -218,6 +225,95 @@
 						  (else status #;"<unknown status>"))))
   (%display " final-buffer?=")	(%display (xml-parser-status-final-buffer? S))
   (%display "]"))
+
+;;; --------------------------------------------------------------------
+
+(define-struct xml-content
+  (type quant name numchildren children))
+
+(define (%struct-xml-content-printer S port sub-printer)
+  (define-inline (%display thing)
+    (display thing port))
+  (%display "#[expat:xml-content")
+  (%display " type=")	(%display (let ((fx (xml-content-type S)))
+				    (cond ((fx=? fx XML_CTYPE_EMPTY)
+					   "XML_CTYPE_EMPTY")
+					  ((fx=? fx XML_CTYPE_ANY)
+					   "XML_CTYPE_ANY")
+					  ((fx=? fx XML_CTYPE_MIXED)
+					   "XML_CTYPE_MIXED")
+					  ((fx=? fx XML_CTYPE_NAME)
+					   "XML_CTYPE_NAME")
+					  ((fx=? fx XML_CTYPE_CHOICE)
+					   "XML_CTYPE_CHOICE")
+					  ((fx=? fx XML_CTYPE_SEQ)
+					   "XML_CTYPE_SEQ")
+					  (else
+					   "<unknown>"))))
+  (%display " quant=")	(%display (let ((fx (xml-content-quant S)))
+				    (cond ((fx=? fx XML_CQUANT_NONE)
+					   "XML_CQUANT_NONE")
+					  ((fx=? fx XML_CQUANT_OPT)
+					   "XML_CQUANT_OPT")
+					  ((fx=? fx XML_CQUANT_REP)
+					   "XML_CQUANT_REP")
+					  ((fx=? fx XML_CQUANT_PLUS)
+					   "XML_CQUANT_PLUS")
+					  (else
+					   "<unknown>"))))
+  (%display " name=")	(%display (xml-content-name S))
+  (%display " numchildren=")	(%display (xml-content-numchildren S))
+  (%display " children=")	(%display (xml-content-children S))
+  (%display "]"))
+
+(define (pointer->xml-content pointer)
+  (define who 'pointer->xml-content)
+  (let* ((type		(XML_Content.type pointer))
+	 (quant		(XML_Content.quant pointer))
+	 (name		(let ((name (XML_Content.name pointer)))
+			  (if (ffi.pointer-null? name)
+			      #f
+			    (ffi.cstring->string name))))
+	 (numchildren	(XML_Content.numchildren pointer))
+	 (children	(cond ((bignum? numchildren)
+			       (assertion-violation who
+				 "number of child elements too big" numchildren))
+			      ((fxzero? numchildren)
+			       #f)
+			      (else
+			       (let ((children (make-vector numchildren)))
+				 (do ((i 0 (fx+ 1 i)))
+				     ((= i numchildren)
+				      children)
+				   (vector-set! children i
+						(pointer->xml-content
+						 (XML_Content.children pointer i)))))))))
+    (make-xml-content type quant name numchildren children)))
+
+(define (xml-content->list S)
+  (list (xml-content-type S)
+	(xml-content-quant S)
+	(xml-content-name S)
+	(xml-content-numchildren S)
+	(let ((vec (xml-content-children S)))
+	  (if vec
+	      (vector-map xml-content->list vec)
+	    #f))))
+
+(define-inline (XML_Content.type pointer)
+  (foreign-call "ik_expat_xml_content_type_ref" pointer))
+
+(define-inline (XML_Content.quant pointer)
+  (foreign-call "ik_expat_xml_content_quant_ref" pointer))
+
+(define-inline (XML_Content.name pointer)
+  (foreign-call "ik_expat_xml_content_name_ref" pointer))
+
+(define-inline (XML_Content.numchildren pointer)
+  (foreign-call "ik_expat_xml_content_numchildren_ref" pointer))
+
+(define-inline (XML_Content.children pointer index)
+  (foreign-call "ik_expat_xml_content_children_ref" pointer index))
 
 
 ;;;; helpers
@@ -721,6 +817,7 @@
 ;;;; done
 
 (set-rtd-printer! (type-descriptor xml-parser-status) %struct-xml-parser-status-printer)
+(set-rtd-printer! (type-descriptor xml-content)       %struct-xml-content-printer)
 
 )
 
