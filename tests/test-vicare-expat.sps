@@ -808,7 +808,7 @@
     (add-result
      (list 'dtd-element
 	   (ffi.cstring->string name)
-	   (xml-content->list (pointer->xml-content model))))
+	   (XML_Content->list (pointer->XML_Content model))))
     (XML_FreeContentModel data model))
 
 ;;; --------------------------------------------------------------------

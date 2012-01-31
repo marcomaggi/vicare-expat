@@ -228,6 +228,96 @@
   #t)
 
 
+;;;; DTD element declaration handler
+
+(let ()
+
+  (define (doit xml)
+    (let ((xml-utf8	(string->utf8 xml))
+	  (parser	(XML_ParserCreate))
+	  (dtd-elm	(XML_ElementDeclHandler dtd-elm-callback)))
+      (XML_UseParserAsHandlerArg parser)
+      (XML_SetElementDeclHandler parser dtd-elm)
+      (XML_Parse parser xml-utf8 #f #t)
+      (ffi.free-c-callback dtd-elm)
+      (flush-output-port (current-output-port))))
+
+  (define (dtd-elm-callback data name model)
+    (pretty-print
+     (list 'dtd-element
+	   (ffi.cstring->string name)
+	   (pointer->XML_Content model)))
+    (XML_FreeContentModel data model))
+
+;;; --------------------------------------------------------------------
+
+  (when #f
+    (doit "<!DOCTYPE toys [
+             <!ELEMENT ball EMPTY>
+           ]>
+           <toys><ball/></toys>"))
+
+  (when #f
+    (doit "<!DOCTYPE toys [
+             <!ELEMENT ball ANY>
+           ]>
+           <toys><ball/></toys>"))
+
+  (when #f
+    (doit "<!DOCTYPE toys [
+             <!ELEMENT toys (ball)>
+             <!ELEMENT ball EMPTY>
+           ]>
+           <toys><ball/></toys>"))
+
+  (when #f
+    (doit "<!DOCTYPE outer [
+             <!ELEMENT outer (middle)>
+             <!ELEMENT middle (inner)>
+             <!ELEMENT inner EMPTY>
+           ]>
+           <outer><middle><inner/></middle></outer>"))
+
+  (when #f
+    (doit "<!DOCTYPE this [
+             <!ELEMENT this (#PCDATA)>
+           ]>
+           <this>ciao</this>"))
+
+  (when #f
+    (doit "<!DOCTYPE this [
+             <!ELEMENT this (#PCDATA|that)*>
+             <!ELEMENT that EMPTY>
+           ]>
+           <this><that/></this>"))
+
+;;; --------------------------------------------------------------------
+;;; quantifiers
+
+  (when #f
+    (doit "<!DOCTYPE toys [
+             <!ELEMENT toys (ball)*>
+             <!ELEMENT ball EMPTY>
+           ]>
+           <toys><ball/></toys>"))
+
+  (when #f
+    (doit "<!DOCTYPE toys [
+             <!ELEMENT toys (ball)?>
+             <!ELEMENT ball EMPTY>
+           ]>
+           <toys><ball/></toys>"))
+
+  (when #f
+    (doit "<!DOCTYPE toys [
+             <!ELEMENT toys (ball)+>
+             <!ELEMENT ball EMPTY>
+           ]>
+           <toys><ball/></toys>"))
+
+  #t)
+
+
 ;;;; DTD notation handler
 
 (let ()

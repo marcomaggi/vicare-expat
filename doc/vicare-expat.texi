@@ -1356,17 +1356,244 @@ library.
 
 @defun XML_ElementDeclHandler @var{scheme-callback}
 @defunx XML_SetElementDeclHandler @var{parser} @var{c-callback}
-@expatref{api handlers, XML_ElementDeclHandler}.  Maker and setter for
-the @dtd{} element declaration handlers.
+@expatref{api handlers dtd element, XML_ElementDeclHandler}.  Maker and
+setter for the @dtd{} element declaration handlers.
 @end defun
 
 
 @defun XML_FreeContentModel @var{parser} @var{model}
-@expatref{api misc, XML_FreeContentModel}.  Release the @var{model}
-arugment for the @code{XML_ElementDeclHandler}.
+@expatref{api handlers dtd element, XML_FreeContentModel}.  Release the
+@var{model} arugment for the @code{XML_ElementDeclHandler}.
 @end defun
 
 
+@deftp {Structure Type} XML_Content
+Scheme mirror of the C language type @code{XML_Content}.  It has the
+following fields:
+
+@table @code
+@item type
+One of the @code{XML_CTYPE_} constants.
+
+@item quant
+One of the @code{XML_CQUANT_} constants.
+
+@item name
+For root elements @false{}; for children elements: a Scheme string
+representing the element's name.
+
+@item numchildren
+A non--negative fixnum representing the number of children elements.
+
+@item children
+@false{} or a vector of @code{XML_Content} structures representing the
+children elements.
+@end table
+@end deftp
+
+
+@defun make-XML_Content @var{type} @var{quant} @var{name} @var{numchildren} @var{children}
+Maker for structures of type @code{XML_Content}.
+@end defun
+
+
+@defun XML_Content? @var{obj}
+Return true if @var{obj} is an instance of @code{XML_Content}.
+@end defun
+
+
+@defun XML_Content-type @var{content}
+@defunx XML_Content-quant @var{content}
+@defunx XML_Content-name @var{content}
+@defunx XML_Content-numchildren @var{content}
+@defunx XML_Content-children @var{content}
+Accessors for the fields of @code{XML_Content} structures.
+@end defun
+
+
+@defun pointer->XML_Content @var{pointer}
+Given a pointer object referencing a C language @code{XML_Content}
+structure: build and return a Scheme @code{XML_Content} structure
+mirroring it.
+@end defun
+
+
+@defun XML_Content->list @var{content}
+Given an instance to @code{XML_Content} return a list holding its fields
+in the same order in which they appear in the structure definition.
+@end defun
+
+
+Given the following program preamble:
+
+@example
+#!r6rs
+(import (vicare)
+  (vicare expat)
+  (vicare expat constants)
+  (prefix (vicare ffi) ffi.))
+
+(define (doit xml)
+  (let ((xml-utf8 (string->utf8 xml))
+        (parser   (XML_ParserCreate))
+        (dtd-elm  (XML_ElementDeclHandler dtd-elm-callback)))
+    (XML_UseParserAsHandlerArg parser)
+    (XML_SetElementDeclHandler parser dtd-elm)
+    (XML_Parse parser xml-utf8 #f #t)
+    (ffi.free-c-callback dtd-elm)
+    (flush-output-port (current-output-port))))
+
+(define (dtd-elm-callback data name model)
+  (pretty-print
+   (list 'dtd-element
+         (ffi.cstring->string name)
+         (pointer->XML_Content model)))
+  (XML_FreeContentModel data model))
+@end example
+
+@noindent
+the following forms print symbolic expressions:
+
+@example
+(doit "<!DOCTYPE toys [
+         <!ELEMENT ball EMPTY>
+       ]>
+       <toys><ball/></toys>")
+@print{} (dtd-element "ball"
+@print{}   #[expat:XML_Content
+@print{}      type=XML_CTYPE_EMPTY quant=XML_CQUANT_NONE
+@print{}      name=#f numchildren=0 children=#f])
+
+(doit "<!DOCTYPE toys [
+         <!ELEMENT ball ANY>
+       ]>
+       <toys><ball/></toys>")
+@print{} (dtd-element "ball"
+@print{}   #[expat:XML_Content
+@print{}      type=XML_CTYPE_ANY quant=XML_CQUANT_NONE
+@print{}      name=#f numchildren=0 children=#f])
+
+(doit "<!DOCTYPE toys [
+         <!ELEMENT toys (ball)>
+         <!ELEMENT ball EMPTY>
+       ]>
+       <toys><ball/></toys>")
+@print{} (dtd-element "toys"
+@print{}   #[expat:XML_Content
+@print{}      type=XML_CTYPE_SEQ quant=XML_CQUANT_NONE
+@print{}      name=#f numchildren=1
+@print{}      children=#(#[expat:XML_Content
+@print{}                    type=XML_CTYPE_NAME quant=XML_CQUANT_NONE
+@print{}                    name="ball" numchildren=0 children=#f])])
+@print{} (dtd-element "ball"
+@print{}   #[expat:XML_Content
+@print{}      type=XML_CTYPE_EMPTY quant=XML_CQUANT_NONE
+@print{}      name=#f numchildren=0 children=#f])
+
+(doit "<!DOCTYPE outer [
+         <!ELEMENT outer (middle)>
+         <!ELEMENT middle (inner)>
+         <!ELEMENT inner EMPTY>
+       ]>
+       <outer><middle><inner/></middle></outer>")
+@print{} (dtd-element "outer"
+@print{}   #[expat:XML_Content
+@print{}      type=XML_CTYPE_SEQ quant=XML_CQUANT_NONE
+@print{}      name=#f numchildren=1
+@print{}      children=#(#[expat:XML_Content
+@print{}                    type=XML_CTYPE_NAME quant=XML_CQUANT_NONE
+@print{}                    name="middle" numchildren=0 children=#f])])
+@print{} (dtd-element "middle"
+@print{}   #[expat:XML_Content
+@print{}      type=XML_CTYPE_SEQ quant=XML_CQUANT_NONE
+@print{}      name=#f numchildren=1
+@print{}      children=#(#[expat:XML_Content
+@print{}                    type=XML_CTYPE_NAME quant=XML_CQUANT_NONE
+@print{}                    name="inner" numchildren=0 children=#f])])
+@print{} (dtd-element "inner"
+@print{}   #[expat:XML_Content
+@print{}      type=XML_CTYPE_EMPTY quant=XML_CQUANT_NONE
+@print{}      name=#f numchildren=0 children=#f])
+
+(doit "<!DOCTYPE this [
+         <!ELEMENT this (#PCDATA)>
+       ]>
+       <this>ciao</this>")
+@print{} (dtd-element "this"
+@print{}   #[expat:XML_Content
+@print{}      type=XML_CTYPE_MIXED quant=XML_CQUANT_NONE
+@print{}      name=#f numchildren=0 children=#f])
+
+(doit "<!DOCTYPE this [
+         <!ELEMENT this (#PCDATA|that)*>
+         <!ELEMENT that EMPTY>
+       ]>
+       <this><that/></this>")
+@print{} (dtd-element "this"
+@print{}   #[expat:XML_Content
+@print{}      type=XML_CTYPE_MIXED quant=XML_CQUANT_REP
+@print{}      name=#f numchildren=1
+@print{}      children=#(#[expat:XML_Content
+@print{}                    type=XML_CTYPE_NAME quant=XML_CQUANT_NONE
+@print{}                    name="that" numchildren=0 children=#f])])
+@print{} (dtd-element "that"
+@print{}   #[expat:XML_Content
+@print{}      type=XML_CTYPE_EMPTY quant=XML_CQUANT_NONE
+@print{}      name=#f numchildren=0 children=#f])
+
+;;; quantifiers
+
+(doit "<!DOCTYPE toys [
+         <!ELEMENT toys (ball)*>
+         <!ELEMENT ball EMPTY>
+       ]>
+       <toys><ball/></toys>")
+@print{} (dtd-element "toys"
+@print{}   #[expat:XML_Content
+@print{}      type=XML_CTYPE_SEQ quant=XML_CQUANT_REP
+@print{}      name=#f numchildren=1
+@print{}      children=#(#[expat:XML_Content
+@print{}                    type=XML_CTYPE_NAME quant=XML_CQUANT_NONE
+@print{}                    name="ball" numchildren=0 children=#f])])
+@print{} (dtd-element "ball"
+@print{}   #[expat:XML_Content
+@print{}      type=XML_CTYPE_EMPTY quant=XML_CQUANT_NONE
+@print{}      name=#f numchildren=0 children=#f])
+
+(doit "<!DOCTYPE toys [
+         <!ELEMENT toys (ball)?>
+         <!ELEMENT ball EMPTY>
+       ]>
+       <toys><ball/></toys>")
+@print{} (dtd-element "toys"
+@print{}   #[expat:XML_Content
+@print{}      type=XML_CTYPE_SEQ quant=XML_CQUANT_OPT
+@print{}      name=#f numchildren=1
+@print{}      children=#(#[expat:XML_Content
+@print{}                    type=XML_CTYPE_NAME quant=XML_CQUANT_NONE
+@print{}                    name="ball" numchildren=0 children=#f])])
+@print{} (dtd-element "ball"
+@print{}   #[expat:XML_Content
+@print{}      type=XML_CTYPE_EMPTY quant=XML_CQUANT_NONE
+@print{}      name=#f numchildren=0 children=#f])
+
+(doit "<!DOCTYPE toys [
+         <!ELEMENT toys (ball)+>
+         <!ELEMENT ball EMPTY>
+       ]>
+       <toys><ball/></toys>")
+@print{} (dtd-element "toys"
+@print{}   #[expat:XML_Content
+@print{}      type=XML_CTYPE_SEQ quant=XML_CQUANT_PLUS
+@print{}      name=#f numchildren=1
+@print{}      children=#(#[expat:XML_Content
+@print{}                    type=XML_CTYPE_NAME quant=XML_CQUANT_NONE
+@print{}                    name="ball" numchildren=0 children=#f])])
+@print{} (dtd-element "ball"
+@print{}   #[expat:XML_Content
+@print{}      type=XML_CTYPE_EMPTY quant=XML_CQUANT_NONE
+@print{}      name=#f numchildren=0 children=#f])
+@end example
 
 @c page
 @node handlers dtd attlist
