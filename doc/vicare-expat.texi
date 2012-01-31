@@ -924,6 +924,7 @@ intgers, and so on.
 * handlers dtd element::        @dtd{} element declaration.
 * handlers dtd attlist::        @dtd{} attribute lists declaration.
 * handlers dtd notation::       @dtd{} notation declaration.
+* handlers dtd entity::         @dtd{} entity declaration.
 * handlers element::            Element handlers.
 * handlers char data::          Character data handlers.
 * handlers comment::            Comment handlers.
@@ -1792,6 +1793,38 @@ the following forms print symbolic expressions:
     "http://localhost/bouncer" "The Bouncer")
 @end example
 
+@c page
+@node handlers dtd entity
+@section @dtd{} entity declaration
+
+
+All the following bindings are exported by the @library{vicare expat}
+library.
+
+
+@defun XML_EntityDeclHandler @var{scheme-callback}
+@defunx XML_SetEntityDeclHandler @var{parser} @var{c-callback}
+@expatref{api handlers, XML_EntityDeclHandler}.  Maker and setter for
+the entity @dtd{} declaration handler.
+@end defun
+
+
+Given the following program preamble:
+
+@example
+#!r6rs
+(import (vicare)
+  (vicare expat)
+  (vicare expat constants)
+  (prefix (vicare ffi) ffi.))
+
+@end example
+
+@noindent
+the following forms print symbolic expressions:
+
+@example
+@end example
 
 @c page
 @node handlers element
@@ -2314,9 +2347,14 @@ element.
 @section Miscellaneous handlers
 
 
-@defun XML_EntityDeclHandler @var{scheme-callback}
-@defunx XML_SetEntityDeclHandler @var{parser} @var{c-callback}
+@defun XML_SkippedEntityHandler @var{scheme-callback}
+@defunx XML_SetSkippedEntityHandler @var{parser} @var{c-callback}
 @end defun
+
+@defun XML_UnparsedEntityDeclHandler @var{scheme-callback}
+@defunx XML_SetUnparsedEntityDeclHandler @var{parser} @var{c-callback}
+@end defun
+
 
 
 @defun XML_ProcessingInstructionHandler @var{scheme-callback}
@@ -2324,19 +2362,9 @@ element.
 @end defun
 
 
-@defun XML_SkippedEntityHandler @var{scheme-callback}
-@defunx XML_SetSkippedEntityHandler @var{parser} @var{c-callback}
-@end defun
-
 @defun XML_UnknownEncodingHandler @var{scheme-callback}
 @defunx XML_SetUnknownEncodingHandler @var{parser} @var{c-callback}
 @end defun
-
-
-@defun XML_UnparsedEntityDeclHandler @var{scheme-callback}
-@defunx XML_SetUnparsedEntityDeclHandler @var{parser} @var{c-callback}
-@end defun
-
 
 
 @c page

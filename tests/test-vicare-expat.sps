@@ -1045,6 +1045,7 @@
 	    (notation	(XML_NotationDeclHandler notation-callback)))
        (XML_SetNotationDeclHandler parser notation)
        (let ((rv (XML_Parse parser xml-utf8 #f #t)))
+	 (%print-parser-error-maybe parser rv)
 	 (ffi.free-c-callback notation)
 	 rv))))
 
@@ -1085,6 +1086,112 @@
              <toys><ball colour='red' /></toys>"))
     => `(,XML_STATUS_OK
 	 ((notation "bouncing" #f "http://localhost/bouncer" "The Bouncer"))))
+
+  #t)
+
+
+(parametrise ((check-test-name	'dtd-entity-handler))
+
+  (define (%false-or-string thing)
+    (if (ffi.pointer-null? thing)
+	#f
+      (ffi.cstring->string thing)))
+
+  (define (doit xml)
+    (with-result
+     (let* ((xml-utf8	(string->utf8 xml))
+	    (parser	(XML_ParserCreate))
+	    (dtd-entity	(XML_EntityDeclHandler dtd-entity-callback))
+	    (elm-start	(XML_StartElementHandler elm-start-callback)))
+       (XML_SetBase parser (string->utf8 "http://localhost/"))
+       (XML_SetEntityDeclHandler parser dtd-entity)
+       (XML_SetStartElementHandler parser elm-start)
+       (let ((rv (XML_Parse parser xml-utf8 #f #t)))
+	 (%print-parser-error-maybe parser rv)
+	 (ffi.free-c-callback dtd-entity)
+	 rv))))
+
+  (define (dtd-entity-callback data entity-name is-parameter-entity
+			       value value-length
+			       base system-id public-id
+			       notation-name)
+    (add-result
+     (list 'dtd-entity
+	   (%false-or-string entity-name)
+	   (fxpositive? is-parameter-entity)
+	   (if (ffi.pointer-null? value)
+	       #f
+	     (ffi.cstring->string value value-length))
+	   (%false-or-string base)
+	   (%false-or-string system-id)
+	   (%false-or-string public-id)
+	   (%false-or-string notation-name))))
+
+  (define (elm-start-callback data element attributes)
+    (add-result
+     (list 'element-start
+	   (ffi.cstring->string element)
+	   (ffi.argv->strings attributes))))
+
+;;; --------------------------------------------------------------------
+
+  (check	;internal entity
+      (doit "<?xml version='1.0'?>
+             <!DOCTYPE thing [
+               <!ELEMENT thing EMPTY>
+               <!ATTLIST thing frob (a|b|c) #REQUIRED>
+               <!ENTITY stuff 'a'>
+             ]>
+             <thing frob='&stuff;'/>")
+    => `(,XML_STATUS_OK
+	 ((dtd-entity "stuff" #f "a" "http://localhost/" #f #f #f)
+	  (element-start "thing" ("frob" "a")))))
+
+  (check	;external entity, SYSTEM
+      (doit "<?xml version='1.0'?>
+             <!DOCTYPE thing [
+               <!ELEMENT thing EMPTY>
+               <!ENTITY stuff SYSTEM 'http://localhost/stuff'>
+             ]>
+             <thing/>")
+    => `(,XML_STATUS_OK
+	 ((dtd-entity "stuff" #f #f "http://localhost/" "http://localhost/stuff" #f #f)
+	  (element-start "thing" ()))))
+
+  (check	;external entity, PUBLIC
+      (doit "<?xml version='1.0'?>
+             <!DOCTYPE thing [
+               <!ELEMENT thing EMPTY>
+               <!ENTITY stuff PUBLIC 'The Stuff' 'http://localhost/stuff'>
+             ]>
+             <thing/>")
+    => `(,XML_STATUS_OK
+	 ((dtd-entity "stuff" #f #f "http://localhost/" "http://localhost/stuff" "The Stuff" #f)
+	  (element-start "thing" ()))))
+
+  (check	;external entity, SYSTEM with notation
+      (doit "<?xml version='1.0'?>
+             <!DOCTYPE thing [
+               <!ELEMENT thing EMPTY>
+               <!NOTATION stuffer SYSTEM 'http://localhost/stuffer'>
+               <!ENTITY stuff SYSTEM 'http://localhost/stuff' NDATA stuffer>
+             ]>
+             <thing/>")
+    => `(,XML_STATUS_OK
+	 ((dtd-entity "stuff" #f #f "http://localhost/" "http://localhost/stuff" #f "stuffer")
+	  (element-start "thing" ()))))
+
+  (check	;external entity, PUBLIC with notation
+      (doit "<?xml version='1.0'?>
+             <!DOCTYPE thing [
+               <!ELEMENT thing EMPTY>
+               <!NOTATION stuffer SYSTEM 'http://localhost/stuffer'>
+               <!ENTITY stuff PUBLIC 'The Stuff' 'http://localhost/stuff' NDATA stuffer>
+             ]>
+             <thing/>")
+    => `(,XML_STATUS_OK
+	 ((dtd-entity "stuff" #f #f "http://localhost/" "http://localhost/stuff" "The Stuff" "stuffer")
+	  (element-start "thing" ()))))
 
   #t)
 
