@@ -176,7 +176,7 @@
   #t)
 
 
-;;; DTD doctype handler
+;;;; DTD doctype handler
 
 (let ()
 
@@ -312,6 +312,80 @@
     (doit "<!DOCTYPE toys [
              <!ELEMENT toys (ball)+>
              <!ELEMENT ball EMPTY>
+           ]>
+           <toys><ball/></toys>"))
+
+  #t)
+
+
+;;;; DTD attlist declaration handler
+
+(let ()
+
+  (define (doit xml)
+    (let* ((xml-utf8	(string->utf8 xml))
+	   (parser	(XML_ParserCreate))
+	   (dtd-attlist	(XML_AttlistDeclHandler dtd-attlist-callback))
+	   (elm-start	(XML_StartElementHandler elm-start-callback)))
+      (XML_SetAttlistDeclHandler parser dtd-attlist)
+      (XML_SetStartElementHandler parser elm-start)
+      (XML_Parse parser xml-utf8 #f #t)
+      (ffi.free-c-callback dtd-attlist)
+      (ffi.free-c-callback elm-start)
+      (flush-output-port (current-output-port))))
+
+  (define (dtd-attlist-callback user-data element-name attribute-name
+				attribute-type default-value required?)
+    (pretty-print
+     (list 'dtd-attlist
+	   (ffi.cstring->string element-name)
+	   (ffi.cstring->string attribute-name)
+	   (ffi.cstring->string attribute-type)
+	   (if (ffi.pointer-null? default-value)
+	       'no-value
+	     (ffi.cstring->string default-value))
+	   (fxpositive? required?))))
+
+  (define (elm-start-callback data element attributes)
+    (pretty-print
+     (list 'element-start
+	   (ffi.cstring->string element)
+	   (ffi.argv->strings attributes))))
+
+;;; --------------------------------------------------------------------
+
+  (when #f
+    (doit "<!DOCTYPE toys [
+             <!ELEMENT ball EMPTY>
+             <!ATTLIST ball colour CDATA #REQUIRED>
+           ]>
+           <toys><ball colour='red' /></toys>"))
+
+  (when #f
+    (doit "<!DOCTYPE toys [
+             <!ELEMENT ball EMPTY>
+             <!ATTLIST ball colour CDATA #IMPLIED>
+           ]>
+           <toys><ball colour='red'/></toys>"))
+
+  (when #f
+    (doit "<!DOCTYPE toys [
+             <!ELEMENT ball EMPTY>
+             <!ATTLIST ball colour CDATA #FIXED 'red'>
+           ]>
+           <toys><ball/></toys>"))
+
+  (when #f
+    (doit "<!DOCTYPE toys [
+             <!ELEMENT ball EMPTY>
+             <!ATTLIST ball colour (red|blue|yellow) #REQUIRED>
+           ]>
+           <toys><ball colour='red' /></toys>"))
+
+  (when #f
+    (doit "<!DOCTYPE toys [
+             <!ELEMENT ball EMPTY>
+             <!ATTLIST ball colour CDATA 'red'>
            ]>
            <toys><ball/></toys>"))
 
@@ -862,41 +936,5 @@
     (doit (string->utf8 "<toys><ball colour='yellow'/></toys>")))
 
   #t)
-
-
-;;;; DTD attributes list
-
-(when #f
-  (let ()
-
-    (define xml-utf8
-      (string->utf8
-       "<!DOCTYPE spiffy [
-         <!ELEMENT ball EMPTY>
-         <!ATTLIST ball colour CDATA #REQUIRED>
-       ]>
-       <spiffy><ball colour='red' /></spiffy>"))
-
-    (define (scheme-callback user-data element-name attribute-name attribute-type default-value required?)
-      (let ((element-name	(ffi.cstring->string element-name))
-	    (attribute-name	(ffi.cstring->string attribute-name))
-	    (attribute-type	(ffi.cstring->string attribute-type))
-	    (default-value	(if (ffi.pointer-null? default-value)
-				    'NULL
-				  (ffi.cstring->string default-value))))
-	(pretty-print (list element-name attribute-name attribute-type default-value required?))))
-
-    (let ((parser	(XML_ParserCreate 'UTF-8))
-	  (cb		(XML_AttlistDeclHandler scheme-callback)))
-      (XML_SetAttlistDeclHandler parser cb)
-      (if (= XML_STATUS_OK (XML_Parse parser xml-utf8 #f #t))
-	  (display "success\n")
-	(let ((code (XML_GetErrorCode parser)))
-	  (printf "error: ~a\n" (latin1->string (XML_ErrorString code)))))
-      (ffi.free-c-callback cb))
-
-    (flush-output-port (current-output-port))
-
-    #f))
 
 ;;; end of file

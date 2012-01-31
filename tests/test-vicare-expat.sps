@@ -943,26 +943,37 @@
 
 (parametrise ((check-test-name	'dtd-attlist-handler))
 
-  (define (scheme-callback user-data element-name attribute-name
-			   attribute-type default-value required?)
-    (add-result (list 'attlist
-		      (ffi.cstring->string element-name)
-		      (ffi.cstring->string attribute-name)
-		      (ffi.cstring->string attribute-type)
-		      (if (ffi.pointer-null? default-value)
-			  'no-value
-			(ffi.cstring->string default-value))
-		      required?)))
-
   (define (doit xml)
     (with-result
-     (let* ((xml-utf8	(string->utf8 xml))
-	    (parser	(XML_ParserCreate 'UTF-8))
-	    (cb		(XML_AttlistDeclHandler scheme-callback)))
-       (XML_SetAttlistDeclHandler parser cb)
+     (let* ((xml-utf8		(string->utf8 xml))
+	    (parser		(XML_ParserCreate))
+	    (dtd-attlist	(XML_AttlistDeclHandler dtd-attlist-callback))
+	    (elm-start		(XML_StartElementHandler elm-start-callback)))
+       (XML_SetAttlistDeclHandler parser dtd-attlist)
+       (XML_SetStartElementHandler parser elm-start)
        (let ((rv (XML_Parse parser xml-utf8 #f #t)))
-	 (ffi.free-c-callback cb)
+	 (%print-parser-error-maybe parser rv)
+	 (ffi.free-c-callback dtd-attlist)
+	 (ffi.free-c-callback elm-start)
 	 rv))))
+
+  (define (dtd-attlist-callback user-data element-name attribute-name
+				attribute-type default-value required?)
+    (add-result
+     (list 'dtd-attlist
+	   (ffi.cstring->string element-name)
+	   (ffi.cstring->string attribute-name)
+	   (ffi.cstring->string attribute-type)
+	   (if (ffi.pointer-null? default-value)
+	       'no-value
+	     (ffi.cstring->string default-value))
+	   (fxpositive? required?))))
+
+  (define (elm-start-callback data element attributes)
+    (add-result
+     (list 'element-start
+	   (ffi.cstring->string element)
+	   (ffi.argv->strings attributes))))
 
 ;;; --------------------------------------------------------------------
 
@@ -973,16 +984,31 @@
              ]>
              <toys><ball colour='red' /></toys>")
     => (list XML_STATUS_OK
-	     '((attlist "ball" "colour" "CDATA" no-value 1))))
+	     '((dtd-attlist "ball" "colour" "CDATA" no-value #t)
+	       (element-start "toys" ())
+	       (element-start "ball" ("colour" "red")))))
 
   (check
       (doit "<!DOCTYPE toys [
                <!ELEMENT ball EMPTY>
                <!ATTLIST ball colour CDATA #IMPLIED>
              ]>
-             <toys><ball colour='red' /></toys>")
+             <toys><ball colour='red'/></toys>")
     => (list XML_STATUS_OK
-	     '((attlist "ball" "colour" "CDATA" no-value 0))))
+	     '((dtd-attlist "ball" "colour" "CDATA" no-value #f)
+	       (element-start "toys" ())
+	       (element-start "ball" ("colour" "red")))))
+
+  (check
+      (doit "<!DOCTYPE toys [
+               <!ELEMENT ball EMPTY>
+               <!ATTLIST ball colour CDATA #FIXED 'red'>
+             ]>
+             <toys><ball/></toys>")
+    => (list XML_STATUS_OK
+	     '((dtd-attlist "ball" "colour" "CDATA" "red" #t)
+	       (element-start "toys" ())
+	       (element-start "ball" ("colour" "red")))))
 
   (check	;enumeration type
       (doit "<!DOCTYPE toys [
@@ -991,7 +1017,9 @@
              ]>
              <toys><ball colour='red' /></toys>")
     => (list XML_STATUS_OK
-	     '((attlist "ball" "colour" "(red|blue|yellow)" no-value 1))))
+	     '((dtd-attlist "ball" "colour" "(red|blue|yellow)" no-value #t)
+	       (element-start "toys" ())
+	       (element-start "ball" ("colour" "red")))))
 
   #t)
 
