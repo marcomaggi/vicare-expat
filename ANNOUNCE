@@ -1,4 +1,4 @@
-Subject: [announce] Vicare/Expat revision 0.1d0
+Subject: [announce] Vicare/Expat revision 1.0b0
 
 			      Vicare/Expat
 			      ============
@@ -89,7 +89,7 @@ Notes for revision 0.1d0
     (let ((text (ffi.cstring->string cstr)))
       (pretty-print (list 'comment text))))
 
-  (let ((parser   (XML_ParserCreate 'UTF-8))
+  (let ((parser   (XML_ParserCreate))
         (start    (XML_StartElementHandler  start-callback))
         (end      (XML_EndElementHandler    end-callback))
         (cdata    (XML_CharacterDataHandler cdata-callback))
@@ -126,6 +126,9 @@ which prints:
   (end "beta")
   (end "thing")
   (end "stuff")
+
+* The documentation mentions the  Nausicaa/Expat package, which has been
+  not yet released to support this backend.
 
 
 ### end of file
