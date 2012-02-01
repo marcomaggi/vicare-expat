@@ -47,7 +47,7 @@ and also online:
 Expat must be compiled to handle UTF-8 strings.
 
 
-Notes for revision 0.1d0
+Notes for revision 1.0b0
 ------------------------
 
 * Here is an example program:
