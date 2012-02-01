@@ -98,6 +98,7 @@ ik_expat_set_external_entity_ref_handler_arg (ikptr s_parser, ikptr s_pointer)
   XML_SetExternalEntityRefHandlerArg(EX_PARSER(s_parser), IK_POINTER_DATA_VOIDP(s_pointer));
   return void_object;
 }
+#if 0 /* interface not implemented */
 ikptr
 ik_expat_set_unknown_encoding_handler (ikptr s_parser, ikptr s_callback, ikptr s_pointer)
 {
@@ -105,6 +106,7 @@ ik_expat_set_unknown_encoding_handler (ikptr s_parser, ikptr s_callback, ikptr s
 				IK_POINTER_DATA_VOIDP(s_pointer));
   return void_object;
 }
+#endif
 ikptr
 ik_expat_free_content_model (ikptr s_parser, ikptr s_model)
 /* Free   the  data   referenced  by   the  "model"   argument   to  the

@@ -1057,4 +1057,62 @@
 
   #t)
 
+
+;;;; skipped entity handler
+
+(let ()
+
+  (define (doit xml)
+    (let ((xml-utf8	(string->utf8 xml))
+	  (parser	(XML_ParserCreate))
+	  (skip-ent	(XML_SkippedEntityHandler skipped-entity-callback)))
+      (XML_SetSkippedEntityHandler parser skip-ent)
+      (XML_Parse parser xml-utf8 #f #t)
+      (ffi.free-c-callback skip-ent)
+      (flush-output-port (current-output-port))))
+
+  (define (skipped-entity-callback data entity-name is-parameter-entity)
+    (pretty-print
+     (list 'skipped-entity
+	   (ffi.cstring->string entity-name)
+	   (fxpositive? is-parameter-entity))))
+
+;;; --------------------------------------------------------------------
+
+  (when #f
+    (doit "<?xml version='1.0' standalone='no'?>
+           <!DOCTYPE thing SYSTEM 'http://localhost/thing'>
+           <thing>&ciao;</thing>"))
+
+  #t)
+
+
+;;;; processing instruction handler
+
+(let ()
+
+  (define (doit xml)
+    (let ((xml-utf8	(string->utf8 xml))
+	  (parser	(XML_ParserCreate))
+	  (proc-inst	(XML_ProcessingInstructionHandler processing-instruction-callback)))
+      (XML_SetProcessingInstructionHandler parser proc-inst)
+      (XML_Parse parser xml-utf8 #f #t)
+      (ffi.free-c-callback proc-inst)
+      (flush-output-port (current-output-port))))
+
+  (define (processing-instruction-callback user-data target data)
+    (pretty-print
+     (list 'processing-instruction
+	   (ffi.cstring->string target)
+	   (ffi.cstring->string data))))
+
+;;; --------------------------------------------------------------------
+
+  (when #f
+    (doit "<?xml version='1.0' standalone='no'?>
+           <!DOCTYPE thing SYSTEM 'http://localhost/thing'>
+           <thing><?scheme (display 123) ?></thing>"))
+
+  #t)
+
 ;;; end of file

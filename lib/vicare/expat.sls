@@ -90,7 +90,7 @@
     XML_SetStartDoctypeDeclHandler
     XML_SetStartElementHandler
     XML_SetStartNamespaceDeclHandler
-    XML_SetUnknownEncodingHandler
+;;;XML_UnknownEncodingHandler	;interface not implemented
     XML_SetUnparsedEntityDeclHandler
     XML_SetXmlDeclHandler
 
@@ -118,7 +118,7 @@
     XML_StartDoctypeDeclHandler
     XML_StartElementHandler
     XML_StartNamespaceDeclHandler
-    XML_UnknownEncodingHandler
+;;;XML_UnknownEncodingHandler	;interface not implemented
     XML_UnparsedEntityDeclHandler
     XML_XmlDeclHandler
 
@@ -222,7 +222,7 @@
 						   "XML_FINISHED")
 						  ((= status XML_SUSPENDED)
 						   "XML_SUSPENDED")
-						  (else status #;"<unknown status>"))))
+						  (else status))))
   (%display " final-buffer?=")	(%display (xml-parser-status-final-buffer? S))
   (%display "]"))
 
@@ -387,13 +387,13 @@
        (pointer	pointer))
     (foreign-call "ik_expat_set_external_entity_ref_handler_arg" parser pointer)))
 
-(define (XML_SetUnknownEncodingHandler parser callback pointer)
-  (define who 'XML_SetUnknownEncodingHandler)
-  (with-arguments-validation (who)
-      ((parser		parser)
-       (callback	callback)
-       (pointer		pointer))
-    (foreign-call "ik_expat_set_unknown_encoding_handler" parser callback pointer)))
+;; (define (XML_SetUnknownEncodingHandler parser callback pointer)
+;;   (define who 'XML_SetUnknownEncodingHandler)
+;;   (with-arguments-validation (who)
+;;       ((parser		parser)
+;;        (callback	callback)
+;;        (pointer		pointer))
+;;     (foreign-call "ik_expat_set_unknown_encoding_handler" parser callback pointer)))
 
 ;;; --------------------------------------------------------------------
 
@@ -558,12 +558,14 @@
 (define XML_SkippedEntityHandler
   (ffi.make-c-callback-maker 'void '(pointer pointer signed-int)))
 
+;;; interface not implemented
+;;
 ;; typedef int (XMLCALL *XML_UnknownEncodingHandler) (
 ;;                                     void *encodingHandlerData,
 ;;                                     const XML_Char *name,
 ;;                                     XML_Encoding *info);
-(define XML_UnknownEncodingHandler
-  (ffi.make-c-callback-maker 'signed-int '(pointer pointer pointer)))
+;; (define XML_UnknownEncodingHandler
+;;   (ffi.make-c-callback-maker 'signed-int '(pointer pointer pointer)))
 
 
 ;;;; parsers

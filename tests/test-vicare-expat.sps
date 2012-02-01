@@ -1413,6 +1413,68 @@
   #t)
 
 
+(parametrise ((check-test-name	'skipped-entity-handler))
+
+  (define (doit xml)
+    (with-result
+     (let ((xml-utf8	(string->utf8 xml))
+	   (parser	(XML_ParserCreate))
+	   (skip-ent	(XML_SkippedEntityHandler skipped-entity-callback)))
+       (XML_SetSkippedEntityHandler parser skip-ent)
+       (let ((rv (XML_Parse parser xml-utf8 #f #t)))
+	 (%print-parser-error-maybe parser rv)
+	 (ffi.free-c-callback skip-ent)
+	 rv))))
+
+  (define (skipped-entity-callback data entity-name is-parameter-entity)
+    (add-result
+     (list 'skipped-entity
+	   (ffi.cstring->string entity-name)
+	   (fxpositive? is-parameter-entity))))
+
+;;; --------------------------------------------------------------------
+
+  (check
+      (doit "<?xml version='1.0' standalone='no'?>
+             <!DOCTYPE thing SYSTEM 'http://localhost/thing'>
+             <thing>&ciao;</thing>")
+    => `(,XML_STATUS_OK
+	 ((skipped-entity "ciao" #f))))
+
+  #t)
+
+
+(parametrise ((check-test-name	'processing-instruction-handler))
+
+  (define (doit xml)
+    (with-result
+     (let ((xml-utf8	(string->utf8 xml))
+	   (parser	(XML_ParserCreate))
+	   (proc-inst	(XML_ProcessingInstructionHandler processing-instruction-callback)))
+       (XML_SetProcessingInstructionHandler parser proc-inst)
+       (let ((rv (XML_Parse parser xml-utf8 #f #t)))
+	 (%print-parser-error-maybe parser rv)
+	 (ffi.free-c-callback proc-inst)
+	 rv))))
+
+  (define (processing-instruction-callback user-data target data)
+    (add-result
+     (list 'processing-instruction
+	   (ffi.cstring->string target)
+	   (ffi.cstring->string data))))
+
+;;; --------------------------------------------------------------------
+
+  (check
+      (doit "<?xml version='1.0' standalone='no'?>
+             <!DOCTYPE thing SYSTEM 'http://localhost/thing'>
+             <thing><?scheme (display 123) ?></thing>")
+    => `(,XML_STATUS_OK
+	 ((processing-instruction "scheme" "(display 123) "))))
+
+  #t)
+
+
 ;;;; done
 
 (check-report)
