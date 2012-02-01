@@ -65,7 +65,7 @@ installed Expat library.  To install Vicare/Expat do this:
    $ cd vicare-expat-0.1.0
    $ mkdir "=build"
    $ cd "=build"
-   $ ../configure
+   $ ../configure --enable-shared --disable-static
    $ make
    $ make check
    $ make install
