@@ -2,7 +2,7 @@ dnl @configure_input@
 dnl
 
 AC_PREREQ([2.68])
-AC_INIT([vicare-expat],[0.1d0],[marco.maggi-ipsu@poste.it])
+AC_INIT([vicare-expat],[1.0b0],[marco.maggi-ipsu@poste.it])
 AC_CANONICAL_TARGET
 AM_INIT_AUTOMAKE
 LT_PREREQ([2.2])
