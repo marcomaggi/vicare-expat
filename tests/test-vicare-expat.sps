@@ -295,7 +295,7 @@
 			   (ffi.argv->strings attributes)))
 	 (let ((status (XML_GetParsingStatus parser)))
 	   (unless (= XML_STATUS_SUSPENDED
-		      (xml-parser-status-parsing status))
+		      (XML_ParsingStatus-parsing status))
 	     (add-result (list 'stop-rv (XML_StopParser parser #f))))))
        (let* ((parser	(XML_ParserCreate))
 	      (start	(XML_StartElementHandler start-callback)))

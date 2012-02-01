@@ -123,8 +123,8 @@
     XML_XmlDeclHandler
 
     ;; parsing status object
-    make-xml-parser-status		xml-parser-status?
-    xml-parser-status-parsing		xml-parser-status-final-buffer?
+    make-XML_ParsingStatus		XML_ParsingStatus?
+    XML_ParsingStatus-parsing		XML_ParsingStatus-final-buffer?
 
     ;; DTD element declaration model structure
     make-XML_Content			XML_Content?
@@ -206,14 +206,14 @@
 
 ;;; --------------------------------------------------------------------
 
-(define-struct xml-parser-status
+(define-struct XML_ParsingStatus
   (parsing final-buffer?))
 
-(define (%struct-xml-parser-status-printer S port sub-printer)
+(define (%struct-XML_ParsingStatus-printer S port sub-printer)
   (define-inline (%display thing)
     (display thing port))
-  (%display "#[expat:xml-parser-status")
-  (%display " parsing=")	(%display (let ((status (xml-parser-status-parsing S)))
+  (%display "#[expat:XML_ParsingStatus")
+  (%display " parsing=")	(%display (let ((status (XML_ParsingStatus-parsing S)))
 					    (cond ((= status XML_INITIALIZED)
 						   "XML_INITIALIZED")
 						  ((= status XML_PARSING)
@@ -223,7 +223,7 @@
 						  ((= status XML_SUSPENDED)
 						   "XML_SUSPENDED")
 						  (else status))))
-  (%display " final-buffer?=")	(%display (xml-parser-status-final-buffer? S))
+  (%display " final-buffer?=")	(%display (XML_ParsingStatus-final-buffer? S))
   (%display "]"))
 
 ;;; --------------------------------------------------------------------
@@ -733,7 +733,7 @@
   (define who 'XML_GetParsingStatus)
   (with-arguments-validation (who)
       ((parser	parser))
-    (let ((status (make-xml-parser-status #f #f)))
+    (let ((status (make-XML_ParsingStatus #f #f)))
       (foreign-call "ik_expat_get_parsing_status" parser status)
       status)))
 
@@ -824,7 +824,7 @@
 
 ;;;; done
 
-(set-rtd-printer! (type-descriptor xml-parser-status) %struct-xml-parser-status-printer)
+(set-rtd-printer! (type-descriptor XML_ParsingStatus) %struct-XML_ParsingStatus-printer)
 (set-rtd-printer! (type-descriptor XML_Content)       %struct-XML_Content-printer)
 
 )

@@ -790,7 +790,7 @@ library.  In all the descriptions: the @var{parser} argument must be a
 pointer object referencing the parser.
 
 
-@deftp {Structure Type} xml-parsing-status
+@deftp {Structure Type} XML_ParsingStatus
 @expatref{api parse, XML_ParsingStatus}.  Structure representing the
 current parser status as mirror of the C data structure
 @code{XML_ParsingStatus}.  It has the following fields:
@@ -805,25 +805,25 @@ A boolean.
 @end deftp
 
 
-@defun make-xml-parsing-status @var{code} @var{boolean}
-Build and return a new instance of @code{xml-parsing-status}.
+@defun make-XML_ParsingStatus @var{code} @var{boolean}
+Build and return a new instance of @code{XML_ParsingStatus}.
 @end defun
 
 
-@defun xml-parsing-status? @var{obj}
-Return true if @var{obj} is an instance of @code{xml-parsing-status}.
+@defun XML_ParsingStatus? @var{obj}
+Return true if @var{obj} is an instance of @code{XML_ParsingStatus}.
 @end defun
 
 
-@defun xml-parsing-status-parsing @var{stru}
-@defunx xml-parsing-status-final-buffer? @var{stru}
-Accessors for the fields of @code{xml-parsing-status} instances.
+@defun XML_ParsingStatus-parsing @var{stru}
+@defunx XML_ParsingStatus-final-buffer? @var{stru}
+Accessors for the fields of @code{XML_ParsingStatus} instances.
 @end defun
 
 
 @defun XML_GetParsingStatus @var{parser}
 @expatref{api parse, XML_GetParsingStatus}.  Acquire the current status
-of the parser and return an instance of @code{xml-parsing-status}.
+of the parser and return an instance of @code{XML_ParsingStatus}.
 @end defun
 
 @c page
@@ -934,7 +934,7 @@ intgers, and so on.
 
 @menu
 * handlers xml decl::           @axml{} declaration handler.
-* handlers standalone::         Non--standalone handler.
+* handlers standalone::         Non-standalone handler.
 * handlers dtd doctype::        @dtd{} document type declaration.
 * handlers dtd element::        @dtd{} element declaration.
 * handlers dtd attlist::        @dtd{} attribute lists declaration.
@@ -961,8 +961,8 @@ library.
 
 @defun XML_XmlDeclHandler @var{scheme-callback}
 @defunx XML_SetXmlDeclHandler @var{parser} @var{c-callback}
-@expatref{api misc, XML_XmlDeclHandler}.  Maker and setter for @axml{}
-declaration handlers and text declaration handlers.
+@expatref{api handlers xml decl, XML_XmlDeclHandler}.  Maker and setter
+for @axml{} declaration handlers and text declaration handlers.
 @end defun
 
 
@@ -1130,8 +1130,8 @@ library.
 
 @defun XML_NotStandaloneHandler @var{scheme-callback}
 @defunx XML_SetNotStandaloneHandler @var{parser} @var{c-callback}
-@expatref{api handlers, XML_NotStandaloneHandler}.  Maker and setter for
-non--standalone declaration handler.
+@expatref{api handlers standalone, XML_NotStandaloneHandler}.  Maker and
+setter for non--standalone declaration handler.
 @end defun
 
 
@@ -1278,21 +1278,22 @@ library.
 
 @defun XML_StartDoctypeDeclHandler @var{scheme-callback}
 @defunx XML_SetStartDoctypeDeclHandler @var{parser} @var{c-callback}
-@expatref{api misc, XML_StartDoctypeDeclHandler}.  Maker and setter for
-the start of document type declaration handlers.
+@expatref{api handlers dtd doctype, XML_StartDoctypeDeclHandler}.  Maker
+and setter for the start of document type declaration handlers.
 @end defun
 
 
 @defun XML_EndDoctypeDeclHandler @var{scheme-callback}
 @defunx XML_SetEndDoctypeDeclHandler @var{parser} @var{c-callback}
-@expatref{api misc, XML_EndDoctypeDeclHandler}.  Maker and setter for
-the end of document type declaration handlers.
+@expatref{api handlers dtd doctype, XML_EndDoctypeDeclHandler}.  Maker
+and setter for the end of document type declaration handlers.
 @end defun
 
 
 @defun XML_SetDoctypeDeclHandler @var{parser} @var{start-c-callback} @var{end-c-callback}
-@expatref{api misc, XML_SetDoctypeDeclHandler}.  Maker and setter for
-both the start and end of document type declaration handlers.
+@expatref{api handlers dtd doctype, XML_SetDoctypeDeclHandler}.  Maker
+and setter for both the start and end of document type declaration
+handlers.
 @end defun
 
 
@@ -1623,8 +1624,8 @@ library.
 
 @defun XML_AttlistDeclHandler @var{scheme-callback}
 @defunx XML_SetAttlistDeclHandler @var{parser} @var{c-callback}
-@expatref{api handlers, XML_AttlistDeclHandler}.  Maker and setter for
-attributes list @dtd{} declaration handlers.
+@expatref{api handlers dtd attlist, XML_AttlistDeclHandler}.  Maker and
+setter for attributes list @dtd{} declaration handlers.
 @end defun
 
 
@@ -1733,8 +1734,8 @@ library.
 
 @defun XML_NotationDeclHandler @var{scheme-callback}
 @defunx XML_SetNotationDeclHandler @var{parser} @var{c-callback}
-@expatref{api handlers, XML_NotationDeclHandler}.  Maker and setter for
-@dtd{} notation handlers.
+@expatref{api handlers dtd notation, XML_NotationDeclHandler}.  Maker
+and setter for @dtd{} notation handlers.
 @end defun
 
 
@@ -1820,16 +1821,16 @@ library.
 
 @defun XML_EntityDeclHandler @var{scheme-callback}
 @defunx XML_SetEntityDeclHandler @var{parser} @var{c-callback}
-@expatref{api handlers, XML_EntityDeclHandler}.  Maker and setter for
-the entity @dtd{} declaration handler.
+@expatref{api handlers dtd entity, XML_EntityDeclHandler}.  Maker and
+setter for the entity @dtd{} declaration handler.
 @end defun
 
 
 @defun XML_UnparsedEntityDeclHandler @var{scheme-callback}
 @defunx XML_SetUnparsedEntityDeclHandler @var{parser} @var{c-callback}
-@expatref{api handlers, XML_UnparsedEntityDeclHandler}.  Maker and
-setter for unparsed entity @dtd{} declaration handler.  Usage of these
-bindings is deprecated.
+@expatref{api handlers dtd entity, XML_UnparsedEntityDeclHandler}.
+Maker and setter for unparsed entity @dtd{} declaration handler.  Usage
+of these bindings is deprecated.
 @end defun
 
 
@@ -1996,21 +1997,21 @@ library.
 
 @defun XML_StartElementHandler @var{scheme-callback}
 @defunx XML_SetStartElementHandler @var{parser} @var{c-callback}
-@expatref{api handlers, XML_StartElementHandler}.  Maker and setter for
-the element start handler.
+@expatref{api handlers element, XML_StartElementHandler}.  Maker and
+setter for the element start handler.
 @end defun
 
 
 @defun XML_EndElementHandler @var{scheme-callback}
 @defunx XML_SetEndElementHandler @var{parser} @var{c-callback}
-@expatref{api handlers, XML_EndElementHandler}.  Maker and setter for
-the element end handler.
+@expatref{api handlers element, XML_EndElementHandler}.  Maker and
+setter for the element end handler.
 @end defun
 
 
 @defun XML_SetElementHandler @var{parser} @var{start-c-callback} @var{end-c-callback}
-@expatref{api handlers, XML_StartElementHandler}.  Setter for both the
-element start and end handlers.
+@expatref{api handlers element, XML_SetElementHandler}.  Setter for both
+the element start and end handlers.
 @end defun
 
 
@@ -2089,9 +2090,9 @@ library.
 
 @defun XML_CharacterDataHandler @var{scheme-callback}
 @defunx XML_SetCharacterDataHandler @var{parser} @var{c-callback}
-@expatref{api handlers, XML_CharacterDataHandler}.  Maker and setter for
-the character data handler.  Such handlers may be called multiple times
-to process a single character data string.
+@expatref{api handlers char data, XML_CharacterDataHandler}.  Maker and
+setter for the character data handler.  Such handlers may be called
+multiple times to process a single character data string.
 @end defun
 
 
@@ -2152,8 +2153,8 @@ library.
 
 @defun XML_CommentHandler @var{scheme-callback}
 @defunx XML_SetCommentHandler @var{parser} @var{c-callback}
-@expatref{api handlers, XML_CommentHandler}.  Maker and setter for the
-comment handler.
+@expatref{api handlers comment, XML_CommentHandler}.  Maker and setter
+for the comment handler.
 @end defun
 
 
@@ -2211,21 +2212,21 @@ library.
 
 @defun XML_StartCdataSectionHandler @var{scheme-callback}
 @defunx XML_SetStartCdataSectionHandler @var{parser} @var{c-callback}
-@expatref{api handlers, XML_StartCdataSectionHandler}.  Maker and setter
-for the cdata start handler.
+@expatref{api handlers cdata, XML_StartCdataSectionHandler}.  Maker and
+setter for the cdata start handler.
 @end defun
 
 
 @defun XML_EndCdataSectionHandler @var{scheme-callback}
 @defunx XML_SetEndCdataSectionHandler @var{parser} @var{c-callback}
-@expatref{api handlers, XML_EndCdataSectionHandler}.  Maker and setter
-for the cdata end handler.
+@expatref{api handlers cdata, XML_EndCdataSectionHandler}.  Maker and
+setter for the cdata end handler.
 @end defun
 
 
 @defun XML_SetCdataSectionHandler @var{parser} @var{start-c-callback} @var{end-c-callback}
-@expatref{api handlers, XML_SetCdataSectionHandler}.  Setter for both
-the cdata start and end handlers.
+@expatref{api handlers cdata, XML_SetCdataSectionHandler}.  Setter for
+both the cdata start and end handlers.
 @end defun
 
 
@@ -2284,23 +2285,23 @@ All the following bindings are exported by the @library{vicare expat}
 library.
 
 
-@defun XML_EndNamespaceDeclHandler @var{scheme-callback}
-@defunx XML_SetEndNamespaceDeclHandler @var{parser} @var{c-callback}
-@expatref{api handlers, XML_EndNamespaceDeclHandler}.  Maker and setter
-for the end--of--namespace handler.
+@defun XML_StartNamespaceDeclHandler @var{scheme-callback}
+@defunx XML_SetStartNamespaceDeclHandler @var{parser} @var{c-callback}
+@expatref{api handlers namespace, XML_StartNamespaceDeclHandler}.  Maker
+and setter for the start--of--namespace handler.
 @end defun
 
 
-@defun XML_StartNamespaceDeclHandler @var{scheme-callback}
-@defunx XML_SetStartNamespaceDeclHandler @var{parser} @var{c-callback}
-@expatref{api handlers, XML_StartNamespaceDeclHandler}.  Maker and
-setter for the start--of--namespace handler.
+@defun XML_EndNamespaceDeclHandler @var{scheme-callback}
+@defunx XML_SetEndNamespaceDeclHandler @var{parser} @var{c-callback}
+@expatref{api handlers namespace, XML_EndNamespaceDeclHandler}.  Maker
+and setter for the end--of--namespace handler.
 @end defun
 
 
 @defun XML_SetNamespaceDeclHandler @var{parser} @var{start-c-callback} @var{end-c-callback}
-@expatref{api handlers, XML_SetNamespaceDeclHandler}.  Setter for both
-the start and end of namespace handlers.
+@expatref{api handlers namespace, XML_SetNamespaceDeclHandler}.  Setter
+for both the start and end of namespace handlers.
 @end defun
 
 
@@ -2423,21 +2424,21 @@ library.
 
 @defun XML_DefaultHandler @var{scheme-callback}
 @defunx XML_SetDefaultHandler @var{parser} @var{c-callback}
-@expatref{api handlers, XML_DefaultHandler}.  Maker and setter for the
-default handler.
+@expatref{api handlers default, XML_DefaultHandler}.  Maker and setter
+for the default handler.
 @end defun
 
 
 @defun XML_SetDefaultHandlerExpand @var{parser} @var{c-callback}
-@expatref{api handlers, XML_SetDefaultHandlerExpand}.  Alternative
-setter for the default handler which does not inhibit the expansion of
-internal entity references.
+@expatref{api handlers default, XML_SetDefaultHandlerExpand}.
+Alternative setter for the default handler which does not inhibit the
+expansion of internal entity references.
 @end defun
 
 
 @defun XML_DefaultCurrent @var{parser}
-@expatref{api misc, XML_DefaultCurrent}.  This function can be called
-within a handler for a start element, end element, processing
+@expatref{api handlers default, XML_DefaultCurrent}.  This function can
+be called within a handler for a start element, end element, processing
 instruction or character data.  It causes the corresponding markup to be
 passed to the default handler set by @cfunc{XML_SetDefaultHandler} or
 @cfunc{XML_SetDefaultHandlerExpand}.  It does nothing if there is not a
@@ -2511,8 +2512,8 @@ library.
 
 @defun XML_SkippedEntityHandler @var{scheme-callback}
 @defunx XML_SetSkippedEntityHandler @var{parser} @var{c-callback}
-@expatref{api handlers, XML_SkippedEntityHandler}.  Maker and setter for
-the skipped entity handlers.
+@expatref{api handlers entity, XML_SkippedEntityHandler}.  Maker and
+setter for the skipped entity handlers.
 @end defun
 
 
@@ -2564,8 +2565,8 @@ library.
 
 @defun XML_ProcessingInstructionHandler @var{scheme-callback}
 @defunx XML_SetProcessingInstructionHandler @var{parser} @var{c-callback}
-@expatref{api handlers, XML_ProcessingInstructionHandler}.  Maker and
-setter for processing instruction handlers.
+@expatref{api handlers procinst, XML_ProcessingInstructionHandler}.
+Maker and setter for processing instruction handlers.
 @end defun
 
 
