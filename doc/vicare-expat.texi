@@ -171,6 +171,11 @@ and also online:
 
 @center @url{http://marcomaggi.github.com/docs/expat.html}
 
+@noindent
+the @axml{} 1.0 specification is available from:
+
+@center @url{http://www.w3.org/TR/REC-xml/}
+
 Expat must be compiled to handle @utf{}-8 strings.
 
 The package installs a C language library implementing wrapper C
@@ -190,6 +195,9 @@ XML_SetUnknownEncodingHandler
 additionally the library @library{vicare expat constants} exports one
 binding for each constant value defined in the C language header
 @file{expat.h}.
+
+This document contains only a brief description of the functions: refer
+to the Expat's documentation for details.
 
 Here is an example program:
 
@@ -231,7 +239,7 @@ Here is an example program:
   (let ((text (ffi.cstring->string cstr)))
     (pretty-print (list 'comment text))))
 
-(let ((parser   (XML_ParserCreate 'UTF-8))
+(let ((parser   (XML_ParserCreate))
       (start    (XML_StartElementHandler  start-callback))
       (end      (XML_EndElementHandler    end-callback))
       (cdata    (XML_CharacterDataHandler cdata-callback))
@@ -305,15 +313,15 @@ a pointer object referencing it.  Values returned by this function must
 be finalised with @func{XML_ParserFree}; this will happen automatically
 when the pointer object is garbage collected.
 
-The optional @var{encoding} must be one of the Scheme symbols:
-@code{UTF-8}, @code{UTF-16}, @code{ISO-8859-1}, @code{US-ASCII} or
-@false{}; when @var{encoding} is not used or it is @false{}: the parser
-will honour the encoding specification in the document.
+The optional @var{encoding} must be @false{} or one of the Scheme
+symbols: @code{UTF-8}, @code{UTF-16}, @code{ISO-8859-1},
+@code{US-ASCII}; when @var{encoding} is not used or it is @false{}: the
+parser will honour the encoding specification in the document.
 @end defun
 
 
 @defun XML_ParserFree @var{parser}
-@expatref{api create, XML_ParserFree}.  Release all the resource
+@expatref{api create, XML_ParserFree}.  Release all the resources
 associated to the pointer object @var{parser}, then mutate @var{parser}
 to represent the @cnull{} pointer; return unspecified values.  It is
 safe to apply this function multiple times to the same @var{parser}
@@ -360,7 +368,7 @@ XML_PARAM_ENTITY_PARSING_ALWAYS
 
 
 @defun XML_ExternalEntityParserCreate @var{parser} @var{context} @var{encoding}
-@expatref{api create, XML_ExternalEntityParserCreate}.  Build a new
+@expatref{api external, XML_ExternalEntityParserCreate}.  Build a new
 parser to parse an external entity for @var{parser} and return a pointer
 object referencing it.  Values returned by this function must be
 finalised with @func{XML_ParserFree}; this will happen automatically
@@ -373,7 +381,7 @@ be a pointer object.  @var{encoding} is as in @func{XML_ParserCreate}.
 
 @defun XML_ExternalEntityRefHandler @var{scheme-callback}
 @defunx XML_SetExternalEntityRefHandler @var{parser} @var{c-callback}
-@expatref{api handlers, XML_ExternalEntityRefHandler}.  Maker and setter
+@expatref{api external, XML_ExternalEntityRefHandler}.  Maker and setter
 for external entity handler.
 @end defun
 
@@ -443,7 +451,7 @@ document; return a fixnum representing a status code.
 @var{buffer} must be a bytevector or a pointer object.  @var{buflen}
 must be @false{} or a non--negative exact integer in the range of the
 @code{int} C language type.  If @var{buffer} is a pointer: @var{buflen}
-must be an integer representing the number bytes to consume from the
+must be an integer representing the number of bytes to consume from the
 buffer; if @var{buffer} is a bytevector: @var{buflen} is ignored and the
 whole bytevector is consumed.
 

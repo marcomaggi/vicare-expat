@@ -266,7 +266,7 @@ ik_expat_parse (ikptr s_parser, ikptr s_buffer, ikptr s_buflen, ikptr s_is_final
     int		is_final = BOOLEAN_TO_INT(s_is_final);
     if (ik_is_pointer(s_buffer)) {
       buffer = IK_POINTER_DATA_VOIDP(s_buffer);
-      buflen = ik_integer_to_int(s_buflen);
+      buflen = (false_object == s_buflen)? 0 : ik_integer_to_int(s_buflen);
     } else { /* is bytevector */
       buffer = IK_BYTEVECTOR_DATA_CHARP(s_buffer);
       buflen = (int)IK_BYTEVECTOR_LENGTH(s_buffer);
