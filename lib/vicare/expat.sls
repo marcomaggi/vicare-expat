@@ -687,13 +687,17 @@
 
 ;;; --------------------------------------------------------------------
 
-(define (XML_Parse parser buffer buflen final?)
-  (define who 'XML_Parse)
-  (with-arguments-validation (who)
-      ((parser				parser)
-       (pointer/bytevector		buffer)
-       (false/non-negative-signed-int	buflen))
-    (foreign-call "ik_expat_parse" parser buffer buflen final?)))
+(define XML_Parse
+  (case-lambda
+   ((parser buffer buflen)
+    (XML_Parse parser buffer buflen #f))
+   ((parser buffer buflen final?)
+    (define who 'XML_Parse)
+    (with-arguments-validation (who)
+	((parser			parser)
+	 (pointer/bytevector		buffer)
+	 (false/non-negative-signed-int	buflen))
+      (foreign-call "ik_expat_parse" parser buffer buflen final?)))))
 
 (define (XML_GetBuffer parser buflen)
   (define who 'XML_GetBuffer)

@@ -63,6 +63,11 @@ Expat is available at:
 @center @url{http://expat.sourceforge.net/}
 
 @noindent
+the @axml{} 1.0 specification is available from:
+
+@center @url{http://www.w3.org/TR/REC-xml/}
+
+@noindent
 Copyright @copyright{} @value{COPYRIGHT_YEARS} by @value{AUTHOR} @value{AUTHOR_EMAIL}
 
 @quotation
@@ -430,7 +435,8 @@ library.  In all the descriptions: the @var{parser} argument must be a
 pointer object referencing the parser.
 
 
-@defun XML_Parse @var{parser} @var{buffer} @var{buflen} @var{final?}
+@defun XML_Parse @var{parser} @var{buffer} @var{buflen}
+@defunx XML_Parse @var{parser} @var{buffer} @var{buflen} @var{final?}
 @expatref{api parse, XML_Parse}.  Parse the next portion of the
 document; return a fixnum representing a status code.
 
@@ -442,7 +448,7 @@ buffer; if @var{buffer} is a bytevector: @var{buflen} is ignored and the
 whole bytevector is consumed.
 
 If @var{final?} is true: expect this buffer to contain the end of the
-document.
+document; @var{final?} defaults to @false{}.
 @end defun
 
 @c ------------------------------------------------------------
