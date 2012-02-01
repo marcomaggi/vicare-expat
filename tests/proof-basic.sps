@@ -452,6 +452,126 @@
   #t)
 
 
+;;;; DTD entity handler
+
+(let ()
+
+  (define (%false-or-string thing)
+    (if (ffi.pointer-null? thing)
+	#f
+      (ffi.cstring->string thing)))
+
+  (define (doit xml)
+    (let* ((xml-utf8	(string->utf8 xml))
+	   (parser	(XML_ParserCreate))
+	   (dtd-entity	(XML_EntityDeclHandler dtd-entity-callback))
+	   (elm-start	(XML_StartElementHandler elm-start-callback)))
+      (XML_SetBase parser (string->utf8 "http://localhost/"))
+      (XML_SetParamEntityParsing parser XML_PARAM_ENTITY_PARSING_ALWAYS)
+      (XML_SetEntityDeclHandler parser dtd-entity)
+      (XML_SetStartElementHandler parser elm-start)
+      (XML_Parse parser xml-utf8 #f #t)
+      (ffi.free-c-callback dtd-entity)
+      (ffi.free-c-callback elm-start)
+      (flush-output-port (current-output-port))))
+
+  (define (dtd-entity-callback data entity-name is-parameter-entity
+			       value value-length
+			       base system-id public-id
+			       notation-name)
+    (pretty-print
+     (list 'dtd-entity
+	   (%false-or-string entity-name)
+	   (fxpositive? is-parameter-entity)
+	   (if (ffi.pointer-null? value)
+	       #f
+	     (ffi.cstring->string value value-length))
+	   (%false-or-string base)
+	   (%false-or-string system-id)
+	   (%false-or-string public-id)
+	   (%false-or-string notation-name))))
+
+  (define (elm-start-callback data element attributes)
+    (pretty-print
+     (list 'element-start
+	   (ffi.cstring->string element)
+	   (ffi.argv->strings attributes))))
+
+;;; --------------------------------------------------------------------
+
+  (when #f	;general internal entity
+    (doit "<?xml version='1.0'?>
+           <!DOCTYPE thing [
+             <!ELEMENT thing EMPTY>
+             <!ATTLIST thing frob (a|b|c) #REQUIRED>
+             <!ENTITY stuff 'a'>
+           ]>
+           <thing frob='&stuff;'/>"))
+
+  (when #f	;general external entity, SYSTEM
+    (doit "<?xml version='1.0'?>
+           <!DOCTYPE thing [
+             <!ELEMENT thing EMPTY>
+             <!ENTITY stuff SYSTEM 'http://localhost/stuff'>
+           ]>
+           <thing/>"))
+
+  (when #f	;general external entity, PUBLIC
+    (doit "<?xml version='1.0'?>
+           <!DOCTYPE thing [
+             <!ELEMENT thing EMPTY>
+             <!ENTITY stuff PUBLIC 'The Stuff' 'http://localhost/stuff'>
+           ]>
+           <thing/>"))
+
+  (when #f	;general external entity, SYSTEM with notation
+    (doit "<?xml version='1.0'?>
+           <!DOCTYPE thing [
+             <!ELEMENT thing EMPTY>
+             <!NOTATION stuffer SYSTEM 'http://localhost/stuffer'>
+             <!ENTITY stuff SYSTEM 'http://localhost/stuff' NDATA stuffer>
+           ]>
+           <thing/>"))
+
+  (when #f	;general external entity, PUBLIC with notation
+    (doit "<?xml version='1.0'?>
+           <!DOCTYPE thing [
+             <!ELEMENT thing EMPTY>
+             <!NOTATION stuffer SYSTEM 'http://localhost/stuffer'>
+             <!ENTITY stuff PUBLIC 'The Stuff' 'http://localhost/stuff' NDATA stuffer>
+           ]>
+           <thing/>"))
+
+;;; --------------------------------------------------------------------
+
+  (when #f	;parameter internal entity
+    (doit "<?xml version='1.0'?>
+           <!DOCTYPE thing [
+             <!ENTITY % stuff 'a'>
+             <!ELEMENT thing EMPTY>
+             <!ATTLIST thing>
+           ]>
+           <thing/>"))
+
+  (when #f	;parameter external entity, SYSTEM
+    (doit "<?xml version='1.0'?>
+           <!DOCTYPE thing [
+             <!ELEMENT thing EMPTY>
+             <!ENTITY % stuff SYSTEM 'http://localhost/stuff'>
+           ]>
+           <thing/>"))
+
+  (when #f	;parameter external entity, PUBLIC
+    (doit "<?xml version='1.0'?>
+           <!DOCTYPE thing [
+             <!ELEMENT thing EMPTY>
+             <!ENTITY % stuff PUBLIC 'The Stuff' 'http://localhost/stuff'>
+           ]>
+           <thing/>"))
+
+  #t)
+
+
 ;;;; not standalone handler
 
 (let ()

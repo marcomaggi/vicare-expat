@@ -1104,11 +1104,13 @@
 	    (dtd-entity	(XML_EntityDeclHandler dtd-entity-callback))
 	    (elm-start	(XML_StartElementHandler elm-start-callback)))
        (XML_SetBase parser (string->utf8 "http://localhost/"))
+       (XML_SetParamEntityParsing parser XML_PARAM_ENTITY_PARSING_ALWAYS)
        (XML_SetEntityDeclHandler parser dtd-entity)
        (XML_SetStartElementHandler parser elm-start)
        (let ((rv (XML_Parse parser xml-utf8 #f #t)))
 	 (%print-parser-error-maybe parser rv)
 	 (ffi.free-c-callback dtd-entity)
+	 (ffi.free-c-callback elm-start)
 	 rv))))
 
   (define (dtd-entity-callback data entity-name is-parameter-entity
@@ -1135,7 +1137,7 @@
 
 ;;; --------------------------------------------------------------------
 
-  (check	;internal entity
+  (check	;general internal entity
       (doit "<?xml version='1.0'?>
              <!DOCTYPE thing [
                <!ELEMENT thing EMPTY>
@@ -1147,7 +1149,7 @@
 	 ((dtd-entity "stuff" #f "a" "http://localhost/" #f #f #f)
 	  (element-start "thing" ("frob" "a")))))
 
-  (check	;external entity, SYSTEM
+  (check	;general external entity, SYSTEM
       (doit "<?xml version='1.0'?>
              <!DOCTYPE thing [
                <!ELEMENT thing EMPTY>
@@ -1158,7 +1160,7 @@
 	 ((dtd-entity "stuff" #f #f "http://localhost/" "http://localhost/stuff" #f #f)
 	  (element-start "thing" ()))))
 
-  (check	;external entity, PUBLIC
+  (check	;general external entity, PUBLIC
       (doit "<?xml version='1.0'?>
              <!DOCTYPE thing [
                <!ELEMENT thing EMPTY>
@@ -1169,7 +1171,7 @@
 	 ((dtd-entity "stuff" #f #f "http://localhost/" "http://localhost/stuff" "The Stuff" #f)
 	  (element-start "thing" ()))))
 
-  (check	;external entity, SYSTEM with notation
+  (check	;general external entity, SYSTEM with notation
       (doit "<?xml version='1.0'?>
              <!DOCTYPE thing [
                <!ELEMENT thing EMPTY>
@@ -1181,7 +1183,7 @@
 	 ((dtd-entity "stuff" #f #f "http://localhost/" "http://localhost/stuff" #f "stuffer")
 	  (element-start "thing" ()))))
 
-  (check	;external entity, PUBLIC with notation
+  (check	;general external entity, PUBLIC with notation
       (doit "<?xml version='1.0'?>
              <!DOCTYPE thing [
                <!ELEMENT thing EMPTY>
@@ -1191,6 +1193,42 @@
              <thing/>")
     => `(,XML_STATUS_OK
 	 ((dtd-entity "stuff" #f #f "http://localhost/" "http://localhost/stuff" "The Stuff" "stuffer")
+	  (element-start "thing" ()))))
+
+;;; --------------------------------------------------------------------
+
+  (check	;parameter internal entity
+      (doit "<?xml version='1.0'?>
+             <!DOCTYPE thing [
+               <!ENTITY % stuff 'a'>
+               <!ELEMENT thing EMPTY>
+               <!ATTLIST thing>
+             ]>
+             <thing/>")
+    => `(,XML_STATUS_OK
+	 ((dtd-entity "stuff" #t "a" "http://localhost/" #f #f #f)
+	  (element-start "thing" ()))))
+
+  (check	;parameter external entity, SYSTEM
+      (doit "<?xml version='1.0'?>
+             <!DOCTYPE thing [
+               <!ELEMENT thing EMPTY>
+               <!ENTITY % stuff SYSTEM 'http://localhost/stuff'>
+             ]>
+             <thing/>")
+    => `(,XML_STATUS_OK
+	 ((dtd-entity "stuff" #t #f "http://localhost/" "http://localhost/stuff" #f #f)
+	  (element-start "thing" ()))))
+
+  (check	;parameter external entity, PUBLIC
+      (doit "<?xml version='1.0'?>
+             <!DOCTYPE thing [
+               <!ELEMENT thing EMPTY>
+               <!ENTITY % stuff PUBLIC 'The Stuff' 'http://localhost/stuff'>
+             ]>
+             <thing/>")
+    => `(,XML_STATUS_OK
+	 ((dtd-entity "stuff" #t #f "http://localhost/" "http://localhost/stuff" "The Stuff" #f)
 	  (element-start "thing" ()))))
 
   #t)
