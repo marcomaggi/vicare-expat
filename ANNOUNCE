@@ -1,4 +1,4 @@
-Subject: [announce] Vicare/Expat revision 1.0b0
+Subject: [announce] Vicare/Expat revision 1.0b1
 
 			      Vicare/Expat
 			      ============
@@ -45,6 +45,13 @@ and also online:
 	     <http://marcomaggi.github.com/docs/expat.html>
 
 Expat must be compiled to handle UTF-8 strings.
+
+
+Notes for revision 1.0b1
+------------------------
+
+* Bug fix  release.  The garbage  collection hook to  automatically free
+  XML parsers was not registered.
 
 
 Notes for revision 1.0b0
