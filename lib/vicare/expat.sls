@@ -199,7 +199,7 @@
 (define %parser-guardian
   (make-guardian))
 
-(define (%free-allocated-guardian)
+(define (%free-allocated-parser)
   (do ((P (%parser-guardian) (%parser-guardian)))
       ((not P))
     (foreign-call "ik_expat_parser_free" P)))
@@ -826,6 +826,9 @@
 
 (set-rtd-printer! (type-descriptor XML_ParsingStatus) %struct-XML_ParsingStatus-printer)
 (set-rtd-printer! (type-descriptor XML_Content)       %struct-XML_Content-printer)
+
+(post-gc-hooks (cons %free-allocated-parser
+		     (post-gc-hooks)))
 
 )
 
