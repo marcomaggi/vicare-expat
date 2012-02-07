@@ -27,8 +27,7 @@
 
 
 #!r6rs
-(import (rename (vicare)
-		(parameterize	parametrise))
+(import (vicare)
   (vicare expat)
   (vicare expat constants)
   (prefix (vicare ffi) ffi.)
