@@ -1,6 +1,6 @@
 ## Process this file with automake to produce Makefile.in
 
-libvicaredir	= $(libdir)/vicare
+libvicaredir	= $(libdir)/scheme
 
 EXTRA_DIST	=			\
 	compile-all.sps			\
