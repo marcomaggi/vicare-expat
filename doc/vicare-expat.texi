@@ -852,7 +852,7 @@ value of @func{XML_GetErrorCode}.
 @end defun
 
 
-@defun XML_GetCurrentByteIndex @var{parser}
+@defun XML_GetCurrentLineNumber @var{parser}
 @defunx XML_GetCurrentColumnNumber @var{parser}
 @defunx XML_GetCurrentByteIndex @var{parser}
 @defunx XML_GetCurrentByteCount @var{parser}
