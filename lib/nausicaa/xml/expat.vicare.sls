@@ -125,13 +125,25 @@
     XML_FEATURE_LARGE_SIZE
     )
   (import (nausicaa)
-    (vicare expat)
+    (prefix (vicare expat) expat.)
     (vicare expat constants)
     (prefix (vicare ffi) ffi.))
 
 
-;;;; code
+(define-finaliser parser-finaliser
+  (lambda ((parser <expat-parser>))
+    #f))
 
+(define-class <expat-parser>
+  (nongenerative nausicaa:xml:expat:<vicare-expat>)
+  (fields (immutable parser))
+  (protocol
+   (lambda (make-top)
+     (lambda ()
+       (let ((parser (expat.XML_ParserCreate)))
+	 (if parser
+	     (parser-finaliser ((make-top) parser))
+	   (error '<expat-parser> "error building Expat parser")))))))
 
 
 ;;;; done

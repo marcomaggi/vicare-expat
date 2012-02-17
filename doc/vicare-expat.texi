@@ -309,9 +309,10 @@ library.
 @defun XML_ParserCreate
 @defunx XML_ParserCreate @var{encoding}
 @expatref{api create, XML_ParserCreate}.  Build a new parser and return
-a pointer object referencing it.  Values returned by this function must
-be finalised with @func{XML_ParserFree}; this will happen automatically
-when the pointer object is garbage collected.
+a pointer object referencing it; if an error occurs return @false{}.
+Values returned by this function must be finalised with
+@func{XML_ParserFree}; this will happen automatically when the pointer
+object is garbage collected.
 
 The optional @var{encoding} must be @false{} or one of the Scheme
 symbols: @code{UTF-8}, @code{UTF-16}, @code{ISO-8859-1},
@@ -370,9 +371,10 @@ XML_PARAM_ENTITY_PARSING_ALWAYS
 @defun XML_ExternalEntityParserCreate @var{parser} @var{context} @var{encoding}
 @expatref{api external, XML_ExternalEntityParserCreate}.  Build a new
 parser to parse an external entity for @var{parser} and return a pointer
-object referencing it.  Values returned by this function must be
-finalised with @func{XML_ParserFree}; this will happen automatically
-when the pointer object is garbage collected.
+object referencing it; if an error occurs return @false{}.  Values
+returned by this function must be finalised with @func{XML_ParserFree};
+this will happen automatically when the pointer object is garbage
+collected.
 
 @var{parser} is a pointer object to the main parser.  @var{context} must
 be a pointer object.  @var{encoding} is as in @func{XML_ParserCreate}.
@@ -521,9 +523,9 @@ that: namespaces are @strong{not} for modular @dtd{} composition.
 @defun XML_ParserCreateNS @var{encoding} @var{namespace-separator}
 @expatref{api create, XML_ParserCreateNS}.  Build a new parser, having
 namespace processing in effect, and return a pointer object referencing
-it.  Values returned by this function must be finalised with
-@func{XML_ParserFree}; this will happen automatically when the pointer
-object is garbage collected.
+it; if an error occurs return @false{}.  Values returned by this
+function must be finalised with @func{XML_ParserFree}; this will happen
+automatically when the pointer object is garbage collected.
 
 @var{encoding} is as in @func{XML_ParserCreate}.
 @var{namespace-separator} must be a Scheme character in the @ascii{}
