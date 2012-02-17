@@ -266,72 +266,46 @@
   (collect))
 
 
-#;(parametrise ((check-test-name	'parser-misc))
+(parametrise ((check-test-name	'parser-misc))
 
   (check
-      (let ((parser (XML_ParserCreate)))
-	(XML_SetUserData parser parser)
-	(ffi.pointer=? parser (XML_GetUserData parser)))
+      (let (((P <expat-parser>) (make <expat-parser>)))
+	(P.set-user-data P.parser)
+	(ffi.pointer=? P.parser (P.get-user-data)))
     => #t)
 
   (check
-      (let ((parser (XML_ParserCreate)))
-	(XML_UseParserAsHandlerArg parser)
+      (let (((P <expat-parser>) (make <expat-parser>)))
+	(P.use-parser-as-handler-arg)
 	#t)
     => #t)
 
   (check
-      (let ((parser (XML_ParserCreate)))
-	(XML_SetBase parser '#vu8(1 2 3 4))
-	(XML_GetBase parser))
+      (let (((P <expat-parser>) (make <expat-parser>)))
+	(P.set-base '#vu8(1 2 3 4))
+	(P.get-base))
     => '#vu8(1 2 3 4))
 
   (check
-      (let ((parser (XML_ParserCreate)))
-	(XML_SetBase parser #f)
-	(XML_GetBase parser))
+      (let (((P <expat-parser>) (make <expat-parser>)))
+	(P.set-base #f)
+	(P.get-base))
     => #f)
 
   (check
-      (let ((parser (XML_ParserCreate)))
-	(XML_SetEncoding parser 'UTF-8))
+      (let (((P <expat-parser>) (make <expat-parser>)))
+	(P.set-encoding 'UTF-8))
     => XML_STATUS_OK)
 
   (check
-      (let ((parser (XML_ParserCreate)))
-	(XML_UseForeignDTD parser #t))
+      (let (((P <expat-parser>) (make <expat-parser>)))
+	(P.use-foreign-dtd #t))
     => XML_ERROR_NONE)
 
   (check
-      (let ((parser (XML_ParserCreate)))
-	(XML_UseForeignDTD parser #f))
+      (let (((P <expat-parser>) (make <expat-parser>)))
+	(P.use-foreign-dtd #f))
     => XML_ERROR_NONE)
-
-
-
-  #t)
-
-
-#;(parametrise ((check-test-name	'error-reporting))
-
-  (check
-      (XML_ErrorString XML_ERROR_NO_ELEMENTS)
-    => "no element found")
-
-  #t)
-
-
-#;(parametrise ((check-test-name	'version))
-
-  (check
-      (XML_ExpatVersion)
-    => "expat_2.0.1")
-
-  (check
-      (XML_ExpatVersionInfo)
-    => '#(2 0 1))
-
-;;;(check-pretty-print (XML_GetFeatureList))
 
   #t)
 

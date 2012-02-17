@@ -284,7 +284,7 @@
     (expat.XML_GetErrorCode P.parser))
 
   (method (error-string (P <expat-parser>))
-    (expat.XML_ErrorString P.parser))
+    (expat.XML_ErrorString (expat.XML_GetErrorCode P.parser)))
 
   (method (get-current-byte-index (P <expat-parser>))
     (expat.XML_GetCurrentByteIndex P.parser))
