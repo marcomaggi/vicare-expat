@@ -29,6 +29,7 @@
 (import (nausicaa)
   (nausicaa xml expat)
   (prefix (vicare ffi) ffi.)
+  (only (vicare) collect)
   (checks))
 
 (check-set-mode! 'report-failed)
@@ -37,10 +38,12 @@
 
 (parametrise ((check-test-name	'base))
 
-  #;(check
-      (let ()
-        )
-    => )
+  (check
+      (let (((P <expat-parser>) (make <expat-parser>)))
+        #f)
+    => #f)
+
+  (collect)
 
   #t)
 

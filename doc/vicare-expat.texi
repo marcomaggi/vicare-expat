@@ -124,6 +124,7 @@ entitled ``@gnu{} Free Documentation License''.
 * parsers::                     Building and running parsers.
 * handlers::                    Building and registering callbacks.
 * version::                     Expat version informations.
+* nau::                         Nausicaa front end.
 
 Appendices
 
@@ -2644,6 +2645,35 @@ representing the features of the running version of Expat.  Example:
      #(8 "XML_NS" #f))
 @end example
 @end defun
+
+@c page
+@node nau
+@chapter Nausicaa front end
+
+
+The following bindings are exported by the library @library{nausicaa xml
+expat}.
+
+
+@deftp Class @aclass{expat-parser}
+Class type wrapping Expat parsers.
+@end deftp
+
+
+@deffn Syntax {make @aclass{expat-parser}} @meta{option} ...
+@deffnx {Auxiliary Syntax} encoding: @var{encoding}
+@deffnx {Auxiliary Syntax} namespace-separator: @var{char}
+Build and return a new instance of @class{expat-parser}.  If an error
+occurs: raise an exception.
+
+@var{encoding} can be @false{} or an encoding symbol as specified for
+@func{XML_ParserCreate}; when not used, it defaults to @false{}.
+
+@var{char} must be a namespace separator character; when used the parser
+is created with @func{XML_ParserCreateNS}, else it is created with
+@func{XML_ParserCreate}.
+@end deffn
+
 
 @c page
 @c ------------------------------------------------------------

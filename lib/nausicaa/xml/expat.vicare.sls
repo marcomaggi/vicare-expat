@@ -29,6 +29,8 @@
 (library (nausicaa xml expat)
   (export
     <expat-parser>
+    encoding:
+    namespace-separator:
 
     ;; Preprocessor symbols: XML_Bool
     XML_TRUE
@@ -130,20 +132,297 @@
     (prefix (vicare ffi) ffi.))
 
 
-(define-finaliser parser-finaliser
-  (lambda ((parser <expat-parser>))
-    #f))
+;;;; auxiliary definitions
 
+(define-inline (%clean-callback field)
+  (let ((cb field))
+    (when cb
+      (ffi.free-c-callback cb))))
+
+(define-finaliser parser-finaliser
+  (lambda ((P <expat-parser>))
+;;;(pretty-print (list 'collected parser) (current-error-port))
+    (%clean-callback P.AttlistDeclHandler)
+    (%clean-callback P.CharacterDataHandler)
+    (%clean-callback P.CommentHandler)
+    (%clean-callback P.DefaultHandler)
+    (%clean-callback P.ElementDeclHandler)
+    (%clean-callback P.EndCdataSectionHandler)
+    (%clean-callback P.EndDoctypeDeclHandler)
+    (%clean-callback P.EndElementHandler)
+    (%clean-callback P.EndNamespaceDeclHandler)
+    (%clean-callback P.EntityDeclHandler)
+    (%clean-callback P.ExternalEntityRefHandler)
+    (%clean-callback P.NotStandaloneHandler)
+    (%clean-callback P.NotationDeclHandler)
+    (%clean-callback P.ProcessingInstructionHandler)
+    (%clean-callback P.SkippedEntityHandler)
+    (%clean-callback P.StartCdataSectionHandler)
+    (%clean-callback P.StartDoctypeDeclHandler)
+    (%clean-callback P.StartElementHandler)
+    (%clean-callback P.StartNamespaceDeclHandler)
+    (%clean-callback P.UnparsedEntityDeclHandler)
+    (%clean-callback P.XmlDeclHandler)
+    ))
+
+(define-auxiliary-syntaxes
+  encoding:
+  namespace-separator:)
+
+
 (define-class <expat-parser>
   (nongenerative nausicaa:xml:expat:<vicare-expat>)
-  (fields (immutable parser))
+  (fields (immutable parser)	;pointer to parser
+
+	  ;; all of the following are #f or C callback pointers
+	  (mutable AttlistDeclHandler)
+	  (mutable CharacterDataHandler)
+	  (mutable CommentHandler)
+	  (mutable DefaultHandler)
+	  (mutable ElementDeclHandler)
+	  (mutable EndCdataSectionHandler)
+	  (mutable EndDoctypeDeclHandler)
+	  (mutable EndElementHandler)
+	  (mutable EndNamespaceDeclHandler)
+	  (mutable EntityDeclHandler)
+	  (mutable ExternalEntityRefHandler)
+	  (mutable NotStandaloneHandler)
+	  (mutable NotationDeclHandler)
+	  (mutable ProcessingInstructionHandler)
+	  (mutable SkippedEntityHandler)
+	  (mutable StartCdataSectionHandler)
+	  (mutable StartDoctypeDeclHandler)
+	  (mutable StartElementHandler)
+	  (mutable StartNamespaceDeclHandler)
+	  (mutable UnparsedEntityDeclHandler)
+	  (mutable XmlDeclHandler))
+
+  (maker ()
+	 (encoding: #f)
+	 (namespace-separator: #f))
+
   (protocol
    (lambda (make-top)
-     (lambda ()
-       (let ((parser (expat.XML_ParserCreate)))
+     (lambda (encoding namespace-separator)
+       (let ((parser (if namespace-separator
+			 (expat.XML_ParserCreateNS encoding namespace-separator)
+		       (expat.XML_ParserCreate encoding))))
 	 (if parser
-	     (parser-finaliser ((make-top) parser))
-	   (error '<expat-parser> "error building Expat parser")))))))
+	     (parser-finaliser ((make-top) parser
+				#f #f #f #f #f #f #f #f #f #f #f #f #f #f #f #f #f #f #f #f #f))
+	   (error '<expat-parser> "error building Expat parser"))))))
+
+  (method (attlist-decl-handler (P <expat-parser>) scheme-callback)
+    (%clean-callback P.AttlistDeclHandler)
+    (if scheme-callback
+	(let ((cb (expat.XML_AttlistDeclHandler scheme-callback)))
+	  (set! P.AttlistDeclHandler cb)
+	  (expat.XML_SetAttlistDeclHandler cb))
+      (begin
+	(set! P.AttlistDeclHandler #f)
+	(expat.XML_SetAttlistDeclHandler (ffi.null-pointer)))))
+
+  (method (character-data-handler (P <expat-parser>) scheme-callback)
+    (%clean-callback P.CharacterDataHandler)
+    (if scheme-callback
+	(let ((cb (expat.XML_CharacterDataHandler scheme-callback)))
+	  (set! P.CharacterDataHandler cb)
+	  (expat.XML_SetCharacterDataHandler cb))
+      (begin
+	(set! P.CharacterDataHandler #f)
+	(expat.XML_SetCharacterDataHandler (ffi.null-pointer)))))
+
+  (method (comment-handler (P <expat-parser>) scheme-callback)
+    (%clean-callback P.CommentHandler)
+    (if scheme-callback
+	(let ((cb (expat.XML_CommentHandler scheme-callback)))
+	  (set! P.CommentHandler cb)
+	  (expat.XML_CommentHandler cb))
+      (begin
+	(set! P.CommentHandler #f)
+	(expat.XML_CommentHandler (ffi.null-pointer)))))
+
+  (method (default-handler (P <expat-parser>) scheme-callback)
+    (%clean-callback P.DefaultHandler)
+    (if scheme-callback
+	(let ((cb (expat.XML_DefaultHandler scheme-callback)))
+	  (set! P.DefaultHandler cb)
+	  (expat.XML_DefaultHandler cb))
+      (begin
+	(set! P.DefaultHandler #f)
+	(expat.XML_DefaultHandler (ffi.null-pointer)))))
+
+  (method (element-decl-handler (P <expat-parser>) scheme-callback)
+    (%clean-callback P.ElementDeclHandler)
+    (if scheme-callback
+	(let ((cb (expat.XML_ElementDeclHandler scheme-callback)))
+	  (set! P.ElementDeclHandler cb)
+	  (expat.XML_ElementDeclHandler cb))
+      (begin
+	(set! P.ElementDeclHandler #f)
+	(expat.XML_ElementDeclHandler (ffi.null-pointer)))))
+
+  (method (end-cdata-section-handler (P <expat-parser>) scheme-callback)
+    (%clean-callback P.EndCdataSectionHandler)
+    (if scheme-callback
+	(let ((cb (expat.XML_EndCdataSectionHandler scheme-callback)))
+	  (set! P.EndCdataSectionHandler cb)
+	  (expat.XML_EndCdataSectionHandler cb))
+      (begin
+	(set! P.EndCdataSectionHandler #f)
+	(expat.XML_EndCdataSectionHandler (ffi.null-pointer)))))
+
+  (method (end-doctype-decl-handler (P <expat-parser>) scheme-callback)
+    (%clean-callback P.EndDoctypeDeclHandler)
+    (if scheme-callback
+	(let ((cb (expat.XML_EndDoctypeDeclHandler scheme-callback)))
+	  (set! P.EndDoctypeDeclHandler cb)
+	  (expat.XML_EndDoctypeDeclHandler cb))
+      (begin
+	(set! P.EndDoctypeDeclHandler #f)
+	(expat.XML_EndDoctypeDeclHandler (ffi.null-pointer)))))
+
+  (method (end-element-handler (P <expat-parser>) scheme-callback)
+    (%clean-callback P.EndElementHandler)
+    (if scheme-callback
+	(let ((cb (expat.XML_EndElementHandler scheme-callback)))
+	  (set! P.EndElementHandler cb)
+	  (expat.XML_EndElementHandler cb))
+      (begin
+	(set! P.EndElementHandler #f)
+	(expat.XML_EndElementHandler (ffi.null-pointer)))))
+
+  (method (end-namespace-decl-handler (P <expat-parser>) scheme-callback)
+    (%clean-callback P.EndNamespaceDeclHandler)
+    (if scheme-callback
+	(let ((cb (expat.XML_EndNamespaceDeclHandler scheme-callback)))
+	  (set! P.EndNamespaceDeclHandler cb)
+	  (expat.XML_EndNamespaceDeclHandler cb))
+      (begin
+	(set! P.EndNamespaceDeclHandler #f)
+	(expat.XML_EndNamespaceDeclHandler (ffi.null-pointer)))))
+
+  (method (entity-decl-handler (P <expat-parser>) scheme-callback)
+    (%clean-callback P.EntityDeclHandler)
+    (if scheme-callback
+	(let ((cb (expat.XML_EntityDeclHandler scheme-callback)))
+	  (set! P.EntityDeclHandler cb)
+	  (expat.XML_EntityDeclHandler cb))
+      (begin
+	(set! P.EntityDeclHandler #f)
+	(expat.XML_EntityDeclHandler (ffi.null-pointer)))))
+
+  (method (external-entity-ref-handler (P <expat-parser>) scheme-callback)
+    (%clean-callback P.ExternalEntityRefHandler)
+    (if scheme-callback
+	(let ((cb (expat.XML_ExternalEntityRefHandler scheme-callback)))
+	  (set! P.ExternalEntityRefHandler cb)
+	  (expat.XML_ExternalEntityRefHandler cb))
+      (begin
+	(set! P.ExternalEntityRefHandler #f)
+	(expat.XML_ExternalEntityRefHandler (ffi.null-pointer)))))
+
+  (method (not-standalone-handler (P <expat-parser>) scheme-callback)
+    (%clean-callback P.NotStandaloneHandler)
+    (if scheme-callback
+	(let ((cb (expat.XML_NotStandaloneHandler scheme-callback)))
+	  (set! P.NotStandaloneHandler cb)
+	  (expat.XML_NotStandaloneHandler cb))
+      (begin
+	(set! P.NotStandaloneHandler #f)
+	(expat.XML_NotStandaloneHandler (ffi.null-pointer)))))
+
+  (method (notation-decl-handler (P <expat-parser>) scheme-callback)
+    (%clean-callback P.NotationDeclHandler)
+    (if scheme-callback
+	(let ((cb (expat.XML_NotationDeclHandler scheme-callback)))
+	  (set! P.NotationDeclHandler cb)
+	  (expat.XML_NotationDeclHandler cb))
+      (begin
+	(set! P.NotationDeclHandler #f)
+	(expat.XML_NotationDeclHandler (ffi.null-pointer)))))
+
+  (method (processing-instruction-handler (P <expat-parser>) scheme-callback)
+    (%clean-callback P.ProcessingInstructionHandler)
+    (if scheme-callback
+	(let ((cb (expat.XML_ProcessingInstructionHandler scheme-callback)))
+	  (set! P.ProcessingInstructionHandler cb)
+	  (expat.XML_ProcessingInstructionHandler cb))
+      (begin
+	(set! P.ProcessingInstructionHandler #f)
+	(expat.XML_ProcessingInstructionHandler (ffi.null-pointer)))))
+
+  (method (skipped-entity-handler (P <expat-parser>) scheme-callback)
+    (%clean-callback P.SkippedEntityHandler)
+    (if scheme-callback
+	(let ((cb (expat.XML_SkippedEntityHandler scheme-callback)))
+	  (set! P.SkippedEntityHandler cb)
+	  (expat.XML_SkippedEntityHandler cb))
+      (begin
+	(set! P.SkippedEntityHandler #f)
+	(expat.XML_SkippedEntityHandler (ffi.null-pointer)))))
+
+  (method (start-cdata-section-handler (P <expat-parser>) scheme-callback)
+    (%clean-callback P.StartCdataSectionHandler)
+    (if scheme-callback
+	(let ((cb (expat.XML_StartCdataSectionHandler scheme-callback)))
+	  (set! P.StartCdataSectionHandler cb)
+	  (expat.XML_StartCdataSectionHandler cb))
+      (begin
+	(set! P.StartCdataSectionHandler #f)
+	(expat.XML_StartCdataSectionHandler (ffi.null-pointer)))))
+
+  (method (start-doctype-decl-handler (P <expat-parser>) scheme-callback)
+    (%clean-callback P.StartDoctypeDeclHandler)
+    (if scheme-callback
+	(let ((cb (expat.XML_StartDoctypeDeclHandler scheme-callback)))
+	  (set! P.StartDoctypeDeclHandler cb)
+	  (expat.XML_StartDoctypeDeclHandler cb))
+      (begin
+	(set! P.StartDoctypeDeclHandler #f)
+	(expat.XML_StartDoctypeDeclHandler (ffi.null-pointer)))))
+
+  (method (start-element-handler (P <expat-parser>) scheme-callback)
+    (%clean-callback P.StartElementHandler)
+    (if scheme-callback
+	(let ((cb (expat.XML_StartElementHandler scheme-callback)))
+	  (set! P.StartElementHandler cb)
+	  (expat.XML_StartElementHandler cb))
+      (begin
+	(set! P.StartElementHandler #f)
+	(expat.XML_StartElementHandler (ffi.null-pointer)))))
+
+  (method (start-namespace-decl-handler (P <expat-parser>) scheme-callback)
+    (%clean-callback P.StartNamespaceDeclHandler)
+    (if scheme-callback
+	(let ((cb (expat.XML_StartNamespaceDeclHandler scheme-callback)))
+	  (set! P.StartNamespaceDeclHandler cb)
+	  (expat.XML_StartNamespaceDeclHandler cb))
+      (begin
+	(set! P.StartNamespaceDeclHandler #f)
+	(expat.XML_StartNamespaceDeclHandler (ffi.null-pointer)))))
+
+  (method (unparsed-entity-decl-handler (P <expat-parser>) scheme-callback)
+    (%clean-callback P.UnparsedEntityDeclHandler)
+    (if scheme-callback
+	(let ((cb (expat.XML_UnparsedEntityDeclHandler scheme-callback)))
+	  (set! P.UnparsedEntityDeclHandler cb)
+	  (expat.XML_UnparsedEntityDeclHandler cb))
+      (begin
+	(set! P.UnparsedEntityDeclHandler #f)
+	(expat.XML_UnparsedEntityDeclHandler (ffi.null-pointer)))))
+
+  (method (xml-decl-handler (P <expat-parser>) scheme-callback)
+    (%clean-callback P.XmlDeclHandler)
+    (if scheme-callback
+	(let ((cb (expat.XML_XmlDeclHandler scheme-callback)))
+	  (set! P.XmlDeclHandler cb)
+	  (expat.XML_XmlDeclHandler cb))
+      (begin
+	(set! P.XmlDeclHandler #f)
+	(expat.XML_XmlDeclHandler (ffi.null-pointer)))))
+
+  )
 
 
 ;;;; done
