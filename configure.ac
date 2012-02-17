@@ -33,6 +33,34 @@ AC_CHECK_HEADERS([vicare.h],,
 AC_CHECK_PROG([VICARE],[vicare],[vicare],[:])
 
 #page
+#### nausicaa configuration
+
+AC_ARG_WITH([nausicaa],
+  AS_HELP_STRING([--with-nausicaa],[install Nausicaa libraries (default is check)]),
+  [true],[with_nausicaa=check])
+vicare_with_nausicaa=no
+if test x$with_nausicaa = xyes || test x$with_nausicaa = xcheck
+then
+  VICARE_CHECK_LIBRARY([NAUSICAA],[(nausicaa)],[vicare_have_nausicaa=yes],[vicare_have_nausicaa=no])
+  if test "$vicare_have_nausicaa" = yes || test "$vicare_cv_have_NAUSICAA" = yes
+  then
+    # Nausicaa library was found: success!
+    AC_MSG_NOTICE([Nausicaa support enabled])
+    vicare_with_nausicaa=yes
+  elif test "$with_nausicaa" = yes
+  then
+    # The user  requested Nausicaa support  or die, but the  library was
+    # not found.
+    AC_MSG_ERROR([Nausicaa cannot be found])
+  else
+    # The  user requested  a check  for optional  Nausicaa  support, but
+    # the library was not found.
+    AC_MSG_WARN([Nausicaa not found -- support disabled])
+  fi
+fi
+AM_CONDITIONAL([WANT_NAUSICAA],[test x$vicare_with_nausicaa = xyes])
+
+#page
 #### expat configuration
 
 AC_CHECK_HEADERS([expat.h],,

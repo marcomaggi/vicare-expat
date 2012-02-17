@@ -4,11 +4,16 @@ libvicaredir	= $(libdir)/scheme
 
 EXTRA_DIST	=			\
 	compile-all.sps			\
+	compile-nausicaa.sps		\
 	vicare/expat/constants.sls.in
 
 nobase_dist_libvicare_DATA =		\
 	vicare/expat.sls		\
 	vicare/expat/constants.sls
+
+if WANT_NAUSICAA
+nobase_dist_libvicare_DATA	+= nausicaa/xml/expat.vicare.sls
+endif
 
 ## --------------------------------------------------------------------
 
@@ -27,8 +32,14 @@ VICARE_INST_RUN	= $(VICARE_INST_ENV) $(VICARE_INST)
 
 vfasl:
 	$(VICARE_RUN) --compile-dependencies $(srcdir)/compile-all.sps
+if WANT_NAUSICAA
+	$(VICARE_RUN) --compile-dependencies $(srcdir)/compile-nausicaa.sps
+endif
 
 vfasl-installed:
 	$(VICARE_INST_RUN) --compile-dependencies $(srcdir)/compile-all.sps
+if WANT_NAUSICAA
+	$(VICARE_INST_RUN) --compile-dependencies $(srcdir)/compile-nausicaa.sps
+endif
 
 ### end of file

@@ -35,10 +35,15 @@ TESTS_ENVIRONMENT	= $(VICARE_RUN)
 TESTS			=	\
 	test-vicare-expat.sps
 
+if WANT_NAUSICAA
+TESTS	+= test-vicare-nausicaa.sps
+endif
+
 EXTRA_DIST =	\
-	test-vicare-expat.sps				\
+	test-vicare-expat.sps			\
+	test-vicare-nausicaa.sps		\
 	\
-	proof-basic.sps					\
+	proof-for-documentation.sps		\
 	\
 	checks.sls
 

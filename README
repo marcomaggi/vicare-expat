@@ -24,9 +24,9 @@ provides bindings  for the Expat C language  library, an XML
 parser  library.  Expat  must  be compiled  to handle  UTF-8
 strings.
 
-  While this  package can be  used alone, its purpose  is to
-provide  a  backend Expat  interface  for Nausicaa/Expat:  a
-higher level interface.
+  If  the package Nausicaa/Scheme  is installed:  a Nausicaa
+front end  library for Vicare/Expat  is installed, providing
+higher level constructs.
 
   The  last   time  the  author  bothered   to  update  this
 paragraph, he had tested Expat version 2.0.1.

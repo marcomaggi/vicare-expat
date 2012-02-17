@@ -1,4 +1,4 @@
-Subject: [announce] Vicare/Expat revision 1.0b2
+Subject: [announce] Vicare/Expat revision 1.0b3
 
 			      Vicare/Expat
 			      ============
@@ -8,9 +8,9 @@ This  package is a  distribution of  C and  Scheme libraries  for Vicare
 Scheme, an R6RS compliant Scheme  implementation in the form of a native
 compiler for x86 architectures, officially supporting GNU+Linux systems;
 it provides  bindings for  the Expat C  language library, an  XML parser
-library.   While this  package  can be  used  alone, its  purpose is  to
-provide  a backend Expat  interface for  Nausicaa/Expat: a  higher level
-interface.
+library.  If the package  Nausicaa/Scheme is installed: a Nausicaa front
+end  library  for  Vicare/Expat  is installed,  providing  higher  level
+constructs.
 
   This package makes use of the GNU Autotools.
 
@@ -45,6 +45,13 @@ and also online:
 	     <http://marcomaggi.github.com/docs/expat.html>
 
 Expat must be compiled to handle UTF-8 strings.
+
+
+Notes for revision 1.0b3
+------------------------
+
+* Added library  to provide  a Nausicaa front  end to the  package.  The
+  idea of distributing a separate Nausicaa package has been abandoned.
 
 
 Notes for revision 1.0b2
