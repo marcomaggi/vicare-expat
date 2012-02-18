@@ -30,6 +30,7 @@
   (export
     <expat-parser>
     <expat-ns-parser>
+    <expat-entity-parser>
     <expat-parsing-status>
     encoding:
     namespace-separator:
@@ -280,6 +281,9 @@
   (method (get-parsing-status (P <expat-parser>))
     (expat.XML_GetParsingStatus P.parser))
 
+  (method (set-param-entity-parsing (P <expat-parser>) code)
+    (expat.XML_SetParamEntityParsing P.parser code))
+
   (method (get-error-code (P <expat-parser>))
     (expat.XML_GetErrorCode P.parser))
 
@@ -527,7 +531,7 @@
        (let ((parser (expat.XML_ParserCreateNS encoding namespace-separator)))
 	 (if parser
 	     ((make-expat-parser parser))
-	   (error '<expat-parser> "error building Expat parser"))))))
+	   (error '<expat-ns-parser> "error building Expat parser"))))))
 
 ;;; --------------------------------------------------------------------
 
@@ -537,12 +541,29 @@
   )
 
 
+(define-class <expat-entity-parser>
+  (nongenerative nausicaa:xml:expat:<expat-entity-parser>)
+  (inherit <expat-parser>)
+
+  (maker (root-parser context)
+	 (encoding:	'UTF-8))
+
+  (protocol
+   (lambda (make-expat-parser)
+     (lambda (root-parser context encoding)
+       (let ((parser (expat.XML_ExternalEntityParserCreate root-parser context encoding)))
+	 (if parser
+	     ((make-expat-parser parser))
+	   (error '<expat-entity-parser> "error building Expat parser"))))))
+
+  )
+
+
 (define-label <expat-parsing-status>
   (custom-maker expat.make-XML_ParsingStatus)
   (predicate expat.XML_ParsingStatus?)
   (virtual-fields (immutable parsing		expat.XML_ParsingStatus-parsing)
 		  (immutable final-buffer?	expat.XML_ParsingStatus-final-buffer?)))
-
 
 
 ;;;; done

@@ -29,6 +29,7 @@
 (import (nausicaa)
   (nausicaa xml expat)
   (prefix (vicare ffi) ffi.)
+  (prefix (vicare expat) expat.)
   (only (vicare) collect)
   (checks))
 
@@ -307,10 +308,10 @@
 	(P.use-foreign-dtd #f))
     => XML_ERROR_NONE)
 
-  #t)
+  (collect))
 
 
-#;(parametrise ((check-test-name	'xml-decl-handler))
+(parametrise ((check-test-name	'xml-decl-handler))
 
   (define (%process-standalone standalone)
     (case standalone
@@ -326,15 +327,11 @@
 	   (or (ffi.pointer-null? encoding) (ffi.cstring->string encoding))
 	   (%process-standalone standalone))))
 
-  (define (doit xml-utf8)
+  (define (doit xml)
     (with-result
-     (let ((parser	(XML_ParserCreate))
-	   (xml-decl	(XML_XmlDeclHandler xml-decl-callback)))
-       (XML_SetXmlDeclHandler parser xml-decl)
-       (let ((rv (XML_Parse parser xml-utf8 #f #t)))
-	 (%print-parser-error-maybe parser rv)
-	 (ffi.free-c-callback xml-decl)
-	 rv))))
+     (let (((P <expat-parser>) (make <expat-parser>)))
+       (P.xml-decl-handler xml-decl-callback)
+       (P.parse (string->utf8 xml) #f #t))))
 
 ;;; --------------------------------------------------------------------
 
@@ -344,53 +341,45 @@
       <!ELEMENT ball EMPTY>
       <!ATTLIST ball colour CDATA #REQUIRED>"))
 
-  (define (external-entity-callback parser context base system-id public-id)
+  (define (external-entity-callback root-parser context base system-id public-id)
     (add-result
      (list 'external-entity
 	   (or (ffi.pointer-null? context)     (ffi.cstring->string context))
 	   (or (ffi.pointer-null? base)        (ffi.cstring->string base))
 	   (ffi.cstring->string system-id)
 	   (or (ffi.pointer-null? public-id)   (ffi.cstring->string public-id))))
-    (let* ((parser	(XML_ExternalEntityParserCreate parser context 'UTF-8))
-	   (xml-decl	(XML_XmlDeclHandler xml-decl-callback)))
-      (XML_SetXmlDeclHandler parser xml-decl)
-      (let ((rv (XML_Parse parser dtd-utf8 #f #t)))
-	(ffi.free-c-callback xml-decl)
-	(%print-parser-error-maybe parser rv)
-	rv)))
+    (let (((E <expat-entity-parser>) (make <expat-entity-parser>
+				       root-parser context)))
+      (E.xml-decl-handler xml-decl-callback)
+      (E.parse dtd-utf8 #f #t)))
 
-  (define (doit-with-external-entity xml-utf8)
+  (define (doit-with-external-entity xml)
     (with-result
-     (let* ((parser	(XML_ParserCreate))
-	    (xml-decl	(XML_XmlDeclHandler xml-decl-callback))
-	    (ext-ent	(XML_ExternalEntityRefHandler external-entity-callback)))
-       (XML_SetParamEntityParsing parser XML_PARAM_ENTITY_PARSING_ALWAYS)
-       (XML_SetXmlDeclHandler parser xml-decl)
-       (XML_SetExternalEntityRefHandler parser ext-ent)
-       (let ((rv (XML_Parse parser xml-utf8 #f #t)))
-	 (ffi.free-c-callback xml-decl)
-	 (ffi.free-c-callback ext-ent)
-	 rv))))
+     (let (((P <expat-parser>) (make <expat-parser>)))
+       (P.xml-decl-handler xml-decl-callback)
+       (P.external-entity-ref-handler external-entity-callback)
+       (P.set-param-entity-parsing XML_PARAM_ENTITY_PARSING_ALWAYS)
+       (P.parse (string->utf8 xml) #f #t))))
 
 ;;; --------------------------------------------------------------------
 
   (check
-      (doit (string->utf8 "<?xml version='1.0'?><toys><ball colour='red'/></toys>"))
+      (doit "<?xml version='1.0'?><toys><ball colour='red'/></toys>")
     => `(,XML_STATUS_OK
 	 ((xml-decl "1.0" #t unspecified))))
 
   (check
-      (doit (string->utf8 "<?xml version='1.0' encoding='utf-8'?><toys><ball colour='red'/></toys>"))
+      (doit "<?xml version='1.0' encoding='utf-8'?><toys><ball colour='red'/></toys>")
     => `(,XML_STATUS_OK
 	 ((xml-decl "1.0" "utf-8" unspecified))))
 
   (check
-      (doit (string->utf8 "<?xml version='1.0' standalone='yes'?><toys><ball colour='red'/></toys>"))
+      (doit "<?xml version='1.0' standalone='yes'?><toys><ball colour='red'/></toys>")
     => `(,XML_STATUS_OK
 	 ((xml-decl "1.0" #t standalone))))
 
   (check
-      (doit (string->utf8 "<?xml version='1.0' standalone='no'?><toys><ball colour='red'/></toys>"))
+      (doit "<?xml version='1.0' standalone='no'?><toys><ball colour='red'/></toys>")
     => `(,XML_STATUS_OK
 	 ((xml-decl "1.0" #t non-standalone))))
 
@@ -398,19 +387,18 @@
 
   (check
       (doit-with-external-entity
-       (string->utf8
-	"<?xml version='1.0'?>
-         <!DOCTYPE toys SYSTEM 'http://localhost/toys'>
-         <toys><ball colour='red'/></toys>"))
+       "<?xml version='1.0'?>
+        <!DOCTYPE toys SYSTEM 'http://localhost/toys'>
+        <toys><ball colour='red'/></toys>")
     => `(,XML_STATUS_OK
 	 ((xml-decl "1.0" #t unspecified)
 	  (external-entity #t #t "http://localhost/toys" #t)
 	  (xml-decl "1.0" "utf-8" unspecified))))
 
-  #t)
+  (collect))
 
 
-#;(parametrise ((check-test-name	'non-standalone-handler))
+(parametrise ((check-test-name	'non-standalone-handler))
 
   (define (%process-standalone standalone)
     (case standalone
@@ -434,41 +422,29 @@
   (define (end-doctype-callback data)
     (add-result '(doctype-end)))
 
-  (define (doit xml-utf8)
+  (define (doit xml)
     (with-result
-     (let ((parser	(XML_ParserCreate))
-	   (xml-decl	(XML_XmlDeclHandler xml-decl-callback))
-	   (not-stand	(XML_NotStandaloneHandler not-stand-callback))
-	   (dt-start	(XML_StartDoctypeDeclHandler start-doctype-callback))
-	   (dt-end	(XML_EndDoctypeDeclHandler end-doctype-callback)))
-       (XML_SetXmlDeclHandler parser xml-decl)
-       (XML_SetNotStandaloneHandler parser not-stand)
-       (XML_SetStartDoctypeDeclHandler parser dt-start)
-       (XML_SetEndDoctypeDeclHandler   parser dt-end)
-       (let ((rv (XML_Parse parser xml-utf8 #f #t)))
-	 (%print-parser-error-maybe parser rv)
-	 (ffi.free-c-callback xml-decl)
-	 (ffi.free-c-callback not-stand)
-	 (ffi.free-c-callback dt-start)
-	 (ffi.free-c-callback dt-end)
-	 rv))))
+     (let (((P <expat-parser>) (make <expat-parser>)))
+       (P.xml-decl-handler xml-decl-callback)
+       (P.not-standalone-handler not-stand-callback)
+       (P.start-doctype-decl-handler start-doctype-callback)
+       (P.end-doctype-decl-handler end-doctype-callback)
+       (P.parse (string->utf8 xml) #f #t))))
 
 ;;; --------------------------------------------------------------------
 
   (check
       (doit
-       (string->utf8
-	"<?xml version='1.0'?>
-         <toys><ball colour='red'/></toys>"))
+       "<?xml version='1.0'?>
+        <toys><ball colour='red'/></toys>")
     => `(,XML_STATUS_OK
 	 ((xml-decl unspecified))))
 
   (check
       (doit
-       (string->utf8
-	"<?xml version='1.0'?>
-         <!DOCTYPE toys SYSTEM 'http://localhost/toys'>
-         <toys><ball colour='red'/></toys>"))
+       "<?xml version='1.0'?>
+        <!DOCTYPE toys SYSTEM 'http://localhost/toys'>
+        <toys><ball colour='red'/></toys>")
     => `(,XML_STATUS_OK
 	 ((xml-decl unspecified)
 	  (not-standalone)
@@ -477,10 +453,9 @@
 
   (check
       (doit
-       (string->utf8
-	"<?xml version='1.0'?>
-         <!DOCTYPE toys PUBLIC 'The Toys' 'http://localhost/toys'>
-         <toys><ball colour='red'/></toys>"))
+       "<?xml version='1.0'?>
+        <!DOCTYPE toys PUBLIC 'The Toys' 'http://localhost/toys'>
+        <toys><ball colour='red'/></toys>")
     => `(,XML_STATUS_OK
 	 ((xml-decl unspecified)
 	  (not-standalone)
@@ -491,18 +466,16 @@
 
   (check
       (doit
-       (string->utf8
-	"<?xml version='1.0' standalone='no'?>
-         <toys><ball colour='red'/></toys>"))
+       "<?xml version='1.0' standalone='no'?>
+        <toys><ball colour='red'/></toys>")
     => `(,XML_STATUS_OK
 	 ((xml-decl non-standalone))))
 
   (check
       (doit
-       (string->utf8
-	"<?xml version='1.0' standalone='no'?>
-         <!DOCTYPE toys SYSTEM 'http://localhost/toys'>
-         <toys><ball colour='red'/></toys>"))
+       "<?xml version='1.0' standalone='no'?>
+        <!DOCTYPE toys SYSTEM 'http://localhost/toys'>
+        <toys><ball colour='red'/></toys>")
     => `(,XML_STATUS_OK
 	 ((xml-decl non-standalone)
 	  (not-standalone)
@@ -511,10 +484,9 @@
 
   (check
       (doit
-       (string->utf8
-	"<?xml version='1.0' standalone='no'?>
-         <!DOCTYPE toys PUBLIC 'The Toys' 'http://localhost/toys'>
-         <toys><ball colour='red'/></toys>"))
+       "<?xml version='1.0' standalone='no'?>
+        <!DOCTYPE toys PUBLIC 'The Toys' 'http://localhost/toys'>
+        <toys><ball colour='red'/></toys>")
     => `(,XML_STATUS_OK
 	 ((xml-decl non-standalone)
 	  (not-standalone)
@@ -525,18 +497,16 @@
 
   (check
       (doit
-       (string->utf8
-	"<?xml version='1.0' standalone='yes'?>
-         <toys><ball colour='red'/></toys>"))
+       "<?xml version='1.0' standalone='yes'?>
+        <toys><ball colour='red'/></toys>")
     => `(,XML_STATUS_OK
 	 ((xml-decl standalone))))
 
   (check
       (doit
-       (string->utf8
-	"<?xml version='1.0' standalone='yes'?>
-         <!DOCTYPE toys SYSTEM 'http://localhost/toys'>
-         <toys><ball colour='red'/></toys>"))
+       "<?xml version='1.0' standalone='yes'?>
+        <!DOCTYPE toys SYSTEM 'http://localhost/toys'>
+        <toys><ball colour='red'/></toys>")
     => `(,XML_STATUS_OK
 	 ((xml-decl standalone)
 	  (doctype-start 0)
@@ -544,124 +514,115 @@
 
   (check
       (doit
-       (string->utf8
-	"<?xml version='1.0' standalone='yes'?>
-         <!DOCTYPE toys PUBLIC 'The Toys' 'http://localhost/toys'>
-         <toys><ball colour='red'/></toys>"))
+       "<?xml version='1.0' standalone='yes'?>
+        <!DOCTYPE toys PUBLIC 'The Toys' 'http://localhost/toys'>
+        <toys><ball colour='red'/></toys>")
     => `(,XML_STATUS_OK
 	 ((xml-decl standalone)
 	  (doctype-start 0)
 	  (doctype-end))))
 
-  #t)
+  (collect))
 
 
-#;(parametrise ((check-test-name	'dtd-doctype-handler))
+(parametrise ((check-test-name	'dtd-doctype-handler))
 
-  (define (doit xml-utf8)
+  (define (start-doctype-callback data doctype-name sysid pubid has-internal-subset)
+    (add-result
+     (list 'doctype-start
+	   (ffi.cstring->string doctype-name)
+	   (or (ffi.pointer-null? sysid) (ffi.cstring->string sysid))
+	   (or (ffi.pointer-null? pubid) (ffi.cstring->string pubid))
+	   has-internal-subset)))
+
+  (define (end-doctype-callback data)
+    (add-result '(doctype-end)))
+
+  (define (doit xml)
     (with-result
-     (define (start-doctype-callback data doctype-name sysid pubid has-internal-subset)
-       (add-result
-	(list 'doctype-start
-	      (ffi.cstring->string doctype-name)
-	      (or (ffi.pointer-null? sysid) (ffi.cstring->string sysid))
-	      (or (ffi.pointer-null? pubid) (ffi.cstring->string pubid))
-	      has-internal-subset)))
-     (define (end-doctype-callback data)
-       (add-result '(doctype-end)))
-     (let ((parser	(XML_ParserCreate))
-	   (start	(XML_StartDoctypeDeclHandler start-doctype-callback))
-	   (end		(XML_EndDoctypeDeclHandler   end-doctype-callback)))
-       (XML_SetDoctypeDeclHandler parser start end)
-       (let ((rv (XML_Parse parser xml-utf8 #f #t)))
-;;;	 (%print-parser-error-maybe parser rv)
-	 (ffi.free-c-callback start)
-	 (ffi.free-c-callback end)
-	 rv))))
+     (let (((P <expat-parser>) (make <expat-parser>)))
+       (P.start-doctype-decl-handler start-doctype-callback)
+       (P.end-doctype-decl-handler   end-doctype-callback)
+       (P.parse (string->utf8 xml) #f #t))))
 
   (check
       (doit
-       (string->utf8
-	"<?xml version='1.0'?>
-         <!DOCTYPE toys SYSTEM 'http://localhost/toys'>
-         <toys><ball colour='yellow'/></toys>"))
+       "<?xml version='1.0'?>
+        <!DOCTYPE toys SYSTEM 'http://localhost/toys'>
+        <toys><ball colour='yellow'/></toys>")
     => (list XML_STATUS_OK
 	     '((doctype-start "toys" "http://localhost/toys" #t 0)
 	       (doctype-end))))
 
   (check
       (doit
-       (string->utf8
-	"<?xml version='1.0'?>
-         <!DOCTYPE toys PUBLIC 'The Toys' 'http://localhost/toys'>
-         <toys><ball colour='yellow'/></toys>"))
+       "<?xml version='1.0'?>
+        <!DOCTYPE toys PUBLIC 'The Toys' 'http://localhost/toys'>
+        <toys><ball colour='yellow'/></toys>")
     => (list XML_STATUS_OK
 	     '((doctype-start "toys" "http://localhost/toys" "The Toys" 0)
 	       (doctype-end))))
 
   (check
       (doit
-       (string->utf8
-	"<?xml version='1.0'?>
-         <!DOCTYPE toys [
-           <!ELEMENT ball EMPTY>
-           <!ATTLIST ball colour CDATA #REQUIRED>
-         ]>
-         <toys><ball colour='yellow'/></toys>"))
+       "<?xml version='1.0'?>
+        <!DOCTYPE toys [
+          <!ELEMENT ball EMPTY>
+          <!ATTLIST ball colour CDATA #REQUIRED>
+        ]>
+        <toys><ball colour='yellow'/></toys>")
     => (list XML_STATUS_OK
 	     '((doctype-start "toys" #t #t 1)
 	       (doctype-end))))
 
-  #t)
+  (collect))
 
 
-#;(parametrise ((check-test-name	'default-handler))
+(parametrise ((check-test-name	'default-handler))
 
-  (define (doit xml-utf8)
+  (define (start-callback data element attributes)
+    (expat.XML_DefaultCurrent data))
+
+  (define (end-callback data element)
+    (expat.XML_DefaultCurrent data))
+
+  (define (default-callback user-data buf.ptr buf.len)
+    (add-result (list 'default (ffi.cstring->string buf.ptr buf.len))))
+
+  (define (doit xml)
     (with-result
-     (define (start-callback data element attributes)
-       (XML_DefaultCurrent data))
-     (define (end-callback data element)
-       (XML_DefaultCurrent data))
-     (define (default-callback user-data buf.ptr buf.len)
-       (add-result (list 'default (ffi.cstring->string buf.ptr buf.len))))
-     (let ((parser	(XML_ParserCreateNS 'UTF-8 #\:))
-	   (start	(XML_StartElementHandler start-callback))
-	   (end		(XML_EndElementHandler   end-callback))
-	   (default	(XML_DefaultHandler      default-callback)))
-       (XML_UseParserAsHandlerArg parser)
-       (XML_SetElementHandler parser start end)
-       (XML_SetDefaultHandler parser default)
-       (let ((rv (XML_Parse parser xml-utf8 #f #t)))
-	 (ffi.free-c-callback start)
-	 (ffi.free-c-callback end)
-	 (ffi.free-c-callback default)
-	 rv))))
+     (let (((P <expat-parser>) (make <expat-ns-parser>)))
+       (P.start-element-handler start-callback)
+       (P.end-element-handler   end-callback)
+       (P.default-handler       default-callback)
+       (P.use-parser-as-handler-arg)
+       (P.parse (string->utf8 xml) #f #t))))
 
   (check
-      (doit (string->utf8 "<toys><ball colour='yellow'/></toys>"))
+      (doit "<toys><ball colour='yellow'/></toys>")
     => (list XML_STATUS_OK
 	     '((default "<toys>")
 	       (default "<ball colour='yellow'/>")
 	       (default "")
 	       (default "</toys>"))))
 
-  #t)
+  (collect))
 
 
-#;(parametrise ((check-test-name	'external-entity-parser))
+(parametrise ((check-test-name	'external-entity-parser))
 
-  (define xml-utf8
-    (string->utf8 "<!DOCTYPE toys SYSTEM 'http://localhost/toys'>
-                   <toys><ball colour='red'/></toys>"))
+  (define xml
+    "<!DOCTYPE toys SYSTEM 'http://localhost/toys'>
+     <toys><ball colour='red'/></toys>")
 
-  (define dtd-utf8
-    (string->utf8 "<!ELEMENT ball EMPTY>
-                   <!ATTLIST ball colour CDATA #REQUIRED>"))
+  (define dtd
+    "<!ELEMENT ball EMPTY>
+     <!ATTLIST ball colour CDATA #REQUIRED>")
 
-  (define (scheme-callback parser context base system-id public-id)
-    (let* ((parser (XML_ExternalEntityParserCreate parser context 'UTF-8))
-	   (rv     (XML_Parse parser dtd-utf8 #f #t)))
+  (define (scheme-callback root-parser context base system-id public-id)
+    (let* (((E <expat-entity-parser>) (make <expat-entity-parser>
+					root-parser context))
+	   (rv     (E.parse (string->utf8 dtd) #f #t)))
       (add-result (list 'external-entity rv
 			(ffi.pointer-null? context)
 			(ffi.pointer-null? base)
@@ -671,13 +632,10 @@
 
   (define (doit)
     (with-result
-     (let* ((parser	(XML_ParserCreate 'UTF-8))
-	    (cb		(XML_ExternalEntityRefHandler scheme-callback)))
-       (XML_SetParamEntityParsing parser XML_PARAM_ENTITY_PARSING_ALWAYS)
-       (XML_SetExternalEntityRefHandler parser cb)
-       (let ((rv (XML_Parse parser xml-utf8 #f #t)))
-	 (ffi.free-c-callback cb)
-	 rv))))
+     (let (((P <expat-parser>) (make <expat-parser>)))
+       (P.external-entity-ref-handler scheme-callback)
+       (P.set-param-entity-parsing XML_PARAM_ENTITY_PARSING_ALWAYS)
+       (P.parse (string->utf8 xml) #f #t))))
 
 ;;; --------------------------------------------------------------------
 
@@ -686,29 +644,24 @@
     => `(,XML_STATUS_OK
 	 ((external-entity ,XML_STATUS_OK #t #t "http://localhost/toys" #t))))
 
-  #t)
+  (collect))
 
 
-#;(parametrise ((check-test-name	'dtd-element-handler))
+(parametrise ((check-test-name	'dtd-element-handler))
 
   (define (doit xml)
     (with-result
-     (let ((xml-utf8	(string->utf8 xml))
-	   (parser	(XML_ParserCreate))
-	   (dtd-elm	(XML_ElementDeclHandler dtd-elm-callback)))
-       (XML_UseParserAsHandlerArg parser)
-       (XML_SetElementDeclHandler parser dtd-elm)
-       (let ((rv (XML_Parse parser xml-utf8 #f #t)))
-	 (%print-parser-error-maybe parser rv)
-	 (ffi.free-c-callback dtd-elm)
-	 rv))))
+     (let (((P <expat-parser>) (make <expat-parser>)))
+       (P.element-decl-handler dtd-elm-callback)
+       (P.use-parser-as-handler-arg)
+       (P.parse (string->utf8 xml) #f #t))))
 
   (define (dtd-elm-callback data name model)
     (add-result
      (list 'dtd-element
 	   (ffi.cstring->string name)
-	   (XML_Content->list (pointer->XML_Content model))))
-    (XML_FreeContentModel data model))
+	   (expat.XML_Content->list (expat.pointer->XML_Content model))))
+    (expat.XML_FreeContentModel data model))
 
 ;;; --------------------------------------------------------------------
 
@@ -840,21 +793,14 @@
   #t)
 
 
-#;(parametrise ((check-test-name	'dtd-attlist-handler))
+(parametrise ((check-test-name	'dtd-attlist-handler))
 
   (define (doit xml)
     (with-result
-     (let* ((xml-utf8		(string->utf8 xml))
-	    (parser		(XML_ParserCreate))
-	    (dtd-attlist	(XML_AttlistDeclHandler dtd-attlist-callback))
-	    (elm-start		(XML_StartElementHandler elm-start-callback)))
-       (XML_SetAttlistDeclHandler parser dtd-attlist)
-       (XML_SetStartElementHandler parser elm-start)
-       (let ((rv (XML_Parse parser xml-utf8 #f #t)))
-	 (%print-parser-error-maybe parser rv)
-	 (ffi.free-c-callback dtd-attlist)
-	 (ffi.free-c-callback elm-start)
-	 rv))))
+     (let (((P <expat-parser>) (make <expat-parser>)))
+       (P.attlist-decl-handler dtd-attlist-callback)
+       (P.start-element-handler elm-start-callback)
+       (P.parse (string->utf8 xml) #f #t))))
 
   (define (dtd-attlist-callback user-data element-name attribute-name
 				attribute-type default-value required?)
@@ -920,10 +866,10 @@
 	       (element-start "toys" ())
 	       (element-start "ball" ("colour" "red")))))
 
-  #t)
+  (collect))
 
 
-#;(parametrise ((check-test-name	'dtd-notation-handler))
+(parametrise ((check-test-name	'dtd-notation-handler))
 
   (define (%false-or-string thing)
     (if (ffi.pointer-null? thing)
@@ -938,58 +884,51 @@
 	   (%false-or-string system-id)
 	   (%false-or-string public-id))))
 
-  (define (doit xml-utf8)
+  (define (doit xml)
     (with-result
-     (let* ((parser	(XML_ParserCreate))
-	    (notation	(XML_NotationDeclHandler notation-callback)))
-       (XML_SetNotationDeclHandler parser notation)
-       (let ((rv (XML_Parse parser xml-utf8 #f #t)))
-	 (%print-parser-error-maybe parser rv)
-	 (ffi.free-c-callback notation)
-	 rv))))
+     (let (((P <expat-parser>) (make <expat-parser>)))
+       (P.notation-decl-handler notation-callback)
+       (P.parse (string->utf8 xml) #f #t))))
 
 ;;; --------------------------------------------------------------------
 
   (check
-      (doit (string->utf8
-	     "<?xml version='1.0'?>
-              <!DOCTYPE toys [
-               <!NOTATION bouncing SYSTEM 'http://localhost/bouncer'>
-               <!ELEMENT ball EMPTY>
-               <!ATTLIST ball colour CDATA #REQUIRED>
-             ]>
-             <toys><ball colour='red' /></toys>"))
+      (doit "<?xml version='1.0'?>
+             <!DOCTYPE toys [
+              <!NOTATION bouncing SYSTEM 'http://localhost/bouncer'>
+              <!ELEMENT ball EMPTY>
+              <!ATTLIST ball colour CDATA #REQUIRED>
+            ]>
+            <toys><ball colour='red' /></toys>")
     => `(,XML_STATUS_OK
 	 ((notation "bouncing" #f "http://localhost/bouncer" #f))))
 
   (check
-      (doit (string->utf8
-	     "<?xml version='1.0'?>
-              <!DOCTYPE toys [
-               <!NOTATION bouncing PUBLIC 'The Bouncer'>
-               <!ELEMENT ball EMPTY>
-               <!ATTLIST ball colour CDATA #REQUIRED>
-             ]>
-             <toys><ball colour='red' /></toys>"))
+      (doit "<?xml version='1.0'?>
+             <!DOCTYPE toys [
+              <!NOTATION bouncing PUBLIC 'The Bouncer'>
+              <!ELEMENT ball EMPTY>
+              <!ATTLIST ball colour CDATA #REQUIRED>
+            ]>
+            <toys><ball colour='red' /></toys>")
     => `(,XML_STATUS_OK
 	 ((notation "bouncing" #f #f "The Bouncer"))))
 
   (check
-      (doit (string->utf8
-	     "<?xml version='1.0'?>
-              <!DOCTYPE toys [
-               <!NOTATION bouncing PUBLIC 'The Bouncer' 'http://localhost/bouncer'>
-               <!ELEMENT ball EMPTY>
-               <!ATTLIST ball colour CDATA #REQUIRED>
-             ]>
-             <toys><ball colour='red' /></toys>"))
+      (doit "<?xml version='1.0'?>
+             <!DOCTYPE toys [
+              <!NOTATION bouncing PUBLIC 'The Bouncer' 'http://localhost/bouncer'>
+              <!ELEMENT ball EMPTY>
+              <!ATTLIST ball colour CDATA #REQUIRED>
+            ]>
+            <toys><ball colour='red' /></toys>")
     => `(,XML_STATUS_OK
 	 ((notation "bouncing" #f "http://localhost/bouncer" "The Bouncer"))))
 
-  #t)
+  (collect))
 
 
-#;(parametrise ((check-test-name	'dtd-entity-handler))
+(parametrise ((check-test-name	'dtd-entity-handler))
 
   (define (%false-or-string thing)
     (if (ffi.pointer-null? thing)
@@ -998,19 +937,12 @@
 
   (define (doit xml)
     (with-result
-     (let* ((xml-utf8	(string->utf8 xml))
-	    (parser	(XML_ParserCreate))
-	    (dtd-entity	(XML_EntityDeclHandler dtd-entity-callback))
-	    (elm-start	(XML_StartElementHandler elm-start-callback)))
-       (XML_SetBase parser (string->utf8 "http://localhost/"))
-       (XML_SetParamEntityParsing parser XML_PARAM_ENTITY_PARSING_ALWAYS)
-       (XML_SetEntityDeclHandler parser dtd-entity)
-       (XML_SetStartElementHandler parser elm-start)
-       (let ((rv (XML_Parse parser xml-utf8 #f #t)))
-	 (%print-parser-error-maybe parser rv)
-	 (ffi.free-c-callback dtd-entity)
-	 (ffi.free-c-callback elm-start)
-	 rv))))
+     (let (((P <expat-parser>) (make <expat-parser>)))
+       (P.entity-decl-handler dtd-entity-callback)
+       (P.start-element-handler elm-start-callback)
+       (P.set-base (string->utf8 "http://localhost/"))
+       (P.set-param-entity-parsing XML_PARAM_ENTITY_PARSING_ALWAYS)
+       (P.parse (string->utf8 xml) #f #t))))
 
   (define (dtd-entity-callback data entity-name is-parameter-entity
 			       value value-length
@@ -1130,7 +1062,7 @@
 	 ((dtd-entity "stuff" #t #f "http://localhost/" "http://localhost/stuff" "The Stuff" #f)
 	  (element-start "thing" ()))))
 
-  #t)
+  (collect))
 
 
 #;(parametrise ((check-test-name	'comment-handler))
