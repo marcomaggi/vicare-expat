@@ -1065,39 +1065,31 @@
   (collect))
 
 
-#;(parametrise ((check-test-name	'comment-handler))
+(parametrise ((check-test-name	'comment-handler))
 
-  (define xml-utf8
-    (string->utf8
-     "<!-- this is a test document --><stuff></stuff>"))
+  (define xml
+    "<!-- this is a test document --><stuff></stuff>")
 
   (define (comment-callback data cstr)
     (add-result
      (list 'comment
 	   (ffi.cstring->string cstr))))
 
-  (define (doit xml-utf8)
+  (define (doit xml)
     (with-result
-     (let ((parser	(XML_ParserCreate))
-	   (comment	(XML_CommentHandler comment-callback)))
-       (XML_SetCommentHandler parser comment)
-       (let ((rv (XML_Parse parser xml-utf8 #f #t)))
-	 (ffi.free-c-callback comment)
-	 rv))))
+     (let (((P <expat-parser>) (make <expat-parser>)))
+       (P.comment-handler comment-callback)
+       (P.parse (string->utf8 xml) #f #t))))
 
   (check
-      (doit xml-utf8)
+      (doit xml)
     => `(,XML_STATUS_OK
 	 ((comment " this is a test document "))))
 
-  #t)
+  (collect))
 
 
-#;(parametrise ((check-test-name	'cdata-handler))
-
-  (define xml-utf8
-    (string->utf8
-     "<stuff><![CDATA[ <stuff> ]]></stuff>"))
+(parametrise ((check-test-name	'cdata-handler))
 
   (define (start-cdata-callback data)
     (add-result '(start-cdata)))
@@ -1110,53 +1102,45 @@
      (list 'text
 	   (ffi.cstring->string buf.ptr buf.len))))
 
-  (define (doit xml-utf8)
+  (define (doit xml)
     (with-result
-     (let ((parser	(XML_ParserCreate))
-	   (start	(XML_StartCdataSectionHandler start-cdata-callback))
-	   (end		(XML_EndCdataSectionHandler   end-cdata-callback))
-	   (text	(XML_CharacterDataHandler     text-callback)))
-       (XML_SetCdataSectionHandler parser start end)
-       (XML_SetCharacterDataHandler parser text)
-       (let ((rv (XML_Parse parser xml-utf8 #f #t)))
-	 (ffi.free-c-callback start)
-	 (ffi.free-c-callback end)
-	 (ffi.free-c-callback text)
-	 rv))))
+     (let (((P <expat-parser>) (make <expat-parser>)))
+       (P.start-cdata-section-handler start-cdata-callback)
+       (P.end-cdata-section-handler   end-cdata-callback)
+       (P.character-data-handler      text-callback)
+       (P.parse (string->utf8 xml) #f #t))))
 
-  (define (doit-2 xml-utf8)
+  (define (doit-2 xml)
     (with-result
-     (let ((parser	(XML_ParserCreate))
-	   (start	(XML_StartCdataSectionHandler start-cdata-callback))
-	   (end		(XML_EndCdataSectionHandler   end-cdata-callback))
-	   (text	(XML_CharacterDataHandler     text-callback)))
-       (XML_SetStartCdataSectionHandler parser start)
-       (XML_SetEndCdataSectionHandler   parser end)
-       (XML_SetCharacterDataHandler     parser text)
-       (let ((rv (XML_Parse parser xml-utf8 #f #t)))
-	 (ffi.free-c-callback start)
-	 (ffi.free-c-callback end)
-	 (ffi.free-c-callback text)
-	 rv))))
+     (let (((P <expat-parser>) (make <expat-parser>)))
+       (P.start-cdata-section-handler start-cdata-callback)
+       (P.end-cdata-section-handler   end-cdata-callback)
+       (P.character-data-handler      text-callback)
+       (P.parse (string->utf8 xml) #f #t))))
+
+;;; --------------------------------------------------------------------
+
+  (define xml
+    "<stuff><![CDATA[ <stuff> ]]></stuff>")
 
   (check
-      (doit xml-utf8)
+      (doit xml)
     => `(,XML_STATUS_OK
 	 ((start-cdata)
 	  (text " <stuff> ")
 	  (end-cdata))))
 
   (check
-      (doit-2 xml-utf8)
+      (doit-2 xml)
     => `(,XML_STATUS_OK
 	 ((start-cdata)
 	  (text " <stuff> ")
 	  (end-cdata))))
 
-  #t)
+  (collect))
 
 
-#;(parametrise ((check-test-name	'namespace-handler))
+(parametrise ((check-test-name	'namespace-handler))
 
   (define (start-element-callback data element attributes)
     (add-result
@@ -1180,34 +1164,26 @@
      (list 'xmlns-end
 	   (or (ffi.pointer-null? prefix) (ffi.cstring->string prefix)))))
 
-  (define (doit xml-utf8)
+  (define (doit xml)
     (with-result
-     (let ((parser	(XML_ParserCreateNS 'UTF-8 #\:))
-	   (start-elm	(XML_StartElementHandler  start-element-callback))
-	   (end-elm	(XML_EndElementHandler    end-element-callback))
-	   (start-ns	(XML_StartNamespaceDeclHandler  start-xmlns-callback))
-	   (end-ns	(XML_EndNamespaceDeclHandler    end-xmlns-callback)))
-       (XML_SetElementHandler		parser start-elm end-elm)
-       (XML_SetNamespaceDeclHandler	parser start-ns  end-ns)
-       (let ((rv (XML_Parse parser xml-utf8 #f #t)))
-	 (ffi.free-c-callback start-elm)
-	 (ffi.free-c-callback end-elm)
-	 (ffi.free-c-callback start-ns)
-	 (ffi.free-c-callback end-ns)
-	 rv))))
+     (let (((P <expat-parser>) (make <expat-ns-parser>)))
+       (P.start-element-handler  start-element-callback)
+       (P.end-element-handler    end-element-callback)
+       (P.start-namespace-decl-handler  start-xmlns-callback)
+       (P.end-namespace-decl-handler    end-xmlns-callback)
+       (P.parse (string->utf8 xml) #f #t))))
 
   (check	;some namespaces
-      (doit (string->utf8
-	     "<?xml version='1.0'?>
-              <!DOCTYPE toys [
-                <!ELEMENT ball EMPTY>
-                <!ATTLIST ball colour CDATA #REQUIRED>
-              ]>
-             <toys xmlns:blue='http://localhost/blue'
-                   xmlns:red='http://localhost/red'>\
-               <blue:ball colour='yellow'/>\
-               <red:ball  colour='purple'/>\
-             </toys>"))
+      (doit "<?xml version='1.0'?>
+             <!DOCTYPE toys [
+               <!ELEMENT ball EMPTY>
+               <!ATTLIST ball colour CDATA #REQUIRED>
+             ]>
+            <toys xmlns:blue='http://localhost/blue'
+                  xmlns:red='http://localhost/red'>\
+              <blue:ball colour='yellow'/>\
+              <red:ball  colour='purple'/>\
+            </toys>")
     => (list XML_STATUS_OK
 	     '((xmlns-start "blue" "http://localhost/blue")
 	       (xmlns-start "red" "http://localhost/red")
@@ -1221,16 +1197,15 @@
 	       (xmlns-end "blue"))))
 
   (check	;default namespace
-      (doit (string->utf8
-	     "<?xml version='1.0'?>
-              <!DOCTYPE toys [
-                <!ELEMENT ball EMPTY>
-                <!ATTLIST ball colour CDATA #REQUIRED>
-              ]>
-             <toys xmlns='http://localhost/blue'>
-               <ball colour='yellow'/>
-               <ball  colour='purple'/>
-             </toys>"))
+      (doit "<?xml version='1.0'?>
+             <!DOCTYPE toys [
+               <!ELEMENT ball EMPTY>
+               <!ATTLIST ball colour CDATA #REQUIRED>
+             ]>
+            <toys xmlns='http://localhost/blue'>
+              <ball colour='yellow'/>
+              <ball  colour='purple'/>
+            </toys>")
     => (list XML_STATUS_OK
 	     '((xmlns-start #t "http://localhost/blue")
 	       (element-start "http://localhost/blue:toys" ())
@@ -1241,21 +1216,16 @@
 	       (element-end "http://localhost/blue:toys")
 	       (xmlns-end #t))))
 
-  #t)
+  (collect))
 
 
-#;(parametrise ((check-test-name	'skipped-entity-handler))
+(parametrise ((check-test-name	'skipped-entity-handler))
 
   (define (doit xml)
     (with-result
-     (let ((xml-utf8	(string->utf8 xml))
-	   (parser	(XML_ParserCreate))
-	   (skip-ent	(XML_SkippedEntityHandler skipped-entity-callback)))
-       (XML_SetSkippedEntityHandler parser skip-ent)
-       (let ((rv (XML_Parse parser xml-utf8 #f #t)))
-	 (%print-parser-error-maybe parser rv)
-	 (ffi.free-c-callback skip-ent)
-	 rv))))
+     (let (((P <expat-parser>) (make <expat-parser>)))
+       (P.skipped-entity-handler skipped-entity-callback)
+       (P.parse (string->utf8 xml) #f #t))))
 
   (define (skipped-entity-callback data entity-name is-parameter-entity)
     (add-result
@@ -1272,21 +1242,16 @@
     => `(,XML_STATUS_OK
 	 ((skipped-entity "ciao" #f))))
 
-  #t)
+  (collect))
 
 
-#;(parametrise ((check-test-name	'processing-instruction-handler))
+(parametrise ((check-test-name	'processing-instruction-handler))
 
   (define (doit xml)
     (with-result
-     (let ((xml-utf8	(string->utf8 xml))
-	   (parser	(XML_ParserCreate))
-	   (proc-inst	(XML_ProcessingInstructionHandler processing-instruction-callback)))
-       (XML_SetProcessingInstructionHandler parser proc-inst)
-       (let ((rv (XML_Parse parser xml-utf8 #f #t)))
-	 (%print-parser-error-maybe parser rv)
-	 (ffi.free-c-callback proc-inst)
-	 rv))))
+     (let (((P <expat-parser>) (make <expat-parser>)))
+       (P.processing-instruction-handler processing-instruction-callback)
+       (P.parse (string->utf8 xml) #f #t))))
 
   (define (processing-instruction-callback user-data target data)
     (add-result
