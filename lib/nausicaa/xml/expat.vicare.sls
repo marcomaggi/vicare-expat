@@ -148,7 +148,6 @@
     ;;Notice  that  we do  not  touch the  parser  pointer  here: it  is
     ;;finalised by the guardian in (vicare expat).
     ;;
-;;;(pretty-print (list 'collected P) (current-error-port))
     (%clean-callback P.AttlistDeclHandler)
     (%clean-callback P.CharacterDataHandler)
     (%clean-callback P.CommentHandler)
@@ -169,8 +168,7 @@
     (%clean-callback P.StartElementHandler)
     (%clean-callback P.StartNamespaceDeclHandler)
     (%clean-callback P.UnparsedEntityDeclHandler)
-    (%clean-callback P.XmlDeclHandler)
-    ))
+    (%clean-callback P.XmlDeclHandler)))
 
 (define-auxiliary-syntaxes
   encoding:
@@ -211,7 +209,7 @@
 	  (mutable XmlDeclHandler))
 
   (maker ()
-	 (encoding: 'UTF-8))
+	 (encoding: #f))
 
   (protocol
    (lambda (make-top)
@@ -522,8 +520,8 @@
   (inherit <expat-parser>)
 
   (maker ()
-	 (encoding: 'UTF-8)
-	 (namespace-separator: #\:))
+	 (encoding:		#f)
+	 (namespace-separator:	#\:))
 
   (protocol
    (lambda (make-expat-parser)
