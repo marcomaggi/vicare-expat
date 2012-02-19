@@ -24,7 +24,6 @@
 ;;;along with this program.  If not, see <http://www.gnu.org/licenses/>.
 ;;;
 
-
 
 #!r6rs
 (import (vicare)
@@ -34,7 +33,7 @@
   (checks))
 
 (check-set-mode! 'report-failed)
-(display "*** testing Vicare Expat bindings\n")
+(check-display "*** testing Vicare Expat bindings\n")
 
 
 ;;;; helpers
