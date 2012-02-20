@@ -37,50 +37,49 @@
 
 ;;;; simple document parsing
 
-(when #f
-  (let ()
+(let ()
 
-    (define xml-utf8
-      (string->utf8
-       "<!-- this is a test document -->\
-     <stuff>\
-     <thing colour=\"yellow\">\
-     <alpha>one</alpha>\
-     <beta>two</beta>\
-     </thing>\
-     <thing>\
-     <alpha>123</alpha>\
-     <beta>456</beta>\
-     </thing>\
-     </stuff>"))
-
-    (define (start-callback data element attributes)
-      (let ((element    (ffi.cstring->string element))
-	    (attributes (ffi.argv->strings attributes)))
-	(pretty-print (list 'start element attributes))))
-
-    (define (end-callback data element)
-      (let ((element (ffi.cstring->string element)))
-	(pretty-print (list 'end element))))
-
-    (define (cdata-callback data buf.ptr buf.len)
-      (let ((text (ffi.cstring->string buf.ptr buf.len)))
-	(pretty-print (list 'cdata text))))
-
-    (define (comment-callback data cstr)
-      (let ((text (ffi.cstring->string cstr)))
-	(pretty-print (list 'comment text))))
-
+  (define (doit xml)
     (let (((P <expat-parser>) (make <expat-parser>)))
       (P.start-element-handler  start-callback)
       (P.end-element-handler    end-callback)
       (P.character-data-handler cdata-callback)
       (P.comment-handler        comment-callback)
-      (P.parse xml-utf8 #f #t))
+      (P.parse (string->utf8 xml) #f #t)))
 
-    (flush-output-port (current-output-port))
+  (define (start-callback data element attributes)
+    (let ((element    (ffi.cstring->string element))
+	  (attributes (ffi.argv->strings attributes)))
+      (pretty-print (list 'start element attributes))))
 
-    #f))
+  (define (end-callback data element)
+    (let ((element (ffi.cstring->string element)))
+      (pretty-print (list 'end element))))
+
+  (define (cdata-callback data buf.ptr buf.len)
+    (let ((text (ffi.cstring->string buf.ptr buf.len)))
+      (pretty-print (list 'cdata text))))
+
+  (define (comment-callback data cstr)
+    (let ((text (ffi.cstring->string cstr)))
+      (pretty-print (list 'comment text))))
+
+  (when #t
+    (doit
+     "<!-- this is a test document -->\
+      <stuff>\
+        <thing colour=\"yellow\">\
+          <alpha>one</alpha>\
+          <beta>two</beta>\
+        </thing>\
+        <thing>\
+          <alpha>123</alpha>\
+          <beta>456</beta>\
+        </thing>\
+      </stuff>")
+    (flush-output-port (current-output-port)))
+
+  #f)
 
 
 ;;;; XML declarations

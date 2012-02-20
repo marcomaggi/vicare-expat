@@ -1,7 +1,7 @@
 \input texinfo.tex
 @c %**start of header
 @setfilename vicare-expat.info
-@settitle Expat backend for Vicare
+@settitle Expat for Vicare
 @c %**end of header
 
 @include version.texi
@@ -17,7 +17,7 @@
 @c Values.
 @c ------------------------------------------------------------
 
-@set TITLE                      Expat backend for Vicare
+@set TITLE                      Expat for Vicare
 
 @c To be used as @value{PACKAGE} whenever we need to include the full
 @c name of this package.
@@ -197,6 +197,10 @@ additionally the library @library{vicare expat constants} exports one
 binding for each constant value defined in the C language header
 @file{expat.h}.
 
+The Nausicaa front end installs the library @library{nausicaa xml
+expat}; such library may still need some bindings from @library{vicare
+expat} and it needs for sure the @ffi{} library @library{vicare ffi}.
+
 This document contains only a brief description of the functions: refer
 to the Expat's documentation for details.
 
@@ -291,7 +295,45 @@ and here is the same example using the Nausicaa front end:
   (nausicaa xml expat)
   (prefix (vicare ffi) ffi.))
 
+(define (doit xml)
+  (let (((P <expat-parser>) (make <expat-parser>)))
+    (P.start-element-handler  start-callback)
+    (P.end-element-handler    end-callback)
+    (P.character-data-handler cdata-callback)
+    (P.comment-handler        comment-callback)
+    (P.parse (string->utf8 xml) #f #t)))
 
+(define (start-callback data element attributes)
+  (let ((element    (ffi.cstring->string element))
+        (attributes (ffi.argv->strings attributes)))
+    (pretty-print (list 'start element attributes))))
+
+(define (end-callback data element)
+  (let ((element (ffi.cstring->string element)))
+    (pretty-print (list 'end element))))
+
+(define (cdata-callback data buf.ptr buf.len)
+  (let ((text (ffi.cstring->string buf.ptr buf.len)))
+    (pretty-print (list 'cdata text))))
+
+(define (comment-callback data cstr)
+  (let ((text (ffi.cstring->string cstr)))
+    (pretty-print (list 'comment text))))
+
+(doit
+ "<!-- this is a test document -->\
+  <stuff>\
+    <thing colour=\"yellow\">\
+      <alpha>one</alpha>\
+      <beta>two</beta>\
+    </thing>\
+    <thing>\
+      <alpha>123</alpha>\
+      <beta>456</beta>\
+    </thing>\
+  </stuff>")
+
+(flush-output-port (current-output-port))
 @end example
 
 @c page
