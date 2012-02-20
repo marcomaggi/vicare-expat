@@ -250,7 +250,8 @@
     (expat.XML_StopParser P.parser resumable?))
 
   (method (resume-parser (P <expat-parser>))
-    (expat.XML_ResumeParser P.parser))
+    (parametrise ((current-expat-parser P))
+      (expat.XML_ResumeParser P.parser)))
 
   (method (set-user-data (P <expat-parser>) data)
     (expat.XML_SetUserData P.parser data))

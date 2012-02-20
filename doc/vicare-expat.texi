@@ -200,7 +200,7 @@ binding for each constant value defined in the C language header
 This document contains only a brief description of the functions: refer
 to the Expat's documentation for details.
 
-Here is an example program:
+Here is an example program using the core interface:
 
 @example
 #!r6rs
@@ -280,6 +280,18 @@ which prints:
 (end "beta")
 (end "thing")
 (end "stuff")
+@end example
+
+@noindent
+and here is the same example using the Nausicaa front end:
+
+@example
+#!r6rs
+(import (nausicaa)
+  (nausicaa xml expat)
+  (prefix (vicare ffi) ffi.))
+
+
 @end example
 
 @c page
@@ -2652,23 +2664,19 @@ representing the features of the running version of Expat.  Example:
 
 
 @menu
-* nau classes::                 Parser class types.
+* nau base::                    Base parser class.
+* nau namespace::               Namespace-enabled parser class.
+* nau entity::                  External entity parser class.
+* nau parsing::                 Parsing operations.
+* nau stop::                    Stopping and resuming.
+* nau status::                  Parsing status.
+* nau report::                  Inspecting errors.
+* nau misc::                    Miscellaneous functions.
 @end menu
 
 @c page
-@node nau classes
-@section Parser class types
-
-
-@menu
-* nau classes parser::          Base parser class.
-* nau classes ns::              Namespace-enabled parser class.
-* nau classes entity::          External entity parser class.
-@end menu
-
-@c page
-@node nau classes parser
-@subsection Base parser class
+@node nau base
+@section Base parser class
 
 
 The following bindings are exported by the library @library{nausicaa xml
@@ -2681,15 +2689,15 @@ Class type wrapping Expat parsers.  It is derived from @class{top}.
 
 
 @defop {Default constructor} @aclass{expat-parser} constructor @var{encoding}
-Build and return an instance of @class{expat-parser} wrapping a newly
-built Expat parser.  If an error occurs raise an exception with
-components: @condition{error}, @condition{who}, @condition{message}.
-@expatref{api create, XML_ParserCreate}.
+Build and return a class instance wrapping a newly built Expat parser;
+@expatref{api create, XML_ParserCreate}.  If an error occurs raise an
+exception with components: @condition{error}, @condition{who},
+@condition{message}.
 
 The Expat parser finalises itself with @func{XML_ParserFree} whenever
 the pointer object referencing it is garbage collected, @expatref{api
-create, XML_ParserFree}; in addition: all the C callbacks created by and
-registered in this parser are automatically finalised whenever the
+create, XML_ParserFree}.  In addition: all the C callbacks created by
+and registered in this parser are automatically finalised whenever the
 returned instance is garbage collected.
 
 @var{encoding} must be @false{} or one of the Scheme symbols:
@@ -2700,7 +2708,7 @@ document.
 
 
 @defop {Superclass constructor} @aclass{expat-parser} constructor @var{parser}
-Build and return new instance wrapping an already built Expat parser
+Build and return a class instance wrapping an already built Expat parser
 referenced by @var{parser}, which must be a pointer object.
 @end defop
 
@@ -2734,8 +2742,8 @@ a status code.  @expatref{api misc, XML_SetEncoding}.
 @end defmethod
 
 @c page
-@node nau classes ns
-@subsection Namespace--enabled parser class
+@node nau namespace
+@section Namespace--enabled parser class
 
 
 The use of namespaces in @axml{} 1.0 is defined in the recommendation
@@ -2759,10 +2767,10 @@ derived from @class{expat-parser}.
 
 
 @defop {Default constructor} @aclass{expat-ns-parser} constructor @var{encoding} @var{namespace-separator}
-@expatref{api create, XML_ParserCreateNS}.  Build and return an instance
-of @class{expat-ns-parser} wrapping a newly built Expat parser with
-namespaces enabled.  If an error occurs raise an exception with
-components: @condition{error}, @condition{who}, @condition{message}.
+Build and return a class instance wrapping a newly built Expat parser
+with namespaces enabled; @expatref{api create, XML_ParserCreateNS}.  If
+an error occurs raise an exception with components: @condition{error},
+@condition{who}, @condition{message}.
 
 @var{encoding} is as in the constructor of @class{expat-parser}.
 @var{namespace-separator} must be a Scheme character in the @ascii{}
@@ -2786,8 +2794,8 @@ triplets: @uri{}, local name, prefix, rather than the default pairs:
 @end defmethod
 
 @c page
-@node nau classes entity
-@subsection External entity parser class
+@node nau entity
+@section External entity parser class
 
 
 The following bindings are exported by the library @library{nausicaa xml
@@ -2821,8 +2829,8 @@ from @class{expat-parser}.
 
 
 @defop {Default constructor} @aclass{expat-entity-parser} constructor @var{root-parser} @var{context} @var{encoding}
-Build and return an instance of @class{expat-entity-parser} wrapping a
-newly built Expat parser for entity parsing; @expatref{api external,
+Build and return a class instance wrapping a newly built Expat parser
+for entity parsing; @expatref{api external,
 XML_ExternalEntityParserCreate}.  If an error occurs raise an exception
 with components: @condition{error}, @condition{who},
 @condition{message}.
@@ -2839,6 +2847,206 @@ constructor of @class{expat-parser}.
 Build and return a new instance using the default constructor.
 @var{encoding} defaults to @code{UTF-8}.
 @end deffn
+
+@c page
+@node nau parsing
+@section Parsing operations
+
+
+All the following bindings are exported by the @library{nausicaa xml
+expat} library.
+
+
+@defmethod @aclass{expat-parser} parse @var{buffer} @var{length} @var{final?}
+Parse the next portion of the document; return a fixnum representing a
+status code.  @expatref{api parse, XML_Parse}.
+
+@var{buffer} must be a bytevector or a pointer object; @var{length} must
+be @false{} or a non--negative exact integer in the range of the C
+language type @code{int}.  If @var{buffer} is a pointer: @var{length}
+must be an integer representing the number of bytes to consume from the
+buffer; if @var{buffer} is a bytevector: @var{length} is ignored and the
+whole bytevector is consumed.
+
+If @var{final?} is true: expect this buffer to contain the end of the
+document; @var{final?} defaults to @false{}.
+
+While actually running the parse operation: the
+@func{current-expat-parser} parameter is set to the parser instance.
+@end defmethod
+
+
+@deffn Parameter current-expat-parser
+References the @class{expat-parser} instance currently in use for a
+parsing operation.
+@end deffn
+
+@c ------------------------------------------------------------
+
+@subsubheading Parsing data from an internal buffer
+
+
+@defmethod @aclass{expat-parser} get-buffer @var{length}
+Allocate an internal buffer @var{length} bytes wide and return a pointer
+object to it; @expatref{api parse, XML_GetBuffer}.  If the allocation
+fails raise an exception with components: @condition{error},
+@condition{who}, @condition{message}, @condition{irritants}.
+
+The returned value is meant to be filled with the next portion of the
+document and processed by the method @func{parse-buffer}.
+@end defmethod
+
+
+@defmethod @aclass{expat-parser} parse-buffer @var{length} @var{final?}
+Parse the next portion of the document from the internal buffer
+allocated by a previous call to the method @func{get-buffer}.  Return a
+fixnum representing a status code.  @expatref{api parse,
+XML_ParseBuffer}.
+
+While actually running the parse operation: the
+@func{current-expat-parser} parameter is set to the parser instance.
+@end defmethod
+
+@c page
+@node nau stop
+@section Stopping and resuming
+
+
+All the following bindings are exported by the @library{nausicaa xml
+expat} library.
+
+
+@defmethod @aclass{expat-parser} stop-parser @var{resumable?}
+Stop parsing causing the parse function to return; return a fixnum
+representing a status code.  @expatref{api parse, XML_StopParser}.
+
+If @var{resumable?} is true: suspend the parsing for later resumption;
+if @var{resumable?} is false: abort the parsing.
+@end defmethod
+
+
+@defmethod @aclass{expat-parser} resume-parser
+Resume parsing for a suspended parser; @expatref{api parse,
+XML_ResumeParser}.
+
+While actually running the parse operation: the
+@func{current-expat-parser} parameter is set to the parser instance.
+@end defmethod
+
+@c page
+@node nau status
+@section Parsing status
+
+
+All the following bindings are exported by the @library{nausicaa xml
+expat} library.
+
+
+@defmethod @aclass{expat-parser} get-parsing-status
+Acquire the current status of the parser and return an object accessible
+through the @class{expat-parsing-status} label.  @expatref{api parse,
+XML_GetParsingStatus}.
+@end defmethod
+
+
+@deftp Label @aclass{expat-parsing-status}
+Label type wrapping a structure representing the current parser status
+as mirror of the C data structure @code{XML_ParsingStatus};
+@expatref{api parse, XML_ParsingStatus}.  It has the following fields:
+
+@table @code
+@item parsing
+A fixnum.
+
+@item final-buffer?
+A boolean.
+@end table
+@end deftp
+
+@c page
+@node nau report
+@section Inspecting errors
+
+
+All the following bindings are exported by the @library{nausicaa xml
+expat} library.
+
+
+@defmethod @aclass{expat-parser} get-error-code
+Return a fixnum representing an error code for the last error while
+parsing.  @expatref{api report, XML_GetErrorCode}.
+@end defmethod
+
+
+@defmethod @aclass{expat-parser} error-string
+Return a Scheme string describing the error associated to the last error
+while parsing.  @expatref{api report, XML_ErrorString}.
+@end defmethod
+
+
+@defmethod @aclass{expat-parser} get-current-line-number
+@defmethodx @aclass{expat-parser} get-current-column-number
+@defmethodx @aclass{expat-parser} get-current-byte-index
+@defmethodx @aclass{expat-parser} get-current-byte-count
+Inspect the current parsing position.  @expatref{api report,
+XML_GetCurrentByteIndex}.
+@end defmethod
+
+@c page
+@node nau misc
+@section Miscellaneous functions
+
+
+All the following bindings are exported by the @library{nausicaa xml
+expat} library.
+
+
+@defmethod @aclass{expat-parser} set-user-data @var{pointer}
+@defmethodx @aclass{expat-parser} get-user-data
+Setter and getter for custom data pointer used as first argument to many
+handlers.  @expatref{api misc, XML_SetUserData}.
+@end defmethod
+
+
+@defmethod @aclass{expat-parser} use-parser-as-handler-arg
+Set the parser pointer as first argument to many handlers; notice that
+it is a raw pointer object that is handed to the callback, not the
+instance of @class{expat-parser}.  @expatref{api misc,
+XML_UseParserAsHandlerArg}.
+@end defmethod
+
+
+@defmethod @aclass{expat-parser} set-base @var{base}
+Set the base to resolve relative @uri{}s.  @var{base} can be a
+bytevector representing a string or @false{}, in which case the base is
+reset.  @expatref{api misc, XML_SetBase}.
+@end defmethod
+
+
+@defmethod @aclass{expat-parser} get-base
+Get the base to resolve relative @uri{}s and return it as bytevector.
+If there is no base set: the return value is @false{}.  @expatref{api
+misc, XML_GetBase}.
+@end defmethod
+
+
+@defmethod @aclass{expat-parser} get-specified-attribute-count
+Refer to the original documentation.  @expatref{api misc,
+XML_GetSpecifiedAttributeCount}.
+@end defmethod
+
+
+@defmethod @aclass{expat-parser} get-id-attribute-index
+Refer to the original documentation.  @expatref{api misc,
+XML_GetIdAttributeIndex}.
+@end defmethod
+
+
+@defmethod @aclass{expat-parser} use-foreign-dtd @var{use-dtd?}
+If @var{use-dtd?} is true: allow the application to provide an external
+@dtd{}.  Return a fixnum representing an error code, if successful
+@code{XML_ERROR_NONE}.  @expatref{api misc, XML_UseForeignDTD}.
+@end defmethod
 
 @c page
 @c ------------------------------------------------------------

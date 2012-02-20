@@ -44,6 +44,7 @@ EXTRA_DIST =	\
 	test-vicare-nausicaa.sps		\
 	\
 	proof-for-documentation.sps		\
+	proof-for-nau-documentation.sps		\
 	\
 	checks.sls
 
