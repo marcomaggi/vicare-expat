@@ -2767,12 +2767,14 @@ access this pointer directly.
 @end defcv
 
 
-@defmethod @aclass{expat-parser} reset @var{encoding}
+@defmethod @aclass{expat-parser} reset
+@defmethodx @aclass{expat-parser} reset @var{encoding}
 Reset a parser so that it can be used again; return a boolean value:
 @true{} if success, @false{} if this parser cannot be reset.
 @expatref{api create, XML_ParserReset}.
 
-@var{encoding} is as described for the default constructor.
+@var{encoding} is as described for the default constructor and it
+defaults to @false{}.
 @end defmethod
 
 

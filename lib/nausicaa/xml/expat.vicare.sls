@@ -228,8 +228,12 @@
 
 ;;; --------------------------------------------------------------------
 
-  (method (reset (P <expat-parser>) encoding)
-    (expat.XML_ParserReset P.parser encoding))
+  (method reset
+    (case-lambda
+     (((P <expat-parser>))
+      (expat.XML_ParserReset P.parser #f))
+     (((P <expat-parser>) encoding)
+      (expat.XML_ParserReset P.parser encoding))))
 
   (method (set-encoding (P <expat-parser>) encoding)
     (expat.XML_SetEncoding P.parser encoding))
