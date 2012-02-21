@@ -28,9 +28,9 @@
 #!r6rs
 (import (nausicaa)
   (nausicaa xml expat)
-  (prefix (vicare ffi) ffi.)
-  (prefix (vicare expat) expat.)
-  (only (vicare) collect)
+  (prefix (vicare language-extensions)
+	  ik.)
+;;;  (prefix (vicare expat) expat.)
   (checks))
 
 (check-set-mode! 'report-failed)
@@ -56,14 +56,14 @@
       (with-result
        (define (start-callback data element attributes)
 	 (add-result (list 'start
-			   (ffi.cstring->string element)
-			   (ffi.argv->strings attributes))))
+			   (ik.cstring->string element)
+			   (ik.argv->strings attributes))))
        (define (end-callback data element)
-	 (add-result (list 'end (ffi.cstring->string element))))
+	 (add-result (list 'end (ik.cstring->string element))))
        (define (chdata-callback data buf.ptr buf.len)
-	 (add-result (list 'character-data (ffi.cstring->string buf.ptr buf.len))))
+	 (add-result (list 'character-data (ik.cstring->string buf.ptr buf.len))))
        (define (comment-callback data cstr)
-	 (add-result (list 'comment (ffi.cstring->string cstr))))
+	 (add-result (list 'comment (ik.cstring->string cstr))))
        (let (((P <expat-parser>) (make <expat-parser>
 				   (encoding: 'UTF-8))))
 	 (P.start-element-handler  start-callback)
@@ -88,14 +88,14 @@
       (with-result
        (define (start-callback data element attributes)
 	 (add-result (list 'start
-			   (ffi.cstring->string element)
-			   (ffi.argv->strings attributes))))
+			   (ik.cstring->string element)
+			   (ik.argv->strings attributes))))
        (define (end-callback data element)
-	 (add-result (list 'end (ffi.cstring->string element))))
+	 (add-result (list 'end (ik.cstring->string element))))
        (define (chdata-callback data buf.ptr buf.len)
-	 (add-result (list 'character-data (ffi.cstring->string buf.ptr buf.len))))
+	 (add-result (list 'character-data (ik.cstring->string buf.ptr buf.len))))
        (define (comment-callback data cstr)
-	 (add-result (list 'comment (ffi.cstring->string cstr))))
+	 (add-result (list 'comment (ik.cstring->string cstr))))
        (let (((P <expat-ns-parser>) (make <expat-ns-parser>
 				      (encoding: 'UTF-8)
 				      (namespace-separator: #\,))))
@@ -121,14 +121,14 @@
       (with-result
        (define (start-callback data element attributes)
 	 (add-result (list 'start
-			   (ffi.cstring->string element)
-			   (ffi.argv->strings attributes))))
+			   (ik.cstring->string element)
+			   (ik.argv->strings attributes))))
        (define (end-callback data element)
-	 (add-result (list 'end (ffi.cstring->string element))))
+	 (add-result (list 'end (ik.cstring->string element))))
        (define (chdata-callback data buf.ptr buf.len)
-	 (add-result (list 'character-data (ffi.cstring->string buf.ptr buf.len))))
+	 (add-result (list 'character-data (ik.cstring->string buf.ptr buf.len))))
        (define (comment-callback data cstr)
-	 (add-result (list 'comment (ffi.cstring->string cstr))))
+	 (add-result (list 'comment (ik.cstring->string cstr))))
        (let (((P <expat-parser>) (make <expat-parser>)))
 	 (P.start-element-handler  start-callback)
 	 (P.end-element-handler    end-callback)
@@ -136,7 +136,7 @@
 	 (P.comment-handler        comment-callback)
 	 (let* ((buflen		(bytevector-length xml-1))
 		(buffer		(P.get-buffer buflen)))
-	   (ffi.memory-copy buffer 0 xml-1 0 buflen)
+	   (ik.memory-copy buffer 0 xml-1 0 buflen)
 	   (P.parse-buffer buflen #t))))
     => (list XML_STATUS_OK
 	     '((comment " this is a test document ")
@@ -151,7 +151,7 @@
 	       (end "thing")
 	       (end "stuff"))))
 
-  (collect))
+  (ik.collect))
 
 
 (parametrise ((check-test-name	'namespaces))
@@ -160,10 +160,10 @@
     (with-result
      (define (start-callback data element attributes)
        (add-result (list 'start
-			 (ffi.cstring->string element)
-			 (ffi.argv->strings attributes))))
+			 (ik.cstring->string element)
+			 (ik.argv->strings attributes))))
      (define (end-callback data element)
-       (add-result (list 'end (ffi.cstring->string element))))
+       (add-result (list 'end (ik.cstring->string element))))
      (let (((P <expat-ns-parser>) (make <expat-ns-parser>)))
        (P.start-element-handler  start-callback)
        (P.end-element-handler    end-callback)
@@ -226,8 +226,8 @@
       (with-result
        (define (start-callback dummy element attributes)
 	 (add-result (list 'start
-			   (ffi.cstring->string element)
-			   (ffi.argv->strings attributes)))
+			   (ik.cstring->string element)
+			   (ik.argv->strings attributes)))
 	 (let* (((P <expat-parser>) (current-expat-parser))
 		((status <expat-parsing-status>) (P.get-parsing-status)))
 	   (unless (= XML_STATUS_SUSPENDED status.parsing)
@@ -245,14 +245,14 @@
       (with-result
        (define (start-callback-and-suspend dummy element attributes)
 	 (add-result (list 'start
-			   (ffi.cstring->string element)
-			   (ffi.argv->strings attributes)))
+			   (ik.cstring->string element)
+			   (ik.argv->strings attributes)))
 	 (let (((P <expat-parser>) (current-expat-parser)))
 	   (add-result (list 'stop-rv (P.stop-parser #t)))))
        (define (start-callback parser element attributes)
 	 (add-result (list 'start
-			   (ffi.cstring->string element)
-			   (ffi.argv->strings attributes))))
+			   (ik.cstring->string element)
+			   (ik.argv->strings attributes))))
        (let (((P <expat-parser>) (make <expat-parser>)))
 	 (P.start-element-handler start-callback-and-suspend)
 	 (let ((rv (P.parse xml-utf8 #f #t)))
@@ -264,7 +264,7 @@
 			 (suspended ,XML_STATUS_SUSPENDED)
 			 (start "ball" ("colour" "red")))))
 
-  (collect))
+  (ik.collect))
 
 
 (parametrise ((check-test-name	'parser-misc))
@@ -282,7 +282,7 @@
   (check
       (let (((P <expat-parser>) (make <expat-parser>)))
 	(P.set-user-data P.parser)
-	(ffi.pointer=? P.parser (P.get-user-data)))
+	(ik.pointer=? P.parser (P.get-user-data)))
     => #t)
 
   (check
@@ -327,7 +327,7 @@
 	(P.use-foreign-dtd #f))
     => XML_ERROR_NONE)
 
-  (collect))
+  (ik.collect))
 
 
 (parametrise ((check-test-name	'xml-decl-handler))
@@ -342,8 +342,8 @@
   (define (xml-decl-callback user-data version encoding standalone)
     (add-result
      (list 'xml-decl
-	   (or (ffi.pointer-null? version)  (ffi.cstring->string version))
-	   (or (ffi.pointer-null? encoding) (ffi.cstring->string encoding))
+	   (or (ik.pointer-null? version)  (ik.cstring->string version))
+	   (or (ik.pointer-null? encoding) (ik.cstring->string encoding))
 	   (%process-standalone standalone))))
 
   (define (doit xml)
@@ -363,10 +363,10 @@
   (define (external-entity-callback root-parser context base system-id public-id)
     (add-result
      (list 'external-entity
-	   (or (ffi.pointer-null? context)     (ffi.cstring->string context))
-	   (or (ffi.pointer-null? base)        (ffi.cstring->string base))
-	   (ffi.cstring->string system-id)
-	   (or (ffi.pointer-null? public-id)   (ffi.cstring->string public-id))))
+	   (or (ik.pointer-null? context)     (ik.cstring->string context))
+	   (or (ik.pointer-null? base)        (ik.cstring->string base))
+	   (ik.cstring->string system-id)
+	   (or (ik.pointer-null? public-id)   (ik.cstring->string public-id))))
     (let (((E <expat-entity-parser>) (make <expat-entity-parser>
 				       root-parser context)))
       (E.xml-decl-handler xml-decl-callback)
@@ -414,7 +414,7 @@
 	  (external-entity #t #t "http://localhost/toys" #t)
 	  (xml-decl "1.0" "utf-8" unspecified))))
 
-  (collect))
+  (ik.collect))
 
 
 (parametrise ((check-test-name	'non-standalone-handler))
@@ -541,7 +541,7 @@
 	  (doctype-start 0)
 	  (doctype-end))))
 
-  (collect))
+  (ik.collect))
 
 
 (parametrise ((check-test-name	'dtd-doctype-handler))
@@ -549,9 +549,9 @@
   (define (start-doctype-callback data doctype-name sysid pubid has-internal-subset)
     (add-result
      (list 'doctype-start
-	   (ffi.cstring->string doctype-name)
-	   (or (ffi.pointer-null? sysid) (ffi.cstring->string sysid))
-	   (or (ffi.pointer-null? pubid) (ffi.cstring->string pubid))
+	   (ik.cstring->string doctype-name)
+	   (or (ik.pointer-null? sysid) (ik.cstring->string sysid))
+	   (or (ik.pointer-null? pubid) (ik.cstring->string pubid))
 	   has-internal-subset)))
 
   (define (end-doctype-callback data)
@@ -594,38 +594,7 @@
 	     '((doctype-start "toys" #t #t 1)
 	       (doctype-end))))
 
-  (collect))
-
-
-(parametrise ((check-test-name	'default-handler))
-
-  (define (start-callback data element attributes)
-    (expat.XML_DefaultCurrent data))
-
-  (define (end-callback data element)
-    (expat.XML_DefaultCurrent data))
-
-  (define (default-callback user-data buf.ptr buf.len)
-    (add-result (list 'default (ffi.cstring->string buf.ptr buf.len))))
-
-  (define (doit xml)
-    (with-result
-     (let (((P <expat-parser>) (make <expat-ns-parser>)))
-       (P.start-element-handler start-callback)
-       (P.end-element-handler   end-callback)
-       (P.default-handler       default-callback)
-       (P.use-parser-as-handler-arg)
-       (P.parse (string->utf8 xml) #f #t))))
-
-  (check
-      (doit "<toys><ball colour='yellow'/></toys>")
-    => (list XML_STATUS_OK
-	     '((default "<toys>")
-	       (default "<ball colour='yellow'/>")
-	       (default "")
-	       (default "</toys>"))))
-
-  (collect))
+  (ik.collect))
 
 
 (parametrise ((check-test-name	'external-entity-parser))
@@ -643,10 +612,10 @@
 					root-parser context))
 	   (rv     (E.parse (string->utf8 dtd) #f #t)))
       (add-result (list 'external-entity rv
-			(ffi.pointer-null? context)
-			(ffi.pointer-null? base)
-			(ffi.cstring->string system-id)
-			(ffi.pointer-null? public-id)))
+			(ik.pointer-null? context)
+			(ik.pointer-null? base)
+			(ik.cstring->string system-id)
+			(ik.pointer-null? public-id)))
       XML_STATUS_OK))
 
   (define (doit)
@@ -663,10 +632,10 @@
     => `(,XML_STATUS_OK
 	 ((external-entity ,XML_STATUS_OK #t #t "http://localhost/toys" #t))))
 
-  (collect))
+  (ik.collect))
 
 
-(parametrise ((check-test-name	'dtd-element-handler))
+#;(parametrise ((check-test-name	'dtd-element-handler))
 
   (define (doit xml)
     (with-result
@@ -678,7 +647,7 @@
   (define (dtd-elm-callback data name model)
     (add-result
      (list 'dtd-element
-	   (ffi.cstring->string name)
+	   (ik.cstring->string name)
 	   (expat.XML_Content->list (expat.pointer->XML_Content model))))
     (expat.XML_FreeContentModel data model))
 
@@ -825,19 +794,19 @@
 				attribute-type default-value required?)
     (add-result
      (list 'dtd-attlist
-	   (ffi.cstring->string element-name)
-	   (ffi.cstring->string attribute-name)
-	   (ffi.cstring->string attribute-type)
-	   (if (ffi.pointer-null? default-value)
+	   (ik.cstring->string element-name)
+	   (ik.cstring->string attribute-name)
+	   (ik.cstring->string attribute-type)
+	   (if (ik.pointer-null? default-value)
 	       'no-value
-	     (ffi.cstring->string default-value))
+	     (ik.cstring->string default-value))
 	   (fxpositive? required?))))
 
   (define (elm-start-callback data element attributes)
     (add-result
      (list 'element-start
-	   (ffi.cstring->string element)
-	   (ffi.argv->strings attributes))))
+	   (ik.cstring->string element)
+	   (ik.argv->strings attributes))))
 
 ;;; --------------------------------------------------------------------
 
@@ -885,15 +854,15 @@
 	       (element-start "toys" ())
 	       (element-start "ball" ("colour" "red")))))
 
-  (collect))
+  (ik.collect))
 
 
 (parametrise ((check-test-name	'dtd-notation-handler))
 
   (define (%false-or-string thing)
-    (if (ffi.pointer-null? thing)
+    (if (ik.pointer-null? thing)
 	#f
-      (ffi.cstring->string thing)))
+      (ik.cstring->string thing)))
 
   (define (notation-callback data notation-name base system-id public-id)
     (add-result
@@ -944,15 +913,15 @@
     => `(,XML_STATUS_OK
 	 ((notation "bouncing" #f "http://localhost/bouncer" "The Bouncer"))))
 
-  (collect))
+  (ik.collect))
 
 
 (parametrise ((check-test-name	'dtd-entity-handler))
 
   (define (%false-or-string thing)
-    (if (ffi.pointer-null? thing)
+    (if (ik.pointer-null? thing)
 	#f
-      (ffi.cstring->string thing)))
+      (ik.cstring->string thing)))
 
   (define (doit xml)
     (with-result
@@ -971,9 +940,9 @@
      (list 'dtd-entity
 	   (%false-or-string entity-name)
 	   (fxpositive? is-parameter-entity)
-	   (if (ffi.pointer-null? value)
+	   (if (ik.pointer-null? value)
 	       #f
-	     (ffi.cstring->string value value-length))
+	     (ik.cstring->string value value-length))
 	   (%false-or-string base)
 	   (%false-or-string system-id)
 	   (%false-or-string public-id)
@@ -982,8 +951,8 @@
   (define (elm-start-callback data element attributes)
     (add-result
      (list 'element-start
-	   (ffi.cstring->string element)
-	   (ffi.argv->strings attributes))))
+	   (ik.cstring->string element)
+	   (ik.argv->strings attributes))))
 
 ;;; --------------------------------------------------------------------
 
@@ -1081,7 +1050,7 @@
 	 ((dtd-entity "stuff" #t #f "http://localhost/" "http://localhost/stuff" "The Stuff" #f)
 	  (element-start "thing" ()))))
 
-  (collect))
+  (ik.collect))
 
 
 (parametrise ((check-test-name	'comment-handler))
@@ -1092,7 +1061,7 @@
   (define (comment-callback data cstr)
     (add-result
      (list 'comment
-	   (ffi.cstring->string cstr))))
+	   (ik.cstring->string cstr))))
 
   (define (doit xml)
     (with-result
@@ -1105,7 +1074,7 @@
     => `(,XML_STATUS_OK
 	 ((comment " this is a test document "))))
 
-  (collect))
+  (ik.collect))
 
 
 (parametrise ((check-test-name	'cdata-handler))
@@ -1119,7 +1088,7 @@
   (define (text-callback data buf.ptr buf.len)
     (add-result
      (list 'text
-	   (ffi.cstring->string buf.ptr buf.len))))
+	   (ik.cstring->string buf.ptr buf.len))))
 
   (define (doit xml)
     (with-result
@@ -1156,7 +1125,7 @@
 	  (text " <stuff> ")
 	  (end-cdata))))
 
-  (collect))
+  (ik.collect))
 
 
 (parametrise ((check-test-name	'namespace-handler))
@@ -1164,24 +1133,24 @@
   (define (start-element-callback data element attributes)
     (add-result
      (list 'element-start
-	   (ffi.cstring->string element)
-	   (ffi.argv->strings attributes))))
+	   (ik.cstring->string element)
+	   (ik.argv->strings attributes))))
 
   (define (end-element-callback data element)
     (add-result
      (list 'element-end
-	   (ffi.cstring->string element))))
+	   (ik.cstring->string element))))
 
   (define (start-xmlns-callback data prefix uri)
     (add-result
      (list 'xmlns-start
-	   (or (ffi.pointer-null? prefix) (ffi.cstring->string prefix))
-	   (or (ffi.pointer-null? uri)    (ffi.cstring->string uri)))))
+	   (or (ik.pointer-null? prefix) (ik.cstring->string prefix))
+	   (or (ik.pointer-null? uri)    (ik.cstring->string uri)))))
 
   (define (end-xmlns-callback data prefix)
     (add-result
      (list 'xmlns-end
-	   (or (ffi.pointer-null? prefix) (ffi.cstring->string prefix)))))
+	   (or (ik.pointer-null? prefix) (ik.cstring->string prefix)))))
 
   (define (doit xml)
     (with-result
@@ -1235,7 +1204,7 @@
 	       (element-end "http://localhost/blue:toys")
 	       (xmlns-end #t))))
 
-  (collect))
+  (ik.collect))
 
 
 (parametrise ((check-test-name	'skipped-entity-handler))
@@ -1249,7 +1218,7 @@
   (define (skipped-entity-callback data entity-name is-parameter-entity)
     (add-result
      (list 'skipped-entity
-	   (ffi.cstring->string entity-name)
+	   (ik.cstring->string entity-name)
 	   (fxpositive? is-parameter-entity))))
 
 ;;; --------------------------------------------------------------------
@@ -1261,7 +1230,7 @@
     => `(,XML_STATUS_OK
 	 ((skipped-entity "ciao" #f))))
 
-  (collect))
+  (ik.collect))
 
 
 (parametrise ((check-test-name	'processing-instruction-handler))
@@ -1275,8 +1244,8 @@
   (define (processing-instruction-callback user-data target data)
     (add-result
      (list 'processing-instruction
-	   (ffi.cstring->string target)
-	   (ffi.cstring->string data))))
+	   (ik.cstring->string target)
+	   (ik.cstring->string data))))
 
 ;;; --------------------------------------------------------------------
 

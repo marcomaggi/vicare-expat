@@ -29,7 +29,9 @@
 (import (vicare)
   (vicare expat)
   (vicare expat constants)
-  (prefix (vicare ffi) ffi.)
+  (prefix (only (vicare ffi)
+		free-c-callback)
+	  ffi.)
   (checks))
 
 (check-set-mode! 'report-failed)
@@ -61,14 +63,14 @@
       (with-result
        (define (start-callback data element attributes)
 	 (add-result (list 'start
-			   (ffi.cstring->string element)
-			   (ffi.argv->strings attributes))))
+			   (cstring->string element)
+			   (argv->strings attributes))))
        (define (end-callback data element)
-	 (add-result (list 'end (ffi.cstring->string element))))
+	 (add-result (list 'end (cstring->string element))))
        (define (chdata-callback data buf.ptr buf.len)
-	 (add-result (list 'character-data (ffi.cstring->string buf.ptr buf.len))))
+	 (add-result (list 'character-data (cstring->string buf.ptr buf.len))))
        (define (comment-callback data cstr)
-	 (add-result (list 'comment (ffi.cstring->string cstr))))
+	 (add-result (list 'comment (cstring->string cstr))))
        (let ((parser	(XML_ParserCreate 'UTF-8))
 	     (start	(XML_StartElementHandler  start-callback))
 	     (end	(XML_EndElementHandler    end-callback))
@@ -102,14 +104,14 @@
       (with-result
        (define (start-callback data element attributes)
 	 (add-result (list 'start
-			   (ffi.cstring->string element)
-			   (ffi.argv->strings attributes))))
+			   (cstring->string element)
+			   (argv->strings attributes))))
        (define (end-callback data element)
-	 (add-result (list 'end (ffi.cstring->string element))))
+	 (add-result (list 'end (cstring->string element))))
        (define (chdata-callback data buf.ptr buf.len)
-	 (add-result (list 'character-data (ffi.cstring->string buf.ptr buf.len))))
+	 (add-result (list 'character-data (cstring->string buf.ptr buf.len))))
        (define (comment-callback data cstr)
-	 (add-result (list 'comment (ffi.cstring->string cstr))))
+	 (add-result (list 'comment (cstring->string cstr))))
        (let ((parser	(XML_ParserCreateNS 'UTF-8 #\,))
 	     (start	(XML_StartElementHandler  start-callback))
 	     (end	(XML_EndElementHandler    end-callback))
@@ -143,14 +145,14 @@
       (with-result
        (define (start-callback data element attributes)
 	 (add-result (list 'start
-			   (ffi.cstring->string element)
-			   (ffi.argv->strings attributes))))
+			   (cstring->string element)
+			   (argv->strings attributes))))
        (define (end-callback data element)
-	 (add-result (list 'end (ffi.cstring->string element))))
+	 (add-result (list 'end (cstring->string element))))
        (define (chdata-callback data buf.ptr buf.len)
-	 (add-result (list 'character-data (ffi.cstring->string buf.ptr buf.len))))
+	 (add-result (list 'character-data (cstring->string buf.ptr buf.len))))
        (define (comment-callback data cstr)
-	 (add-result (list 'comment (ffi.cstring->string cstr))))
+	 (add-result (list 'comment (cstring->string cstr))))
        (let ((parser	(XML_ParserCreate 'UTF-8))
 	     (start	(XML_StartElementHandler  start-callback))
 	     (end	(XML_EndElementHandler    end-callback))
@@ -162,7 +164,7 @@
 	 (let* ((data		(string->utf8 xml-1))
 		(buflen		(bytevector-length data))
 		(buffer		(XML_GetBuffer parser buflen)))
-	   (ffi.memory-copy buffer 0 data 0 buflen)
+	   (memory-copy buffer 0 data 0 buflen)
 	   (let* ((finished?	#t)
 		  (rv		(XML_ParseBuffer parser buflen finished?)))
 	     (ffi.free-c-callback start)
@@ -192,10 +194,10 @@
     (with-result
      (define (start-callback data element attributes)
        (add-result (list 'start
-			 (ffi.cstring->string element)
-			 (ffi.argv->strings attributes))))
+			 (cstring->string element)
+			 (argv->strings attributes))))
      (define (end-callback data element)
-       (add-result (list 'end (ffi.cstring->string element))))
+       (add-result (list 'end (cstring->string element))))
      (let ((parser	(XML_ParserCreateNS 'UTF-8 #\:))
 	   (start	(XML_StartElementHandler  start-callback))
 	   (end		(XML_EndElementHandler    end-callback)))
@@ -252,7 +254,7 @@
   (check
       (let ((parser (XML_ParserCreate 'UTF-8)))
 	(XML_ParserFree parser)
-	(ffi.pointer-null? parser))
+	(pointer-null? parser))
     => #t)
 
   (check
@@ -260,14 +262,14 @@
 	(XML_ParserFree parser)
 	(XML_ParserFree parser)
 	(XML_ParserFree parser)
-	(ffi.pointer-null? parser))
+	(pointer-null? parser))
     => #t)
 
   (check
       (let ((parser (XML_ParserCreate 'UTF-8)))
 	(XML_ParserReset parser)
 	(XML_ParserFree parser)
-	(ffi.pointer-null? parser))
+	(pointer-null? parser))
     => #t)
 
 
@@ -289,8 +291,8 @@
       (with-result
        (define (start-callback parser element attributes)
 	 (add-result (list 'start
-			   (ffi.cstring->string element)
-			   (ffi.argv->strings attributes)))
+			   (cstring->string element)
+			   (argv->strings attributes)))
 	 (let ((status (XML_GetParsingStatus parser)))
 	   (unless (= XML_STATUS_SUSPENDED
 		      (XML_ParsingStatus-parsing status))
@@ -311,13 +313,13 @@
       (with-result
        (define (start-callback-and-suspend parser element attributes)
 	 (add-result (list 'start
-			   (ffi.cstring->string element)
-			   (ffi.argv->strings attributes)))
+			   (cstring->string element)
+			   (argv->strings attributes)))
 	 (add-result (list 'stop-rv (XML_StopParser parser #t))))
        (define (start-callback parser element attributes)
 	 (add-result (list 'start
-			   (ffi.cstring->string element)
-			   (ffi.argv->strings attributes))))
+			   (cstring->string element)
+			   (argv->strings attributes))))
        (let* ((parser	(XML_ParserCreate))
 	      (suspend	(XML_StartElementHandler start-callback-and-suspend)))
 	 (XML_SetStartElementHandler parser suspend)
@@ -344,7 +346,7 @@
   (check
       (let ((parser (XML_ParserCreate)))
 	(XML_SetUserData parser parser)
-	(ffi.pointer=? parser (XML_GetUserData parser)))
+	(pointer=? parser (XML_GetUserData parser)))
     => #t)
 
   (check
@@ -421,8 +423,8 @@
   (define (xml-decl-callback user-data version encoding standalone)
     (add-result
      (list 'xml-decl
-	   (or (ffi.pointer-null? version)  (ffi.cstring->string version))
-	   (or (ffi.pointer-null? encoding) (ffi.cstring->string encoding))
+	   (or (pointer-null? version)  (cstring->string version))
+	   (or (pointer-null? encoding) (cstring->string encoding))
 	   (%process-standalone standalone))))
 
   (define (doit xml-utf8)
@@ -446,10 +448,10 @@
   (define (external-entity-callback parser context base system-id public-id)
     (add-result
      (list 'external-entity
-	   (or (ffi.pointer-null? context)     (ffi.cstring->string context))
-	   (or (ffi.pointer-null? base)        (ffi.cstring->string base))
-	   (ffi.cstring->string system-id)
-	   (or (ffi.pointer-null? public-id)   (ffi.cstring->string public-id))))
+	   (or (pointer-null? context)     (cstring->string context))
+	   (or (pointer-null? base)        (cstring->string base))
+	   (cstring->string system-id)
+	   (or (pointer-null? public-id)   (cstring->string public-id))))
     (let* ((parser	(XML_ExternalEntityParserCreate parser context 'UTF-8))
 	   (xml-decl	(XML_XmlDeclHandler xml-decl-callback)))
       (XML_SetXmlDeclHandler parser xml-decl)
@@ -662,9 +664,9 @@
      (define (start-doctype-callback data doctype-name sysid pubid has-internal-subset)
        (add-result
 	(list 'doctype-start
-	      (ffi.cstring->string doctype-name)
-	      (or (ffi.pointer-null? sysid) (ffi.cstring->string sysid))
-	      (or (ffi.pointer-null? pubid) (ffi.cstring->string pubid))
+	      (cstring->string doctype-name)
+	      (or (pointer-null? sysid) (cstring->string sysid))
+	      (or (pointer-null? pubid) (cstring->string pubid))
 	      has-internal-subset)))
      (define (end-doctype-callback data)
        (add-result '(doctype-end)))
@@ -723,7 +725,7 @@
      (define (end-callback data element)
        (XML_DefaultCurrent data))
      (define (default-callback user-data buf.ptr buf.len)
-       (add-result (list 'default (ffi.cstring->string buf.ptr buf.len))))
+       (add-result (list 'default (cstring->string buf.ptr buf.len))))
      (let ((parser	(XML_ParserCreateNS 'UTF-8 #\:))
 	   (start	(XML_StartElementHandler start-callback))
 	   (end		(XML_EndElementHandler   end-callback))
@@ -762,10 +764,10 @@
     (let* ((parser (XML_ExternalEntityParserCreate parser context 'UTF-8))
 	   (rv     (XML_Parse parser dtd-utf8 #f #t)))
       (add-result (list 'external-entity rv
-			(ffi.pointer-null? context)
-			(ffi.pointer-null? base)
-			(ffi.cstring->string system-id)
-			(ffi.pointer-null? public-id)))
+			(pointer-null? context)
+			(pointer-null? base)
+			(cstring->string system-id)
+			(pointer-null? public-id)))
       XML_STATUS_OK))
 
   (define (doit)
@@ -805,7 +807,7 @@
   (define (dtd-elm-callback data name model)
     (add-result
      (list 'dtd-element
-	   (ffi.cstring->string name)
+	   (cstring->string name)
 	   (XML_Content->list (pointer->XML_Content model))))
     (XML_FreeContentModel data model))
 
@@ -959,19 +961,19 @@
 				attribute-type default-value required?)
     (add-result
      (list 'dtd-attlist
-	   (ffi.cstring->string element-name)
-	   (ffi.cstring->string attribute-name)
-	   (ffi.cstring->string attribute-type)
-	   (if (ffi.pointer-null? default-value)
+	   (cstring->string element-name)
+	   (cstring->string attribute-name)
+	   (cstring->string attribute-type)
+	   (if (pointer-null? default-value)
 	       'no-value
-	     (ffi.cstring->string default-value))
+	     (cstring->string default-value))
 	   (fxpositive? required?))))
 
   (define (elm-start-callback data element attributes)
     (add-result
      (list 'element-start
-	   (ffi.cstring->string element)
-	   (ffi.argv->strings attributes))))
+	   (cstring->string element)
+	   (argv->strings attributes))))
 
 ;;; --------------------------------------------------------------------
 
@@ -1025,9 +1027,9 @@
 (parametrise ((check-test-name	'dtd-notation-handler))
 
   (define (%false-or-string thing)
-    (if (ffi.pointer-null? thing)
+    (if (pointer-null? thing)
 	#f
-      (ffi.cstring->string thing)))
+      (cstring->string thing)))
 
   (define (notation-callback data notation-name base system-id public-id)
     (add-result
@@ -1091,9 +1093,9 @@
 (parametrise ((check-test-name	'dtd-entity-handler))
 
   (define (%false-or-string thing)
-    (if (ffi.pointer-null? thing)
+    (if (pointer-null? thing)
 	#f
-      (ffi.cstring->string thing)))
+      (cstring->string thing)))
 
   (define (doit xml)
     (with-result
@@ -1119,9 +1121,9 @@
      (list 'dtd-entity
 	   (%false-or-string entity-name)
 	   (fxpositive? is-parameter-entity)
-	   (if (ffi.pointer-null? value)
+	   (if (pointer-null? value)
 	       #f
-	     (ffi.cstring->string value value-length))
+	     (cstring->string value value-length))
 	   (%false-or-string base)
 	   (%false-or-string system-id)
 	   (%false-or-string public-id)
@@ -1130,8 +1132,8 @@
   (define (elm-start-callback data element attributes)
     (add-result
      (list 'element-start
-	   (ffi.cstring->string element)
-	   (ffi.argv->strings attributes))))
+	   (cstring->string element)
+	   (argv->strings attributes))))
 
 ;;; --------------------------------------------------------------------
 
@@ -1241,7 +1243,7 @@
   (define (comment-callback data cstr)
     (add-result
      (list 'comment
-	   (ffi.cstring->string cstr))))
+	   (cstring->string cstr))))
 
   (define (doit xml-utf8)
     (with-result
@@ -1275,7 +1277,7 @@
   (define (text-callback data buf.ptr buf.len)
     (add-result
      (list 'text
-	   (ffi.cstring->string buf.ptr buf.len))))
+	   (cstring->string buf.ptr buf.len))))
 
   (define (doit xml-utf8)
     (with-result
@@ -1328,24 +1330,24 @@
   (define (start-element-callback data element attributes)
     (add-result
      (list 'element-start
-	   (ffi.cstring->string element)
-	   (ffi.argv->strings attributes))))
+	   (cstring->string element)
+	   (argv->strings attributes))))
 
   (define (end-element-callback data element)
     (add-result
      (list 'element-end
-	   (ffi.cstring->string element))))
+	   (cstring->string element))))
 
   (define (start-xmlns-callback data prefix uri)
     (add-result
      (list 'xmlns-start
-	   (or (ffi.pointer-null? prefix) (ffi.cstring->string prefix))
-	   (or (ffi.pointer-null? uri)    (ffi.cstring->string uri)))))
+	   (or (pointer-null? prefix) (cstring->string prefix))
+	   (or (pointer-null? uri)    (cstring->string uri)))))
 
   (define (end-xmlns-callback data prefix)
     (add-result
      (list 'xmlns-end
-	   (or (ffi.pointer-null? prefix) (ffi.cstring->string prefix)))))
+	   (or (pointer-null? prefix) (cstring->string prefix)))))
 
   (define (doit xml-utf8)
     (with-result
@@ -1427,7 +1429,7 @@
   (define (skipped-entity-callback data entity-name is-parameter-entity)
     (add-result
      (list 'skipped-entity
-	   (ffi.cstring->string entity-name)
+	   (cstring->string entity-name)
 	   (fxpositive? is-parameter-entity))))
 
 ;;; --------------------------------------------------------------------
@@ -1458,8 +1460,8 @@
   (define (processing-instruction-callback user-data target data)
     (add-result
      (list 'processing-instruction
-	   (ffi.cstring->string target)
-	   (ffi.cstring->string data))))
+	   (cstring->string target)
+	   (cstring->string data))))
 
 ;;; --------------------------------------------------------------------
 

@@ -28,11 +28,11 @@
 #!r6rs
 (import (nausicaa)
   (nausicaa xml expat)
+  (prefix (vicare language-extensions)
+	  ik.)
   (only (vicare expat)
 	pointer->XML_Content
-	XML_FreeContentModel
-	XML_DefaultCurrent)
-  (prefix (vicare ffi) ffi.))
+	XML_FreeContentModel))
 
 
 ;;;; simple document parsing
@@ -48,20 +48,20 @@
       (P.parse (string->utf8 xml) #f #t)))
 
   (define (start-callback data element attributes)
-    (let ((element    (ffi.cstring->string element))
-	  (attributes (ffi.argv->strings attributes)))
+    (let ((element    (ik.cstring->string element))
+	  (attributes (ik.argv->strings attributes)))
       (pretty-print (list 'start element attributes))))
 
   (define (end-callback data element)
-    (let ((element (ffi.cstring->string element)))
+    (let ((element (ik.cstring->string element)))
       (pretty-print (list 'end element))))
 
   (define (cdata-callback data buf.ptr buf.len)
-    (let ((text (ffi.cstring->string buf.ptr buf.len)))
+    (let ((text (ik.cstring->string buf.ptr buf.len)))
       (pretty-print (list 'cdata text))))
 
   (define (comment-callback data cstr)
-    (let ((text (ffi.cstring->string cstr)))
+    (let ((text (ik.cstring->string cstr)))
       (pretty-print (list 'comment text))))
 
   (when #t
@@ -96,8 +96,8 @@
   (define (xml-decl-callback user-data version encoding standalone)
     (pretty-print
      (list 'xml-decl
-	   (or (ffi.pointer-null? version)  (ffi.cstring->string version))
-	   (or (ffi.pointer-null? encoding) (ffi.cstring->string encoding))
+	   (or (ik.pointer-null? version)  (ik.cstring->string version))
+	   (or (ik.pointer-null? encoding) (ik.cstring->string encoding))
 	   (%process-standalone standalone))))
 
   (define (doit xml)
@@ -116,10 +116,10 @@
   (define (external-entity-callback root-parser context base system-id public-id)
     (pretty-print
      (list 'external-entity
-	   (or (ffi.pointer-null? context)     (ffi.cstring->string context))
-	   (or (ffi.pointer-null? base)        (ffi.cstring->string base))
-	   (ffi.cstring->string system-id)
-	   (or (ffi.pointer-null? public-id)   (ffi.cstring->string public-id))))
+	   (or (ik.pointer-null? context)     (ik.cstring->string context))
+	   (or (ik.pointer-null? base)        (ik.cstring->string base))
+	   (ik.cstring->string system-id)
+	   (or (ik.pointer-null? public-id)   (ik.cstring->string public-id))))
     (let (((E <expat-entity-parser>) (make <expat-entity-parser>
 				       root-parser context)))
       (E.xml-decl-handler xml-decl-callback)
@@ -167,9 +167,9 @@
   (define (start-doctype-callback data doctype-name sysid pubid has-internal-subset)
     (pretty-print
      (list 'doctype-start
-	   (ffi.cstring->string doctype-name)
-	   (or (ffi.pointer-null? sysid) (ffi.cstring->string sysid))
-	   (or (ffi.pointer-null? pubid) (ffi.cstring->string pubid))
+	   (ik.cstring->string doctype-name)
+	   (or (ik.pointer-null? sysid) (ik.cstring->string sysid))
+	   (or (ik.pointer-null? pubid) (ik.cstring->string pubid))
 	   has-internal-subset)))
 
   (define (end-doctype-callback data)
@@ -220,7 +220,7 @@
   (define (dtd-elm-callback data name model)
     (pretty-print
      (list 'dtd-element
-	   (ffi.cstring->string name)
+	   (ik.cstring->string name)
 	   (pointer->XML_Content model)))
     (XML_FreeContentModel data model))
 
@@ -308,19 +308,19 @@
 				attribute-type default-value required?)
     (pretty-print
      (list 'dtd-attlist
-	   (ffi.cstring->string element-name)
-	   (ffi.cstring->string attribute-name)
-	   (ffi.cstring->string attribute-type)
-	   (if (ffi.pointer-null? default-value)
+	   (ik.cstring->string element-name)
+	   (ik.cstring->string attribute-name)
+	   (ik.cstring->string attribute-type)
+	   (if (ik.pointer-null? default-value)
 	       'no-value
-	     (ffi.cstring->string default-value))
+	     (ik.cstring->string default-value))
 	   (fxpositive? required?))))
 
   (define (elm-start-callback data element attributes)
     (pretty-print
      (list 'element-start
-	   (ffi.cstring->string element)
-	   (ffi.argv->strings attributes))))
+	   (ik.cstring->string element)
+	   (ik.argv->strings attributes))))
 
 ;;; --------------------------------------------------------------------
 
@@ -367,9 +367,9 @@
 (let ()
 
   (define (%false-or-string thing)
-    (if (ffi.pointer-null? thing)
+    (if (ik.pointer-null? thing)
 	#f
-      (ffi.cstring->string thing)))
+      (ik.cstring->string thing)))
 
   (define (notation-callback data notation-name base system-id public-id)
     (pretty-print
@@ -422,9 +422,9 @@
 (let ()
 
   (define (%false-or-string thing)
-    (if (ffi.pointer-null? thing)
+    (if (ik.pointer-null? thing)
 	#f
-      (ffi.cstring->string thing)))
+      (ik.cstring->string thing)))
 
   (define (doit xml)
     (let (((P <expat-parser>) (make <expat-parser>)))
@@ -443,9 +443,9 @@
      (list 'dtd-entity
 	   (%false-or-string entity-name)
 	   (fxpositive? is-parameter-entity)
-	   (if (ffi.pointer-null? value)
+	   (if (ik.pointer-null? value)
 	       #f
-	     (ffi.cstring->string value value-length))
+	     (ik.cstring->string value value-length))
 	   (%false-or-string base)
 	   (%false-or-string system-id)
 	   (%false-or-string public-id)
@@ -454,8 +454,8 @@
   (define (elm-start-callback data element attributes)
     (pretty-print
      (list 'element-start
-	   (ffi.cstring->string element)
-	   (ffi.argv->strings attributes))))
+	   (ik.cstring->string element)
+	   (ik.argv->strings attributes))))
 
 ;;; --------------------------------------------------------------------
 
@@ -637,10 +637,10 @@
 	   (rv     (E.parse (string->utf8 dtd) #f #t)))
       (pretty-print
        (list 'external-entity rv
-	     (ffi.pointer-null? context)
-	     (ffi.pointer-null? base)
-	     (ffi.cstring->string system-id)
-	     (ffi.pointer-null? public-id)))
+	     (ik.pointer-null? context)
+	     (ik.pointer-null? base)
+	     (ik.cstring->string system-id)
+	     (ik.pointer-null? public-id)))
       XML_STATUS_OK))
 
   (define (doit xml)
@@ -687,13 +687,13 @@
   (define (start-callback data element attributes)
     (pretty-print
      (list 'start
-	   (ffi.cstring->string element)
-	   (ffi.argv->strings attributes))))
+	   (ik.cstring->string element)
+	   (ik.argv->strings attributes))))
 
   (define (end-callback data element)
     (pretty-print
      (list 'end
-	   (ffi.cstring->string element))))
+	   (ik.cstring->string element))))
 
   (define (doit xml)
     (let (((P <expat-parser>) (make <expat-parser>)))
@@ -728,7 +728,7 @@
   (define (text-callback data buf.ptr buf.len)
     (pretty-print
      (list 'text
-	   (ffi.cstring->string buf.ptr buf.len))))
+	   (ik.cstring->string buf.ptr buf.len))))
 
   (define (doit xml)
     (let (((P <expat-parser>) (make <expat-parser>)))
@@ -762,7 +762,7 @@
   (define (comment-callback data cstr)
     (pretty-print
      (list 'comment
-	   (ffi.cstring->string cstr))))
+	   (ik.cstring->string cstr))))
 
   (define (doit xml)
     (let (((P <expat-parser>) (make <expat-parser>)))
@@ -792,7 +792,7 @@
   (define (text-callback data buf.ptr buf.len)
     (pretty-print
      (list 'text
-	   (ffi.cstring->string buf.ptr buf.len))))
+	   (ik.cstring->string buf.ptr buf.len))))
 
   (define (doit xml)
     (let (((P <expat-parser>) (make <expat-parser>)))
@@ -815,13 +815,13 @@
   (define (start-callback data element attributes)
     (pretty-print
      (list 'start
-	   (ffi.cstring->string element)
-	   (ffi.argv->strings attributes))))
+	   (ik.cstring->string element)
+	   (ik.argv->strings attributes))))
 
   (define (end-callback data element)
     (pretty-print
      (list 'end
-	   (ffi.cstring->string element))))
+	   (ik.cstring->string element))))
 
   (define (doit xml)
     (let (((P <expat-parser>) (make <expat-ns-parser>)))
@@ -864,13 +864,13 @@
   (define (start-callback data element attributes)
     (pretty-print
      (list 'start
-	   (ffi.cstring->string element)
-	   (ffi.argv->strings attributes))))
+	   (ik.cstring->string element)
+	   (ik.argv->strings attributes))))
 
   (define (end-callback data element)
     (pretty-print
      (list 'end
-	   (ffi.cstring->string element))))
+	   (ik.cstring->string element))))
 
   (define (doit-with-triplet xml)
     (let (((P <expat-ns-parser>) (make <expat-ns-parser>)))
@@ -902,24 +902,24 @@
   (define (start-element-callback data element attributes)
     (pretty-print
      (list 'element-start
-	   (ffi.cstring->string element)
-	   (ffi.argv->strings attributes))))
+	   (ik.cstring->string element)
+	   (ik.argv->strings attributes))))
 
   (define (end-element-callback data element)
     (pretty-print
      (list 'element-end
-	   (ffi.cstring->string element))))
+	   (ik.cstring->string element))))
 
   (define (start-xmlns-callback data prefix uri)
     (pretty-print
      (list 'xmlns-start
-	   (or (ffi.pointer-null? prefix) (ffi.cstring->string prefix))
-	   (or (ffi.pointer-null? uri)    (ffi.cstring->string uri)))))
+	   (or (ik.pointer-null? prefix) (ik.cstring->string prefix))
+	   (or (ik.pointer-null? uri)    (ik.cstring->string uri)))))
 
   (define (end-xmlns-callback data prefix)
     (pretty-print
      (list 'xmlns-end
-	   (or (ffi.pointer-null? prefix) (ffi.cstring->string prefix)))))
+	   (or (ik.pointer-null? prefix) (ik.cstring->string prefix)))))
 
   (define (doit xml)
     (let (((P <expat-parser>) (make <expat-ns-parser>)))
@@ -958,34 +958,6 @@
   #t)
 
 
-;;;; default handler
-
-(let ()
-
-  (define (start-callback data element attributes)
-    (XML_DefaultCurrent data))
-
-  (define (end-callback data element)
-    (XML_DefaultCurrent data))
-
-  (define (default-callback user-data buf.ptr buf.len)
-    (pretty-print (list 'default (ffi.cstring->string buf.ptr buf.len))))
-
-  (define (doit xml)
-    (let (((P <expat-parser>) (make <expat-ns-parser>)))
-      (P.start-element-handler start-callback)
-      (P.end-element-handler   end-callback)
-      (P.default-handler       default-callback)
-      (P.use-parser-as-handler-arg)
-      (P.parse (string->utf8 xml) #f #t)
-      (flush-output-port (current-output-port))))
-
-  (when #f
-    (doit "<toys><ball colour='yellow'/></toys>"))
-
-  #t)
-
-
 ;;;; skipped entity handler
 
 (let ()
@@ -999,7 +971,7 @@
   (define (skipped-entity-callback data entity-name is-parameter-entity)
     (pretty-print
      (list 'skipped-entity
-	   (ffi.cstring->string entity-name)
+	   (ik.cstring->string entity-name)
 	   (fxpositive? is-parameter-entity))))
 
 ;;; --------------------------------------------------------------------
@@ -1025,8 +997,8 @@
   (define (processing-instruction-callback user-data target data)
     (pretty-print
      (list 'processing-instruction
-	   (ffi.cstring->string target)
-	   (ffi.cstring->string data))))
+	   (ik.cstring->string target)
+	   (ik.cstring->string data))))
 
 ;;; --------------------------------------------------------------------
 
