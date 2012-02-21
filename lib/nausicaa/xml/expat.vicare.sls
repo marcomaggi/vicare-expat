@@ -36,6 +36,8 @@
     namespace-separator:
     current-expat-parser
 
+    &expat-error
+
     ;; Preprocessor symbols: XML_Bool
     XML_TRUE
     XML_FALSE
@@ -133,7 +135,8 @@
   (import (nausicaa)
     (prefix (vicare expat) expat.)
     (vicare expat constants)
-    (prefix (vicare ffi) ffi.))
+    (prefix (vicare ffi) ffi.)
+    (prefix (vicare unsafe-operations) unsafe.))
 
 
 ;;;; auxiliary definitions
@@ -180,10 +183,35 @@
       (assert (is-a? obj <expat-parser>))
       obj)))
 
+(define-condition &expat-error
+  (parent &error)
+  (fields code))
+
+(define-inline (%handle-status-code who code)
+  (if (unsafe.fx= code XML_STATUS_ERROR)
+      (raise (condition (make-who-condition who)
+			(make-message-condition (expat.XML_ErrorString code))
+			(make &expat-error code)))
+    code))
+
+(define-syntax %raise-expat-error
+  (syntax-rules ()
+    ((_ ?who ?message ?irritants)
+     (raise (condition (make-who-condition ?who)
+		       (make-message-condition ?message)
+		       (make-irritants-condition ?irritants)
+		       (make &expat-error XML_ERROR_NONE))))
+    ((_ ?who ?message ?irritants ?code)
+     (raise (condition (make-who-condition ?who)
+		       (make-message-condition ?message)
+		       (make-irritants-condition ?irritants)
+		       (make &expat-error ?code))))))
+
 
 (define-class <expat-parser>
   (nongenerative nausicaa:xml:expat:<expat-parser>)
-  (fields (immutable parser)	;pointer to parser
+  (fields (immutable	parser)	  ;pointer to parser
+	  (mutable	started?) ;boolean
 
 	  ;; all of the following are #f or C callback pointers
 	  (mutable AttlistDeclHandler)
@@ -216,14 +244,15 @@
      (lambda (encoding)
        (let ((parser (expat.XML_ParserCreate encoding)))
 	 (if parser
-	     (parser-finaliser ((make-top) parser
+	     (parser-finaliser ((make-top) parser #f
 				#f #f #f #f #f #f #f #f #f #f #f #f #f #f #f #f #f #f #f #f #f))
-	   (error '<expat-parser> "error building Expat parser"))))))
+	   (%raise-expat-error '<expat-parser>
+	     "error building Expat parser" (list encoding)))))))
 
   (superclass-protocol
    (lambda (make-top)
      (lambda (parser)
-       (parser-finaliser ((make-top) parser
+       (parser-finaliser ((make-top) parser #f
 			  #f #f #f #f #f #f #f #f #f #f #f #f #f #f #f #f #f #f #f #f #f)))))
 
 ;;; --------------------------------------------------------------------
@@ -236,17 +265,25 @@
       (expat.XML_ParserReset P.parser encoding))))
 
   (method (set-encoding (P <expat-parser>) encoding)
-    (expat.XML_SetEncoding P.parser encoding))
+    (define who '<expat-parser>.set-encoding)
+    (if P.started?
+	(%raise-expat-error who
+	  "invalid operation on Expat parser already processing" (list P encoding))
+      (%handle-status-code who
+	(expat.XML_SetEncoding P.parser encoding))))
 
   (method (parse (P <expat-parser>) buffer buflen final?)
+    (set! P.started? #t)
     (parametrise ((current-expat-parser P))
       (expat.XML_Parse P.parser buffer buflen final?)))
 
   (method (get-buffer (P <expat-parser>) buflen)
     (or (expat.XML_GetBuffer P.parser buflen)
-	(error '<expat-parser> "error allocating buffer of requested length" P buflen)))
+	(%raise-expat-error '<expat-parser>.get-buffer
+	  "error allocating buffer of requested length" (list P buflen))))
 
   (method (parse-buffer (P <expat-parser>) buflen final?)
+    (set! P.started? #t)
     (parametrise ((current-expat-parser P))
       (expat.XML_ParseBuffer P.parser buflen final?)))
 
@@ -534,7 +571,8 @@
        (let ((parser (expat.XML_ParserCreateNS encoding namespace-separator)))
 	 (if parser
 	     ((make-expat-parser parser))
-	   (error '<expat-ns-parser> "error building Expat parser"))))))
+	   (%raise-expat-error '<expat-ns-parser>
+	     "error building Expat parser" (list encoding namespace-separator)))))))
 
 ;;; --------------------------------------------------------------------
 
@@ -557,7 +595,8 @@
        (let ((parser (expat.XML_ExternalEntityParserCreate root-parser context encoding)))
 	 (if parser
 	     ((make-expat-parser parser))
-	   (error '<expat-entity-parser> "error building Expat parser"))))))
+	   (%raise-expat-error '<expat-entity-parser>
+	     "error building Expat parser" (list root-parser context encoding)))))))
 
   )
 
@@ -574,3 +613,7 @@
 )
 
 ;;; end of file
+;; Local Variables:
+;; eval: (put '%raise-expat-error  'scheme-indent-function 1)
+;; eval: (put '%handle-status-code 'scheme-indent-function 1)
+;; End:

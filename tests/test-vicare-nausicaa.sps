@@ -271,6 +271,16 @@
 
   (check
       (let (((P <expat-parser>) (make <expat-parser>)))
+	(P.reset))
+    => #t)
+
+  (check
+      (let (((P <expat-parser>) (make <expat-parser>)))
+	(P.reset 'UTF-8))
+    => #t)
+
+  (check
+      (let (((P <expat-parser>) (make <expat-parser>)))
 	(P.set-user-data P.parser)
 	(ffi.pointer=? P.parser (P.get-user-data)))
     => #t)
@@ -297,6 +307,15 @@
       (let (((P <expat-parser>) (make <expat-parser>)))
 	(P.set-encoding 'UTF-8))
     => XML_STATUS_OK)
+
+  (check
+      (let (((P <expat-parser>) (make <expat-parser>)))
+	(P.parse (string->utf8 "<alpha>") #f #f)
+	(guard (E ((is-a? &expat-error (with-class &who))
+		   E.who)
+		  (else E))
+	  (P.set-encoding 'US-ASCII)))
+    => '<expat-parser>.set-encoding)
 
   (check
       (let (((P <expat-parser>) (make <expat-parser>)))

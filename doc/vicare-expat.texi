@@ -190,6 +190,7 @@ XML_MemMalloc
 XML_MemRealloc
 XML_MemFree
 XML_SetUnknownEncodingHandler
+XML_SetExternalEntityRefHandlerArg
 @end example
 
 @noindent
@@ -2706,6 +2707,7 @@ representing the features of the running version of Expat.  Example:
 
 
 @menu
+* nau conditions::              Condition object types.
 * nau base::                    Base parser class.
 * nau namespace::               Namespace-enabled parser class.
 * nau entity::                  External entity parser class.
@@ -2717,9 +2719,42 @@ representing the features of the running version of Expat.  Example:
 @end menu
 
 @c page
+@node nau conditions
+@section Condition object types
+
+
+The condition types are defined using Nausicaa's facilities,
+@nauref{conditions}.  The following bindings are exported by the library
+@library{nausicaa xml expat}.
+
+
+@deftp {Condition Type} &expat-error
+Represent an error in an Expat operation; it is derived from
+@condition{error}.  It has the following fields:
+
+@table @code
+@item code
+A fixnum representing an Expat error code among the @code{XML_ERROR_}
+constants.  It can be @code{XML_ERROR_NONE} if the error was in the use
+of the Scheme @api{} rather than returned by an Expat function.
+@end table
+@end deftp
+
+@c page
 @node nau base
 @section Base parser class
 
+
+To instantiate a basic Expat parser we just do the following:
+
+@example
+#!r6rs
+(import (nausicaa)
+  (nausicaa xml expat))
+
+(define parser
+  (make <expat-parser>))
+@end example
 
 The following bindings are exported by the library @library{nausicaa xml
 expat}.
@@ -2727,20 +2762,20 @@ expat}.
 
 @deftp Class @aclass{expat-parser}
 Class type wrapping Expat parsers.  It is derived from @class{top}.
+
+The Expat parser finalises itself with @func{XML_ParserFree} whenever
+the pointer object referencing it is garbage collected, @expatref{api
+create, XML_ParserFree}.  In addition: all the C callbacks created by
+and registered in this instance are automatically finalised whenever the
+returned instance is garbage collected.
 @end deftp
 
 
 @defop {Default constructor} @aclass{expat-parser} constructor @var{encoding}
 Build and return a class instance wrapping a newly built Expat parser;
 @expatref{api create, XML_ParserCreate}.  If an error occurs raise an
-exception with components: @condition{error}, @condition{who},
-@condition{message}.
-
-The Expat parser finalises itself with @func{XML_ParserFree} whenever
-the pointer object referencing it is garbage collected, @expatref{api
-create, XML_ParserFree}.  In addition: all the C callbacks created by
-and registered in this parser are automatically finalised whenever the
-returned instance is garbage collected.
+exception with components: @condition{expat-error}, @condition{who},
+@condition{message}, @condition{irritants}.
 
 @var{encoding} must be @false{} or one of the Scheme symbols:
 @code{UTF-8}, @code{UTF-16}, @code{ISO-8859-1}, @code{US-ASCII}; when
@@ -2779,8 +2814,10 @@ defaults to @false{}.
 
 
 @defmethod @aclass{expat-parser} set-encoding @var{encoding}
-Set the encoding to be used while parsing; return a fixnum representing
-a status code.  @expatref{api misc, XML_SetEncoding}.
+Set the encoding to be used while parsing; @expatref{api misc,
+XML_SetEncoding}.  If the parser has been already used for a parsing
+operation, raise an exception with components: @condition{expat-error},
+@condition{who}, @condition{message}, @condition{irritants}.
 
 @var{encoding} is as described for the default constructor.
 @end defmethod
@@ -2800,21 +2837,37 @@ and allows to tag @axml{} elements with the same name as belonging to
 different sets.  When first learning about @axml{} namespaces, remember
 that: namespaces are @strong{not} for modular @dtd{} composition.
 
+To instantiate an Expat parser with namespace processing enabled, we
+just do the following:
+
+@example
+#!r6rs
+(import (nausicaa)
+  (nausicaa xml expat))
+
+(define parser
+  (make <expat-ns-parser>))
+@end example
+
 The following bindings are exported by the library @library{nausicaa xml
 expat}.
 
 
 @deftp Class @aclass{expat-ns-parser}
-Class type wrapping Expat parsers with namespaces enabled.  It is
-derived from @class{expat-parser}.
+Class type wrapping Expat parsers with namespaces enabled; it is derived
+from @class{expat-parser}.
+
+Instances of this class finalise themselves in the same way instances of
+@class{expat-parser} do.
 @end deftp
 
 
 @defop {Default constructor} @aclass{expat-ns-parser} constructor @var{encoding} @var{namespace-separator}
 Build and return a class instance wrapping a newly built Expat parser
 with namespaces enabled; @expatref{api create, XML_ParserCreateNS}.  If
-an error occurs raise an exception with components: @condition{error},
-@condition{who}, @condition{message}.
+an error occurs raise an exception with components:
+@condition{expat-error}, @condition{who}, @condition{message},
+@condition{irritants}.
 
 @var{encoding} is as in the constructor of @class{expat-parser}.
 @var{namespace-separator} must be a Scheme character in the @ascii{}
@@ -2867,8 +2920,11 @@ XML_ExternalEntityRefHandler}.
 
 
 @deftp Class @aclass{expat-entity-parser}
-Class type wrapping Expat parsers for external entities. It is derived
+Class type wrapping Expat parsers for external entities; it is derived
 from @class{expat-parser}.
+
+Instances of this class finalise themselves in the same way instances of
+@class{expat-parser} do.
 @end deftp
 
 

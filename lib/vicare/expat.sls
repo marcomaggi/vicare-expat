@@ -167,10 +167,6 @@
   (or (ffi.pointer? obj) (bytevector? obj))
   (assertion-violation who "expected pointer or bytevector as argument" obj))
 
-(define-argument-validation (false/encoding-symbol who obj)
-  (or (not obj) (memq obj '(UTF-8 UTF-16 ISO-8859-1)))
-  (assertion-violation who "expected false or Expat encoding symbol as argument" obj))
-
 (define-argument-validation (signed-int who obj)
   (words.signed-int? obj)
   (assertion-violation who "expected signed int as argument" obj))
@@ -180,8 +176,12 @@
   (assertion-violation who "expected false or positive signed int as argument" obj))
 
 (define-argument-validation (encoding-symbol who obj)
-  (memq obj '(UTF-8 UTF-16 ISO-8859-1))
+  (memq obj '(UTF-8 UTF-16 ISO-8859-1 US-ASCII))
   (assertion-violation who "expected Expat encoding symbol as argument" obj))
+
+(define-argument-validation (false/encoding-symbol who obj)
+  (or (not obj) (memq obj '(UTF-8 UTF-16 ISO-8859-1 US-ASCII)))
+  (assertion-violation who "expected false or Expat encoding symbol as argument" obj))
 
 (define-argument-validation (ascii-char who obj)
   (and (char? obj) (<= 0 (char->integer obj) 127))
