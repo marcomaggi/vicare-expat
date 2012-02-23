@@ -152,6 +152,9 @@ supporting @gnu{}+Linux systems.  @value{PACKAGE} is a distribution of C
 language and Scheme language libraries for Vicare Scheme; it provides
 bindings for the Expat C language library, an @axml{} parser library.
 
+Vicare Scheme needs to be compiled with @ffi{} support enabled, because
+Expat heavily relies on C callbacks.
+
 If the package Nausicaa/Scheme is installed: a Nausicaa front end
 library for @value{PACKAGE} is installed, providing higher level
 constructs.

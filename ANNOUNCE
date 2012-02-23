@@ -14,6 +14,9 @@ constructs.
 
   This package makes use of the GNU Autotools.
 
+  Vicare Scheme needs  to be compiled with FFI  support enabled, because
+Expat heavily relies on C callbacks.
+
   The latest version of this package can be downloaded from Github:
 
 	 <http://github.com/marcomaggi/vicare-expat/downloads>
