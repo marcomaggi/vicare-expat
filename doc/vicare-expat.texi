@@ -203,7 +203,7 @@ binding for each constant value defined in the C language header
 
 The Nausicaa front end installs the library @library{nausicaa xml
 expat}; such library may still need some bindings from @library{vicare
-expat} and it needs for sure the @ffi{} library @library{vicare ffi}.
+expat}.
 
 This document contains only a brief description of the functions: refer
 to the Expat's documentation for details.
