@@ -39,6 +39,9 @@ if WANT_NAUSICAA
 TESTS	+= test-vicare-nausicaa.sps
 endif
 
+installcheck-local:
+	@for f in $(TESTS); do VICARE_LIBRARY_PATH=$(srcdir) $(VICARE) $(srcdir)/$$f; done
+
 EXTRA_DIST =	\
 	test-vicare-expat.sps			\
 	test-vicare-nausicaa.sps		\
