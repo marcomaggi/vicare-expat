@@ -30,6 +30,10 @@ proof proofs:
 
 ### interface to "make check"
 
+VICARE_INST_ENV		= VICARE_LIBRARY_PATH=$(srcdir):$(builddir):$(VICARE_LIBRARY_PATH)
+VICARE_INST_FLAGS	= --print-loaded-libraries $(user_flags)
+VICARE_INST_RUN		= $(VICARE_INST_ENV) $(VICARE) $(VICARE_INST_FLAGS)
+
 # TESTS and TESTS_ENVIRONMENT are Automake variables.
 TESTS_ENVIRONMENT	= $(VICARE_RUN)
 TESTS			=	\
@@ -40,16 +44,14 @@ TESTS	+= test-vicare-nausicaa.sps
 endif
 
 installcheck-local:
-	@for f in $(TESTS); do VICARE_LIBRARY_PATH=$(srcdir) $(VICARE) $(srcdir)/$$f; done
+	@for f in $(TESTS); do $(VICARE_INST_RUN) $(srcdir)/$$f; done
 
 EXTRA_DIST =	\
 	test-vicare-expat.sps			\
 	test-vicare-nausicaa.sps		\
 	\
 	proof-for-documentation.sps		\
-	proof-for-nau-documentation.sps		\
-	\
-	checks.sls
+	proof-for-nau-documentation.sps
 
 ### end of file
 # Local Variables:

@@ -4,9 +4,10 @@
 
 set -xe
 
-autoreconf --install
-# --force --verbose
+autoreconf --warnings=all --install --verbose
+# --force
 
+# libtoolize
 # aclocal
 # autoheader
 # automake --foreign --add-missing

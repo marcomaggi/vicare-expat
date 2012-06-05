@@ -32,7 +32,7 @@
   (prefix (only (vicare ffi)
 		free-c-callback)
 	  ffi.)
-  (checks))
+  (vicare checks))
 
 (check-set-mode! 'report-failed)
 (check-display "*** testing Vicare Expat bindings\n")

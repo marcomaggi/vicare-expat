@@ -6,8 +6,6 @@ AC_INIT([Vicare/Expat],[1.0b2],[marco.maggi-ipsu@poste.it],
   [vicare-expat],[http://marcomaggi.github.com/vicare.html])
 AC_CANONICAL_TARGET
 AM_INIT_AUTOMAKE
-LT_PREREQ([2.2])
-LT_INIT([shared disable-static])
 AC_CONFIG_SRCDIR([src/])
 AC_CONFIG_MACRO_DIR([m4])
 dnl AM_MAINTAINER_MODE
@@ -21,9 +19,13 @@ AM_INIT_AUTOMAKE([-Wall])
 AC_PROG_CC
 AC_PROG_CC_C_O
 
+AM_PROG_AR
 AC_PROG_INSTALL
 AC_PROG_LN_S
 AC_PROG_MAKE_SET
+
+LT_PREREQ([2.2])
+LT_INIT([shared disable-static])
 
 #page
 #### vicare configuration
@@ -177,7 +179,9 @@ VICARE_CONSTANT_TEST([XML_FEATURE_LARGE_SIZE])
 #### finish
 
 AC_CONFIG_HEADERS([config.h])
-AC_CONFIG_FILES([Makefile src/Makefile doc/Makefile tests/Makefile lib/Makefile lib/vicare/expat/constants.sls])
+AC_CONFIG_FILES([Makefile src/Makefile doc/Makefile tests/Makefile lib/Makefile
+                 lib/vicare/expat/constants.sls
+                 meta/slackware/doinst.sh])
 AC_OUTPUT
 
 ### end of file
