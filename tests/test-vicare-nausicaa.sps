@@ -31,7 +31,7 @@
   (prefix (vicare language-extensions)
 	  ik.)
 ;;;  (prefix (vicare expat) expat.)
-  (vivcare checks))
+  (vicare checks))
 
 (check-set-mode! 'report-failed)
 (check-display "*** testing Nausicaa front end\n")
