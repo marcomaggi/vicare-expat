@@ -1,15 +1,5 @@
 ### custom macros
 
-m4_define([VICARE_INCLUDES],[
-AC_INCLUDES_DEFAULT
-#ifdef HAVE_VICARE_H
-#  include <vicare.h>
-#endif
-#ifdef HAVE_EXPAT_H
-#  include <expat.h>
-#endif
-])
-
 AC_DEFUN([VICARE_VALUEOF_TEST],[
   VALUEOF_$1="#f"
   AC_CACHE_CHECK([the value of '$2'],
@@ -21,6 +11,15 @@ AC_DEFUN([VICARE_VALUEOF_TEST],[
    VALUEOF_$1="$vicare_cv_valueof_$1"
    AC_SUBST([VALUEOF_$1])])
 
+AC_DEFUN([VICARE_CONSTANT_TEST],[VICARE_VALUEOF_TEST([$1],[$1])])
+AC_DEFUN([VICARE_CONSTANT_TESTS],[m4_map_args_w($1,[VICARE_CONSTANT_TEST(],[)])])
+
+AC_DEFUN([VICARE_CONSTANT_FALSE],
+  [VALUEOF_$1="#f"
+   AC_SUBST([VALUEOF_$1])])
+AC_DEFUN([VICARE_CONSTANT_FALSES],[m4_map_args_w($1,[VICARE_CONSTANT_FALSE(],[)])])
+
+dnl page
 AC_DEFUN([VICARE_STRINGOF_TEST],
   [VALUEOF_$1=""
    AC_CACHE_CHECK([the string value of '$1'],
@@ -33,11 +32,16 @@ AC_DEFUN([VICARE_STRINGOF_TEST],
            return ferror (f) || fclose (f) != 0;
         }])],
         [vicare_cv_stringof_$1=`cat conftest.val`],
-        [vicare_cv_stringof_$1=""])
+        [vicare_cv_stringof_$1=""],
+	[vicare_cv_stringof_$1=""])
       rm -f conftest.val])
    VALUEOF_$1="$vicare_cv_stringof_$1"
    AC_SUBST([VALUEOF_$1])])
 
+AC_DEFUN([VICARE_STRING_CONSTANT_TEST],[VICARE_STRINGOF_TEST([$1],[$1])])
+AC_DEFUN([VICARE_STRING_CONSTANT_TESTS],[m4_map_args_w($1,[VICARE_STRING_CONSTANT_TEST(],[)])])
+
+dnl page
 AC_DEFUN([VICARE_DOUBLEOF_TEST],
   [VALUEOF_$1=""
    AC_CACHE_CHECK([the floating point value of '$1'],
@@ -50,10 +54,13 @@ AC_DEFUN([VICARE_DOUBLEOF_TEST],
            return ferror (f) || fclose (f) != 0;
         }])],
         [vicare_cv_doubleof_$1=`cat conftest.val`],
-        [vicare_cv_doubleof_$1=""])
+        [vicare_cv_doubleof_$1=""],
+	[vicare_cv_doubleof_$1="0.0"])
       rm -f conftest.val])
    VALUEOF_$1="$vicare_cv_doubleof_$1"
    AC_SUBST([VALUEOF_$1])])
+
+AC_DEFUN([VICARE_DOUBLEOF_TESTS],[m4_map_args_w($1,[VICARE_DOUBLEOF_TEST(],[)])])
 
 dnl page
 dnl 1 WITH_TEMP_FILE_CHUNK
