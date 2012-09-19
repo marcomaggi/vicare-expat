@@ -53,8 +53,9 @@ Expat must be compiled to handle UTF-8 strings.
 Notes for revision 1.0b3
 ------------------------
 
-* Added library  to provide  a Nausicaa front  end to the  package.  The
-  idea of distributing a separate Nausicaa package has been abandoned.
+* Fixed Autotools infrastructure.
+
+* Code fixes to make it work under recent Vicare releases.
 
 
 Notes for revision 1.0b2
