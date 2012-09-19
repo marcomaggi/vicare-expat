@@ -303,15 +303,11 @@ Revised^6 Report on the algorithmic language Scheme
 @end macro
 
 @macro vicareref{NODE, TITLE}
-@ref{\NODE\,\TITLE\,\TITLE\,vicare}
+@ref{\NODE\,\TITLE\,\TITLE\,vicare-scheme}
 @end macro
 
 @macro nauref{NODE, TITLE}
-@ref{\NODE\,\TITLE\,\TITLE\,nausicaa}
-@end macro
-
-@macro naumoreref{NODE, TITLE}
-@ref{\NODE\,\TITLE\,\TITLE\,nausicaa-more}
+@ref{\NODE\,\TITLE\,\TITLE\,nausicaa-scheme}
 @end macro
 
 @c ------------------------------------------------------------
@@ -344,31 +340,31 @@ Revised^6 Report on the algorithmic language Scheme
 @c To be used in normal text.
 
 @macro meta{THING}
-@var{?\THING\}
+<\THING\>
 @end macro
 
 @macro metao{THING}
-@var{?\THING\0}
+<\THING\0>
 @end macro
 
 @macro metai{THING}
-@var{?\THING\1}
+<\THING\1>
 @end macro
 
 @macro metaii{THING}
-@var{?\THING\2}
+<\THING\2>
 @end macro
 
 @macro metaiii{THING}
-@var{?\THING\3}
+<\THING\3>
 @end macro
 
 @macro metan{THING}
-@var{?\THING\N}
+<\THING\N>
 @end macro
 
 @macro metani{THING}
-@var{?\THING\N+1}
+<\THING\N+1>
 @end macro
 
 @c ------------------------------------------------------------
@@ -515,5 +511,4 @@ Revised^6 Report on the algorithmic language Scheme
 
 @c Local Variables:
 @c mode: texinfo
-@c TeX-master: t
 @c End:
