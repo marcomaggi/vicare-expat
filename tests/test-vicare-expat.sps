@@ -399,12 +399,16 @@
 (parametrise ((check-test-name	'version))
 
   (check
-      (XML_ExpatVersion)
-    => "expat_2.0.1")
+      (let ((rv (XML_ExpatVersion)))
+	(check-pretty-print rv)
+	(string? rv))
+    => #t)
 
   (check
-      (XML_ExpatVersionInfo)
-    => '#(2 0 1))
+      (let ((rv (XML_ExpatVersionInfo)))
+	(check-pretty-print rv)
+	(vector? rv))
+    => #t)
 
 ;;;(check-pretty-print (XML_GetFeatureList))
 
