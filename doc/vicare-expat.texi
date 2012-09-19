@@ -2729,8 +2729,8 @@ representing the features of the running version of Expat.  Example:
 
 
 The condition types are defined using Nausicaa's facilities,
-@nauref{conditions}.  The following bindings are exported by the library
-@library{nausicaa xml expat}.
+@nauref{conditions, More condition types}.  The following bindings are
+exported by the library @library{nausicaa xml expat}.
 
 
 @deftp {Condition Type} &expat-error
