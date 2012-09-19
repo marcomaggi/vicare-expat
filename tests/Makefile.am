@@ -1,41 +1,46 @@
 ## Process this file with automake to produce Makefile.in
 
+VICARE			= @VICARE@
 testdir			= $(srcdir)
-VICARE_SELECTED_TESTS	= $(testdir)/test-*$(file)*.sps
-VICARE_SELECTED_DEMOS	= $(testdir)/demo-*$(file)*.sps
+VICARE_FASL_DIRECTORY	= $(builddir)/../lib/fasl
 
-VICARE_TEST_SEARCH_PATH	= $(srcdir):$(srcdir)/../lib:$(builddir)/../lib
+VICARE_TEST_SEARCH_PATH	= $(srcdir):$(srcdir)/../lib:$(builddir)/../lib:$(VICARE_LIBRARY_PATH)
+VICARE_TEST_FASL_PATH	= $(VICARE_FASL_DIRECTORY):$(VICARE_FASL_PATH)
+VICARE_TEST_LD_PATH	= $(builddir)/../src/.libs:$(LD_LIBRARY_PATH)
 
 # The variable "user_flags"  is for the user to be  set on the command
-# line of "make".
-VICARE		= @VICARE@
-VICARE_FLAGS	= --debug $(user_flags)
-VICARE_ENV	= VICARE_LIBRARY_PATH=$(VICARE_TEST_SEARCH_PATH)	\
-		  CHECK_TEST_NAME=$(name)				\
-		  VICARE_SRC_DIR=$(srcdir) VICARE_BUILDDIR=$(builddir)	\
-		  LD_LIBRARY_PATH=$(builddir)/../src/.libs
-VICARE_RUN	= $(VICARE_ENV) $(GDB) $(VICARE) $(VICARE_FLAGS)
+# line of "make", for example "user_flags=--print-loaded-libraries".
+VICARE_TEST_FLAGS	= $(user_flags)
+if WANT_VICARE_DEBUG
+VICARE_TEST_FLAGS	+= --debug
+endif
+VICARE_TEST_ENV		= VICARE_LIBRARY_PATH=$(VICARE_TEST_SEARCH_PATH)	\
+			  VICARE_FASL_PATH=$(VICARE_TEST_FASL_PATH)		\
+			  LD_LIBRARY_PATH=$(VICARE_TEST_LD_PATH)		\
+			  VICARE_SRC_DIR=$(srcdir) VICARE_BUILDDIR=$(builddir)	\
+			  CHECK_TEST_NAME=$(name)
+VICARE_TEST_RUN		= $(VICARE_TEST_ENV) $(GDB) $(VICARE) $(VICARE_TEST_FLAGS)
+
+VICARE_SELECTED_TESTS	= $(testdir)/test-*$(file)*.sps
+VICARE_SELECTED_DEMOS	= $(testdir)/demo-*$(file)*.sps
 
 .PHONY: test tests demo demos
 
 test tests:
 	@echo
-	@for f in $(VICARE_SELECTED_TESTS); do $(VICARE_RUN) $$f; done
+	@for f in $(VICARE_SELECTED_TESTS); do $(VICARE_TEST_RUN) $$f; done
 	@echo
 
 demo demos:
 	@echo
-	@for f in $(VICARE_SELECTED_DEMOS); do $(VICARE_RUN) $$f; done
+	@for f in $(VICARE_SELECTED_DEMOS); do $(VICARE_TEST_RUN) $$f; done
 	@echo
 
-### interface to "make check"
-
-VICARE_INST_ENV		= VICARE_LIBRARY_PATH=$(srcdir):$(builddir):$(VICARE_LIBRARY_PATH)
-VICARE_INST_FLAGS	= --print-loaded-libraries $(user_flags)
-VICARE_INST_RUN		= $(VICARE_INST_ENV) $(VICARE) $(VICARE_INST_FLAGS)
+## --------------------------------------------------------------------
+## interface to "make check"
 
 # TESTS and TESTS_ENVIRONMENT are Automake variables.
-TESTS_ENVIRONMENT	= $(VICARE_RUN)
+TESTS_ENVIRONMENT	= VICARE_CHECK_QUIET=yes $(VICARE_TEST_RUN)
 TESTS			=	\
 	test-vicare-expat.sps
 
@@ -43,14 +48,29 @@ if WANT_NAUSICAA
 TESTS	+= test-vicare-nausicaa.sps
 endif
 
-installcheck-local:
-	@for f in $(TESTS); do $(VICARE_INST_RUN) $(srcdir)/$$f; done
-
 EXTRA_DIST =	\
 	test-vicare-expat.sps			\
 	test-vicare-nausicaa.sps		\
 	\
 	demo-for-documentation.sps		\
 	demo-for-nau-documentation.sps
+
+## --------------------------------------------------------------------
+## interface to "make installcheck"
+
+VICARE_INSTCHECK_LIBDIR		= $(libdir)/scheme
+VICARE_INSTCHECK_SEARCH_PATH	= $(DESTDIR)$(VICARE_INSTCHECK_LIBDIR):$(VICARE_LIBRARY_PATH)
+VICARE_INSTCHECK_FASL_PATH	= $(VICARE_FASL_PATH)
+VICARE_INSTCHECK_LD_PATH	= $(DESTDIR)$(libdir):$(LD_LIBRARY_PATH)
+
+VICARE_INSTCHECK_FLAGS	= --print-loaded-libraries $(user_flags)
+VICARE_INSTCHECK_ENV	= VICARE_LIBRARY_PATH=$(VICARE_INSTCHECK_SEARCH_PATH)	\
+			  VICARE_FASL_PATH=$(VICARE_INSTCHECK_FASL_PATH)	\
+			  LD_LIBRARY_PATH=$(VICARE_INSTCHECK_LD_PATH)		\
+			  VICARE_CHECK_QUIET=yes
+VICARE_INSTCHECK_RUN	= $(VICARE_INSTCHECK_ENV) $(VICARE) $(VICARE_INSTCHECK_FLAGS)
+
+installcheck-local:
+	@for f in $(TESTS); do $(VICARE_INSTCHECK_RUN) $(srcdir)/$$f; done
 
 ### end of file
