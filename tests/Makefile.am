@@ -2,7 +2,7 @@
 
 testdir			= $(srcdir)
 VICARE_SELECTED_TESTS	= $(testdir)/test-*$(file)*.sps
-VICARE_SELECTED_PROOFS	= $(testdir)/proof-*$(file)*.sps
+VICARE_SELECTED_DEMOS	= $(testdir)/demo-*$(file)*.sps
 
 VICARE_TEST_SEARCH_PATH	= $(srcdir):$(srcdir)/../lib:$(builddir)/../lib
 
@@ -16,16 +16,16 @@ VICARE_ENV	= VICARE_LIBRARY_PATH=$(VICARE_TEST_SEARCH_PATH)	\
 		  LD_LIBRARY_PATH=$(builddir)/../src/.libs
 VICARE_RUN	= $(VICARE_ENV) $(GDB) $(VICARE) $(VICARE_FLAGS)
 
-.PHONY: test tests proof proofs
+.PHONY: test tests demo demos
 
 test tests:
 	@echo
 	@for f in $(VICARE_SELECTED_TESTS); do $(VICARE_RUN) $$f; done
 	@echo
 
-proof proofs:
+demo demos:
 	@echo
-	@for f in $(VICARE_SELECTED_PROOFS); do $(VICARE_RUN) $$f; done
+	@for f in $(VICARE_SELECTED_DEMOS); do $(VICARE_RUN) $$f; done
 	@echo
 
 ### interface to "make check"
@@ -50,10 +50,7 @@ EXTRA_DIST =	\
 	test-vicare-expat.sps			\
 	test-vicare-nausicaa.sps		\
 	\
-	proof-for-documentation.sps		\
-	proof-for-nau-documentation.sps
+	demo-for-documentation.sps		\
+	demo-for-nau-documentation.sps
 
 ### end of file
-# Local Variables:
-# mode: makefile-gmake
-# End:

@@ -3,10 +3,10 @@
 ACLOCAL_AMFLAGS		= -I m4
 AUTOMAKE_OPTIONS	= foreign
 SUBDIRS			= src doc tests lib
-EXTRA_DIST		= README COPYING INSTALL configure.sh
+EXTRA_DIST		= INSTALL configure.sh
 dist_doc_DATA		= README COPYING
 
-vicare_test_RULES	= test tests proof proofs
+vicare_test_RULES	= test tests demo demos
 vicare_lib_RULES	= vfasl vfasl-installed
 
 .PHONY: $(vicare_test_RULES) $(vicare_lib_RULES)
