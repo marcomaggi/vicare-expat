@@ -60,15 +60,16 @@ License   along   with    this   program.    If   not,   see
 ----------
 
 Vicare Scheme needs to be compiled with FFI support enabled,
-because Expat heavily relies on C callbacks.
+because  Expat  heavily  relies   on  C  callbacks.   Before
+installing  Vicare/Expat  make  sure  to  have  a  correctly
+installed Expat library.
 
-  Before  installing  Vicare/Expat   make  sure  to  have  a
-correctly installed Expat  library.  To install Vicare/Expat
-do this:
+  To install Vicare/Expat from  a proper release tarball, we
+must unpack the archive then do:
 
    $ cd vicare-expat-0.1.0
-   $ mkdir "=build"
-   $ cd "=build"
+   $ mkdir build
+   $ cd build
    $ ../configure
    $ make
    $ make check
@@ -86,7 +87,21 @@ shared library to be dynamically loaded.
   The "Makefile" supports the "DESTDIR" environment variable
 to install the files under a temporary location; example:
 
-    $ make install DESTDIR=/tmp/marco/vicare-expat
+    $ make install DESTDIR=/tmp/vicare-expat
+
+  If,  instead, we  have  checked out  a  revision from  the
+repository, we  will have to first  build the infrastructure
+running a script from the top source directory:
+
+   $ cd vicare-expat
+   $ sh autogen.sh
+
+after this the procedure is the same as the one for building
+from a proper release tarball.
+
+  Libraries are installed under the directory:
+
+		  $(libdir)/vicare-scheme
 
   After  installation, the  makefile  rule "vfasl-installed"
 will  precompile the  libraries installed  in  the hierarchy
@@ -133,7 +148,7 @@ The documentation of Vicare/Expat is available online:
 
 the latest version of this package can be downloaded from:
 
-   <http://github.com/marcomaggi/vicare-expat/downloads>
+  <http://code.google.com/p/vicare-scheme/downloads/list>
 
 development takes place at:
 

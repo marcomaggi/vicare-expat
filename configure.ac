@@ -4,12 +4,17 @@ dnl
 AC_PREREQ([2.68])
 AC_INIT([Vicare/Expat],[1.0b4],[marco.maggi-ipsu@poste.it],
   [vicare-expat],[http://marcomaggi.github.com/vicare.html])
-AC_CANONICAL_TARGET
-AM_INIT_AUTOMAKE([-Wall])
-AC_CONFIG_SRCDIR([src/])
-AC_CONFIG_MACRO_DIR([m4])
-dnl AM_MAINTAINER_MODE
+AC_CONFIG_SRCDIR([src])
+AC_CONFIG_MACRO_DIR([autotools])
+AC_CONFIG_AUX_DIR([autotools])
+AC_CANONICAL_BUILD
 AC_CANONICAL_HOST
+AC_CANONICAL_TARGET
+AM_INIT_AUTOMAKE([-Wall foreign dist-xz no-dist-gzip])
+AM_MAINTAINER_MODE
+
+#page
+#### options
 
 VICARE_DEBUG=no
 AC_MSG_CHECKING([whether debugging features are included in compiled Scheme libraries])

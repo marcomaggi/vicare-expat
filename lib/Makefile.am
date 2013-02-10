@@ -1,7 +1,7 @@
 ## Process this file with automake to produce Makefile.in
 
-libvicaredir	= $(libdir)/scheme
-libvicare2dir	= $(libdir)/scheme
+libvicaredir	= $(libdir)/vicare-scheme
+libvicare2dir	= $(libdir)/vicare-scheme
 
 EXTRA_DIST	= \
 	vicare/expat/constants.sls.in

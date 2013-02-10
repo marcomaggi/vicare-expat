@@ -19,7 +19,7 @@ Expat heavily relies on C callbacks.
 
   The latest version of this package can be downloaded from Github:
 
-	 <http://github.com/marcomaggi/vicare-expat/downloads>
+	<http://code.google.com/p/vicare-scheme/downloads/list>
 
 the home page of the Vicare project is at:
 
@@ -53,7 +53,13 @@ Expat must be compiled to handle UTF-8 strings.
 Notes for revision 1.0b4
 ------------------------
 
-*
+* No new code.
+
+* The GNU  Autotools infrastructure has  been revised to  use Automake's
+  parallel  test harness  and  adjust the  installation  path of  Scheme
+  libraries to:
+
+			$(libdir)/vicare-scheme
 
 
 Notes for revision 1.0b3

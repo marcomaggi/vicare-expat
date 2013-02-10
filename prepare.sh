@@ -4,15 +4,8 @@
 
 set -xe
 
-(set -xe ;  cd .. && sh autogen.sh)
-
-prefix=/usr/local
-
-../configure \
-    --config-cache                              \
-    --cache-file=../config.cache                \
-    --prefix="${prefix}"                        \
-    CFLAGS='-Wall -O3 -march=i686 -mtune=i686'  \
-    "$@"
+(cd .. && sh autogen.sh)
+sh ../configure.sh
 
 ### end of file
+
