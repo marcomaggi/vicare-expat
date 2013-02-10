@@ -1,4 +1,4 @@
-Subject: [announce] Vicare/Expat revision 1.0b4
+Subject: [announce] Vicare/Expat revision 1.0b5
 
 			      Vicare/Expat
 			      ============
@@ -48,6 +48,12 @@ and also online:
 	     <http://marcomaggi.github.com/docs/expat.html>
 
 Expat must be compiled to handle UTF-8 strings.
+
+
+Notes for revision 1.0b5
+------------------------
+
+*
 
 
 Notes for revision 1.0b4
