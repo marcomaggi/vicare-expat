@@ -68,7 +68,7 @@ EXTRA_DIST =	\
 ## --------------------------------------------------------------------
 ## interface to "make installcheck"
 
-VICARE_INSTCHECK_LIBDIR		= $(libdir)/scheme
+VICARE_INSTCHECK_LIBDIR		= $(libvicaredir)
 VICARE_INSTCHECK_SEARCH_PATH	= $(DESTDIR)$(VICARE_INSTCHECK_LIBDIR):$(VICARE_LIBRARY_PATH)
 VICARE_INSTCHECK_FASL_PATH	= $(VICARE_FASL_PATH)
 VICARE_INSTCHECK_LD_PATH	= $(DESTDIR)$(libdir):$(LD_LIBRARY_PATH)
