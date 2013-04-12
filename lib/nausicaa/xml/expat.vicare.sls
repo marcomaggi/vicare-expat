@@ -1,14 +1,14 @@
 ;;; -*- coding: utf-8-unix -*-
 ;;;
 ;;;Part of: Vicare Expat
-;;;Contents: Nausicaa front end to (vicare expat)
+;;;Contents: Nausicaa front end to (vicare xml expat)
 ;;;Date: Fri Feb 17, 2012
 ;;;
 ;;;Abstract
 ;;;
 ;;;
 ;;;
-;;;Copyright (C) 2012 Marco Maggi <marco.maggi-ipsu@poste.it>
+;;;Copyright (C) 2012, 2013 Marco Maggi <marco.maggi-ipsu@poste.it>
 ;;;
 ;;;This program is free software:  you can redistribute it and/or modify
 ;;;it under the terms of the  GNU General Public License as published by
@@ -133,8 +133,8 @@
     XML_FEATURE_LARGE_SIZE
     )
   (import (nausicaa)
-    (prefix (vicare expat) expat.)
-    (vicare expat constants)
+    (prefix (vicare xml expat) expat.)
+    (vicare xml expat constants)
     (prefix (vicare ffi) ffi.)
     (prefix (vicare unsafe-operations) unsafe.))
 

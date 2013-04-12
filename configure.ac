@@ -2,7 +2,7 @@ dnl @configure_input@
 dnl
 
 AC_PREREQ([2.68])
-AC_INIT([Vicare/Expat],[1.0b5],[marco.maggi-ipsu@poste.it],
+AC_INIT([Vicare/Expat],[2.0b0],[marco.maggi-ipsu@poste.it],
   [vicare-expat],[http://marcomaggi.github.com/vicare.html])
 AC_CONFIG_SRCDIR([src])
 AC_CONFIG_MACRO_DIR([autotools])
@@ -13,22 +13,8 @@ AC_CANONICAL_TARGET
 AM_INIT_AUTOMAKE([-Wall foreign dist-xz no-dist-gzip])
 AM_MAINTAINER_MODE
 
-#page
-#### options
-
-VICARE_DEBUG=no
-AC_MSG_CHECKING([whether debugging features are included in compiled Scheme libraries])
-AC_ARG_ENABLE([debug],
-  [AS_HELP_STRING([--enable-debug],
-     [enable compilation of Scheme libraries with debugging features (default is disable)])],
-  [AC_MSG_RESULT([$enableval])
-  if test "z$enableval" = zno
-  then VICARE_DEBUG=no
-  else VICARE_DEBUG=yes
-  fi],
-  [VICARE_DEBUG=no
-   AC_MSG_RESULT([no])])
-AM_CONDITIONAL([WANT_VICARE_DEBUG],[test x$VICARE_DEBUG = xyes])
+VICARE_OPTION_DEBUGGING_MODE
+VICARE_OPTION_NAUSICAA([no])
 
 #page
 #### compiler
@@ -53,34 +39,6 @@ AC_CHECK_HEADERS([vicare.h],,
 AC_CHECK_PROG([VICARE],[vicare],[vicare],[:])
 
 #page
-#### nausicaa configuration
-
-AC_ARG_WITH([nausicaa],
-  AS_HELP_STRING([--with-nausicaa],[install Nausicaa libraries (default is check)]),
-  [true],[with_nausicaa=check])
-vicare_with_nausicaa=no
-if test x$with_nausicaa = xyes || test x$with_nausicaa = xcheck
-then
-  VICARE_CHECK_LIBRARY([NAUSICAA],[(nausicaa)],[vicare_have_nausicaa=yes],[vicare_have_nausicaa=no])
-  if test "$vicare_have_nausicaa" = yes || test "$vicare_cv_have_NAUSICAA" = yes
-  then
-    # Nausicaa library was found: success!
-    AC_MSG_NOTICE([Nausicaa support enabled])
-    vicare_with_nausicaa=yes
-  elif test "$with_nausicaa" = yes
-  then
-    # The user  requested Nausicaa support  or die, but the  library was
-    # not found.
-    AC_MSG_ERROR([Nausicaa cannot be found])
-  else
-    # The  user requested  a check  for optional  Nausicaa  support, but
-    # the library was not found.
-    AC_MSG_WARN([Nausicaa not found -- support disabled])
-  fi
-fi
-AM_CONDITIONAL([WANT_NAUSICAA],[test x$vicare_with_nausicaa = xyes])
-
-#page
 #### expat configuration
 
 AC_CHECK_HEADERS([expat.h],,
@@ -88,24 +46,7 @@ AC_CHECK_HEADERS([expat.h],,
 AC_CHECK_LIB([expat],[XML_ParserCreate],,
   [AC_MSG_FAILURE([missing Expat library],[2])])
 
-vicare_expat_VERSION_INTERFACE_CURRENT=0
-vicare_expat_VERSION_INTERFACE_REVISION=0
-vicare_expat_VERSION_INTERFACE_AGE=0
-AC_DEFINE_UNQUOTED([vicare_expat_VERSION_INTERFACE_CURRENT],
-  [$vicare_expat_VERSION_INTERFACE_CURRENT],
-  [current interface number])
-AC_DEFINE_UNQUOTED([vicare_expat_VERSION_INTERFACE_REVISION],
-  [$vicare_expat_VERSION_INTERFACE_REVISION],
-  [current interface implementation number])
-AC_DEFINE_UNQUOTED([vicare_expat_VERSION_INTERFACE_AGE],
-  [$vicare_expat_VERSION_INTERFACE_AGE],
-  [current interface age number])
-AC_DEFINE_UNQUOTED([vicare_expat_VERSION_INTERFACE_STRING],
-  ["$vicare_expat_VERSION_INTERFACE_CURRENT.$vicare_expat_VERSION_INTERFACE_REVISION"],
-  [library interface version])
-AC_SUBST([vicare_expat_VERSION_INTERFACE_CURRENT])
-AC_SUBST([vicare_expat_VERSION_INTERFACE_REVISION])
-AC_SUBST([vicare_expat_VERSION_INTERFACE_AGE])
+VICARE_EXTENSION_LIBRARY_VERSION([expat],[0],[0],[0])
 
 #page
 #### symbols
@@ -205,7 +146,7 @@ AC_CONFIG_FILES([Makefile]
         [doc/Makefile]
         [tests/Makefile]
         [lib/Makefile]
-        [lib/vicare/expat/constants.sls]
+        [lib/vicare/xml/expat/constants.sls]
         [meta/slackware/doinst.sh])
 AC_OUTPUT
 

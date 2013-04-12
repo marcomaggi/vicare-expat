@@ -8,7 +8,7 @@
 ;;;
 ;;;
 ;;;
-;;;Copyright (C) 2012 Marco Maggi <marco.maggi-ipsu@poste.it>
+;;;Copyright (C) 2012, 2013 Marco Maggi <marco.maggi-ipsu@poste.it>
 ;;;
 ;;;This program is free software:  you can redistribute it and/or modify
 ;;;it under the terms of the  GNU General Public License as published by
@@ -27,7 +27,7 @@
 
 #!vicare
 #!(load-shared-library "vicare-expat")
-(library (vicare expat)
+(library (vicare xml expat)
   (export
 
     XML_ParserCreate
@@ -135,27 +135,18 @@
   (import (vicare)
     (vicare expat constants)
     (vicare syntactic-extensions)
+    (vicare arguments validation)
+    (prefix (vicare xml expat unsafe-capi)
+	    capi.)
     (prefix (vicare ffi) ffi.)
     (prefix (vicare words) words.))
 
 
 ;;;; arguments validation
 
-(define-argument-validation (fixnum who obj)
-  (fixnum? obj)
-  (assertion-violation who "expected fixnum as argument" obj))
-
-(define-argument-validation (pointer who obj)
-  (ffi.pointer? obj)
-  (assertion-violation who "expected pointer as argument" obj))
-
 (define-argument-validation (callback who obj)
   (ffi.pointer? obj)
   (assertion-violation who "expected callback as argument" obj))
-
-(define-argument-validation (bytevector who obj)
-  (bytevector? obj)
-  (assertion-violation who "expected bytevector as argument" obj))
 
 ;;; --------------------------------------------------------------------
 
@@ -166,10 +157,6 @@
 (define-argument-validation (pointer/bytevector who obj)
   (or (ffi.pointer? obj) (bytevector? obj))
   (assertion-violation who "expected pointer or bytevector as argument" obj))
-
-(define-argument-validation (signed-int who obj)
-  (words.signed-int? obj)
-  (assertion-violation who "expected signed int as argument" obj))
 
 (define-argument-validation (false/non-negative-signed-int who obj)
   (or (not obj) (and (words.signed-int? obj) (<= 0 obj)))

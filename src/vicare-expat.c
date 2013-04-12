@@ -7,7 +7,7 @@
 
 
 
-  Copyright (C) 2012 Marco Maggi <marco.maggi-ipsu@poste.it>
+  Copyright (C) 2012, 2013 Marco Maggi <marco.maggi-ipsu@poste.it>
 
   This program is  free software: you can redistribute  it and/or modify
   it under the  terms of the GNU General Public  License as published by
@@ -258,8 +258,7 @@ ik_expat_parse (ikptr s_parser, ikptr s_buffer, ikptr s_buflen, ikptr s_is_final
    boolean. */
 {
   enum XML_Status	rv;
-  ikptr			sk;
-  sk = ik_enter_c_function(pcb);
+  ik_enter_c_function(pcb);
   {
     const char *	buffer;
     int		buflen;
@@ -273,7 +272,7 @@ ik_expat_parse (ikptr s_parser, ikptr s_buffer, ikptr s_buflen, ikptr s_is_final
     }
     rv = XML_Parse(EX_PARSER(s_parser), buffer, buflen, is_final);
   }
-  ik_leave_c_function(pcb, sk);
+  ik_leave_c_function(pcb);
   return IK_FIX(rv);
 }
 ikptr
@@ -289,13 +288,12 @@ ik_expat_parse_buffer (ikptr s_parser, ikptr s_buflen, ikptr s_is_final, ikpcb *
 {
   int	buflen   = (IK_FALSE == s_buflen)? 0 : ik_integer_to_int(s_buflen);
   int	is_final = (IK_TRUE == s_is_final)? 1 : 0;
-  ikptr	sk;
   enum XML_Status	rv;
-  sk = ik_enter_c_function(pcb);
+  ik_enter_c_function(pcb);
   {
     rv = XML_ParseBuffer(EX_PARSER(s_parser), buflen, is_final);
   }
-  ik_leave_c_function(pcb, sk);
+  ik_leave_c_function(pcb);
   return IK_FIX(rv);
 }
 ikptr
@@ -303,24 +301,22 @@ ik_expat_stop_parser (ikptr s_parser, ikptr s_resumable, ikpcb * pcb)
 {
   XML_Bool		resumable = EX_BOOLEAN(s_resumable);
   enum XML_Status	rv;
-  ikptr			sk;
-  sk = ik_enter_c_function(pcb);
+  ik_enter_c_function(pcb);
   {
     rv = XML_StopParser(EX_PARSER(s_parser), resumable);
   }
-  ik_leave_c_function(pcb, sk);
+  ik_leave_c_function(pcb);
   return IK_FIX(rv);
 }
 ikptr
 ik_expat_resume_parser (ikptr s_parser, ikpcb * pcb)
 {
   enum XML_Status	rv;
-  ikptr			sk;
-  sk = ik_enter_c_function(pcb);
+  ik_enter_c_function(pcb);
   {
     rv = XML_ResumeParser(EX_PARSER(s_parser));
   }
-  ik_leave_c_function(pcb, sk);
+  ik_leave_c_function(pcb);
   return IK_FIX(rv);
 }
 ikptr
@@ -380,12 +376,11 @@ ik_expat_parser_create_mm (ikptr s_encoding, ikptr s_namespace_separator, ikpcb 
 ikptr
 ik_expat_default_current (ikptr s_parser, ikpcb * pcb)
 {
-  ikptr			sk;
-  sk = ik_enter_c_function(pcb);
+  ik_enter_c_function(pcb);
   {
     XML_DefaultCurrent(EX_PARSER(s_parser));
   }
-  ik_leave_c_function(pcb, sk);
+  ik_leave_c_function(pcb);
   return IK_VOID;
 }
 ikptr

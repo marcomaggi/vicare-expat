@@ -9,7 +9,7 @@ dist_doc_DATA		= README COPYING
 vicare_test_RULES	= test tests demo demos
 vicare_lib_RULES	= vfasl vfasl-installed
 
-.PHONY: $(vicare_test_RULES) $(vicare_lib_RULES)
+.PHONY: $(vicare_test_RULES) $(vicare_lib_RULES) test-vie test-run
 
 $(vicare_test_RULES):
 	cd tests ; $(MAKE) $(@)
