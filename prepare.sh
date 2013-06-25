@@ -8,4 +8,3 @@ set -xe
 sh ../configure.sh
 
 ### end of file
-

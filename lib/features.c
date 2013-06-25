@@ -62,7 +62,7 @@ main (int argc, const char *const argv[])
 \n\
 \n\
 #!r6rs\n\
-(library (vicare category template features)\n\
+(library (vicare xml expat features)\n\
   (export\n\
     HAVE_TEMPLATE_OPTION\n\
     )\n\

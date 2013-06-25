@@ -9,4 +9,3 @@ test -d autotools || mkdir autotools
 autoreconf --warnings=all --install --verbose "$@"
 
 ### end of file
-

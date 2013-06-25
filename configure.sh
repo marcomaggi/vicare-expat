@@ -11,7 +11,8 @@ prefix=/usr/local
     --config-cache                              \
     --cache-file=../config.cache                \
     --prefix="${prefix}"                        \
-    CFLAGS='-Wall -O3 -march=i686 -mtune=i686'  \
+    --enable-debug                              \
+    CFLAGS='-O3'				\
     "$@"
 
 ### end of file

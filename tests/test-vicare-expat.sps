@@ -8,7 +8,7 @@
 ;;;
 ;;;
 ;;;
-;;;Copyright (C) 2012 Marco Maggi <marco.maggi-ipsu@poste.it>
+;;;Copyright (C) 2012, 2013 Marco Maggi <marco.maggi-ipsu@poste.it>
 ;;;
 ;;;This program is free software:  you can redistribute it and/or modify
 ;;;it under the terms of the  GNU General Public License as published by
@@ -27,8 +27,8 @@
 
 #!r6rs
 (import (vicare)
-  (vicare expat)
-  (vicare expat constants)
+  (vicare xml expat)
+  (vicare xml expat constants)
   (prefix (only (vicare ffi)
 		free-c-callback)
 	  ffi.)

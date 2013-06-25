@@ -8,7 +8,7 @@
 ;;;
 ;;;	Documentation tests for the Nausicaa front end.
 ;;;
-;;;Copyright (C) 2012 Marco Maggi <marco.maggi-ipsu@poste.it>
+;;;Copyright (C) 2012, 2013 Marco Maggi <marco.maggi-ipsu@poste.it>
 ;;;
 ;;;This program is free software:  you can redistribute it and/or modify
 ;;;it under the terms of the  GNU General Public License as published by
@@ -30,7 +30,7 @@
   (nausicaa xml expat)
   (prefix (vicare language-extensions)
 	  ik.)
-  (only (vicare expat)
+  (only (vicare xml expat)
 	pointer->XML_Content
 	XML_FreeContentModel))
 

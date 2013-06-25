@@ -133,13 +133,12 @@
     XML_Content-name			XML_Content-numchildren
     XML_Content-children)
   (import (vicare)
-    (vicare expat constants)
-    (vicare syntactic-extensions)
+    (vicare xml expat constants)
+    (vicare language-extensions syntaxes)
     (vicare arguments validation)
-    (prefix (vicare xml expat unsafe-capi)
-	    capi.)
+    #;(prefix (vicare xml expat unsafe-capi) capi.)
     (prefix (vicare ffi) ffi.)
-    (prefix (vicare words) words.))
+    (prefix (vicare platform words) words.))
 
 
 ;;;; arguments validation

@@ -119,7 +119,7 @@
     XML_FEATURE_SIZEOF_XML_LCHAR
     XML_FEATURE_NS
     XML_FEATURE_LARGE_SIZE)
-  (import (only (vicare syntactic-extensions)
+  (import (only (vicare)
 		define-inline-constant))
 
 
