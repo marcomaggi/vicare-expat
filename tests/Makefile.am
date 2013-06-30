@@ -8,7 +8,7 @@ TESTS	+= test-vicare-nausicaa.sps
 endif
 
 EXTRA_DIST = \
-	test-vicare-template.sps	\
+	test-vicare-expat.sps		\
 	test-vicare-nausicaa.sps	\
 	\
 	demo-for-documentation.sps	\

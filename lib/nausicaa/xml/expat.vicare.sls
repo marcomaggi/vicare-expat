@@ -136,7 +136,7 @@
     (prefix (vicare xml expat) expat.)
     (vicare xml expat constants)
     (prefix (vicare ffi) ffi.)
-    (prefix (vicare unsafe-operations) unsafe.))
+    (vicare unsafe operations))
 
 
 ;;;; auxiliary definitions
@@ -188,7 +188,7 @@
   (fields code))
 
 (define-inline (%handle-status-code who code)
-  (if (unsafe.fx= code XML_STATUS_ERROR)
+  (if ($fx= code XML_STATUS_ERROR)
       (raise (condition (make-who-condition who)
 			(make-message-condition (expat.XML_ErrorString code))
 			(make &expat-error code)))

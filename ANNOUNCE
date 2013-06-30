@@ -1,4 +1,4 @@
-Subject: [announce] Vicare/Expat revision 1.0b5
+Subject: [announce] Vicare/Expat revision 2.0d0
 
 			      Vicare/Expat
 			      ============
@@ -50,10 +50,10 @@ and also online:
 Expat must be compiled to handle UTF-8 strings.
 
 
-Notes for revision 1.0b5
+Notes for revision 2.0d0
 ------------------------
 
-*
+* Updated to and dependent on Vicare Scheme 0.3.
 
 
 Notes for revision 1.0b4

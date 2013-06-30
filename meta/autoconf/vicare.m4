@@ -1,5 +1,17 @@
 ### custom macros
 
+dnl Common initialisation for the Vicare Scheme environment.
+AC_DEFUN([VICARE_SCHEME],
+  [AC_CHECK_HEADERS([vicare.h],,[AC_MSG_FAILURE([missing vicare.h header],[2])])
+   AC_CHECK_PROG([VICARE],[vicare],[vicare],[:])
+   AS_VAR_SET_IF(VFLAGS,,[AS_VAR_SET(VFLAGS,["-O2"])])])
+
+AC_DEFUN([VICARE_OUTPUT],
+  [AC_SUBST([VFLAGS])])
+
+dnl page
+dnl Configuration options.
+
 AC_DEFUN([VICARE_OPTION_DEBUGGING_MODE],
   [VICARE_DEBUG=no
    AC_MSG_CHECKING([whether debugging features are included in compiled Scheme libraries])
@@ -12,10 +24,12 @@ AC_DEFUN([VICARE_OPTION_DEBUGGING_MODE],
      else VICARE_DEBUG=yes
      fi],
      [VICARE_DEBUG=no
-      AC_MSG_RESULT([no])])
-   AM_CONDITIONAL([WANT_VICARE_DEBUG],[test x$VICARE_DEBUG = xyes])])
+      AC_MSG_RESULT([no])])])
 
 dnl $1 - "yes", "no" or "check"
+dnl
+dnl Notice that the AM_CONDITIONAL definition for WANT_NAUSICAA
+dnl must go in "configure.ac", else Automake will not see it.
 AC_DEFUN([VICARE_OPTION_NAUSICAA],
   [AC_ARG_WITH([nausicaa],
      AS_HELP_STRING([--with-nausicaa],[install Nausicaa libraries (default is $1)]),
@@ -40,10 +54,10 @@ AC_DEFUN([VICARE_OPTION_NAUSICAA],
        # the library was not found.
        AC_MSG_WARN([Nausicaa not found -- support disabled])
      fi
-   fi
-   AM_CONDITIONAL([WANT_NAUSICAA],[test x$vicare_with_nausicaa = xyes])])
+   fi])
 
 dnl page
+dnl C language helper library preparations.
 
 dnl $1 - library name
 dnl $2 - interface current version number
@@ -70,6 +84,8 @@ AC_DEFUN([VICARE_EXTENSION_LIBRARY_VERSION],
    AC_SUBST([vicare_$1_VERSION_INTERFACE_AGE])])
 
 dnl page
+dnl Exact integer constants inspection.
+
 AC_DEFUN([VICARE_VALUEOF_TEST],[
   VALUEOF_$1="#f"
   AC_CACHE_CHECK([the value of '$2'],
@@ -90,6 +106,8 @@ AC_DEFUN([VICARE_CONSTANT_FALSE],
 AC_DEFUN([VICARE_CONSTANT_FALSES],[m4_map_args_w($1,[VICARE_CONSTANT_FALSE(],[)])])
 
 dnl page
+dnl String constants inspection.
+
 AC_DEFUN([VICARE_STRINGOF_TEST],
   [VALUEOF_$1=""
    AC_CACHE_CHECK([the string value of '$1'],
@@ -112,6 +130,8 @@ AC_DEFUN([VICARE_STRING_CONSTANT_TEST],[VICARE_STRINGOF_TEST([$1],[$1])])
 AC_DEFUN([VICARE_STRING_CONSTANT_TESTS],[m4_map_args_w($1,[VICARE_STRING_CONSTANT_TEST(],[)])])
 
 dnl page
+dnl Floating point constants inspection.
+
 AC_DEFUN([VICARE_DOUBLEOF_TEST],
   [VALUEOF_$1=""
    AC_CACHE_CHECK([the floating point value of '$1'],
@@ -182,7 +202,8 @@ dnl 2 LIBRARY_IMPORT_SPEC
 dnl 3 OPTIONAL_ACTION_IF_FOUND
 dnl 4 OPTIONAL_ACTION_IF_FOUND
 AC_DEFUN([VICARE_CHECK_LIBRARY],
-  [AC_CACHE_CHECK([availability of Vicare library $2],[vicare_cv_have_$1],
+  [AC_CACHE_CHECK([availability of Vicare library $2],
+     [vicare_cv_schemelib_$1],
      [WITH_OUTPUT_FROM_VICARE_SCRIPT([(import (rnrs) (rnrs eval (6)))
        (with-exception-handler
           (lambda (ex)
@@ -193,7 +214,7 @@ AC_DEFUN([VICARE_CHECK_LIBRARY],
             (environment (quote $2))
             (display "yes\n")
             (flush-output-port (current-output-port))))],,
-         [vicare_cv_have_$1=$vicare_ANSWER
+         [AS_VAR_SET([vicare_cv_schemelib_$1],[$vicare_ANSWER])
           if test "$vicare_ANSWER" = yes ; then
             dnl action if found
             :

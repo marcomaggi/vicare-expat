@@ -2,7 +2,7 @@ dnl @configure_input@
 dnl
 
 AC_PREREQ([2.68])
-AC_INIT([Vicare/Expat],[2.0b0],[marco.maggi-ipsu@poste.it],
+AC_INIT([Vicare/Expat],[2.0d0],[marco.maggi-ipsu@poste.it],
   [vicare-expat],[http://marcomaggi.github.com/vicare.html])
 AC_CONFIG_SRCDIR([src])
 AC_CONFIG_MACRO_DIR([autotools])
@@ -13,30 +13,27 @@ AC_CANONICAL_TARGET
 AM_INIT_AUTOMAKE([-Wall foreign dist-xz no-dist-gzip])
 AM_MAINTAINER_MODE
 
-VICARE_OPTION_DEBUGGING_MODE
-VICARE_OPTION_NAUSICAA([no])
-
-#page
-#### compiler
-
 AC_PROG_CC
 AC_PROG_CC_C_O
-
 AM_PROG_AR
 AC_PROG_INSTALL
 AC_PROG_LN_S
 AC_PROG_MAKE_SET
-
+AC_PROG_MKDIR_P
 LT_PREREQ([2.4])
 LT_INIT([shared disable-static])
 
-#page
-#### vicare configuration
+VICARE_SCHEME
 
-AC_CHECK_HEADERS([vicare.h],,
-  [AC_MSG_FAILURE([missing vicare.h header],[2])])
+VICARE_OPTION_DEBUGGING_MODE
+VICARE_OPTION_NAUSICAA([check])
+AM_CONDITIONAL([WANT_NAUSICAA],[test x$vicare_with_nausicaa = xyes])
 
-AC_CHECK_PROG([VICARE],[vicare],[vicare],[:])
+AM_CONDITIONAL([WANT_VICARE_DEBUG],[test x$VICARE_DEBUG = xyes])
+AM_COND_IF([WANT_VICARE_DEBUG],[AS_VAR_SET(VFLAGS,"$VFLAGS -g")])
+
+AC_LANG([C])
+AC_DEFINE([_GNU_SOURCE],[1],[enable everything GNU])
 
 #page
 #### expat configuration
@@ -140,6 +137,7 @@ VICARE_CONSTANT_TEST([XML_FEATURE_LARGE_SIZE])
 #page
 #### finish
 
+VICARE_OUTPUT
 AC_CONFIG_HEADERS([config.h])
 AC_CONFIG_FILES([Makefile]
         [src/Makefile]

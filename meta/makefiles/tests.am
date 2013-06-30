@@ -11,12 +11,14 @@ VICARE_TEST_SEARCH_PATH	= $(srcdir):$(srcdir)/../lib:$(builddir)/../lib:$(VICARE
 VICARE_TEST_FASL_PATH	= $(VICARE_FASL_DIRECTORY):$(VICARE_FASL_PATH)
 VICARE_TEST_LD_PATH	= $(builddir)/../src/.libs:$(LD_LIBRARY_PATH)
 
-# The variable "user_flags"  is for the user to be  set on the command
-# line of "make", for example "user_flags=--print-loaded-libraries".
-VICARE_TEST_FLAGS	= $(user_flags)
-if WANT_VICARE_DEBUG
-VICARE_TEST_FLAGS	+= --debug
-endif
+# The variable "VFLAGS" is for the user  to be set on the command line
+# of "make" or "configure", for example:
+#
+#   make VFLAGS="-g -O2 --print-loaded-libraries"
+#
+VFLAGS		= @VFLAGS@
+
+VICARE_TEST_FLAGS	= $(VFLAGS)
 VICARE_TEST_ENV		= \
 	VICARE_LIBRARY_PATH=$(VICARE_TEST_SEARCH_PATH); export VICARE_LIBRARY_PATH;	\
 	VICARE_FASL_PATH=$(VICARE_TEST_FASL_PATH); export VICARE_FASL_PATH;		\
@@ -51,7 +53,7 @@ demo demos:
 AM_TESTS_ENVIRONMENT	= VICARE_CHECK_QUIET=yes; export VICARE_CHECK_QUIET; $(VICARE_TEST_ENV)
 TEST_EXTENSIONS		= .sps
 SPS_LOG_COMPILER	= $(VICARE)
-AM_SPS_LOG_FLAGS	= $(user_flags)
+AM_SPS_LOG_FLAGS	= $(VFLAGS)
 
 #page
 #### interface to "make installcheck"
@@ -61,7 +63,7 @@ VICARE_INSTCHECK_SEARCH_PATH	= $(DESTDIR)$(VICARE_INSTCHECK_LIBDIR):$(VICARE_LIB
 VICARE_INSTCHECK_FASL_PATH	= $(VICARE_FASL_PATH)
 VICARE_INSTCHECK_LD_PATH	= $(DESTDIR)$(libdir):$(LD_LIBRARY_PATH)
 
-VICARE_INSTCHECK_FLAGS	= --print-loaded-libraries $(user_flags)
+VICARE_INSTCHECK_FLAGS	= --print-loaded-libraries $(VFLAGS)
 VICARE_INSTCHECK_ENV	= VICARE_LIBRARY_PATH=$(VICARE_INSTCHECK_SEARCH_PATH)	\
 			  VICARE_FASL_PATH=$(VICARE_INSTCHECK_FASL_PATH)	\
 			  LD_LIBRARY_PATH=$(VICARE_INSTCHECK_LD_PATH)
@@ -76,9 +78,9 @@ installcheck-local:
 .PHONY: test-vie test-run
 
 test-vie:
-	$(VICARE_TEST_ENV) vie $(user_flags)
+	$(VICARE_TEST_ENV) vie $(VFLAGS)
 
 test-run:
-	$(VICARE_TEST_ENV) $(VICARE) $(user_flags)
+	$(VICARE_TEST_ENV) $(VICARE) $(VFLAGS)
 
 ### end of file
