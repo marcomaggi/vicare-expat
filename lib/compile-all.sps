@@ -28,6 +28,7 @@
 (import
     (only (vicare xml expat))
   (only (vicare xml expat features))
+  (only (vicare xml expat cond-expand))
   )
 
 ;;; end of file
