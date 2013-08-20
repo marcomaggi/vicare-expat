@@ -6,6 +6,7 @@ EXTRA_DIST	= \
 # These files are hand-written.
 nobase_dist_libvicare_DATA = \
 	vicare/xml/expat.sls			\
+	vicare/xml/expat/unsafe-capi.sls	\
 	vicare/xml/expat/cond-expand.sls
 
 # These files are created at configuration or make time.
