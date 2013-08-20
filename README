@@ -18,20 +18,21 @@ Topics
 1. Introduction
 ---------------
 
-This package is a distribution of C and Scheme libraries for
-Vicare Scheme,  an R6RS compliant  Scheme implementation; it
-provides bindings  for the Expat C language  library, an XML
-parser  library.  Expat  must  be compiled  to handle  UTF-8
-strings.
+This package  is a  distribution of  C and  Scheme libraries  for Vicare
+Scheme, an  R6RS compliant  Scheme implementation; it  provides bindings
+for the Expat C language library,  an XML parser library.  Expat must be
+compiled to handle UTF-8 strings.
 
-  If  the package Nausicaa/Scheme  is installed:  a Nausicaa
-front end  library for Vicare/Expat  is installed, providing
-higher level constructs.
+  If  the package  Nausicaa/Scheme is  installed: a  Nausicaa front  end
+library   for  Vicare/Expat   is  installed,   providing  higher   level
+constructs.
 
-  The  last   time  the  author  bothered   to  update  this
-paragraph, he had tested Expat version 2.0.1.
+  The last time the maintainer bothered to update this paragraph, he had
+tested  Expat version  2.0.1.   This package  requires  at least  Vicare
+Scheme revision 0.3d1.
 
-  This package makes use of the GNU Autotools.
+  This package  makes use  of the GNU  Autotools.  The  maintainer tests
+only on GNU+Linux systems.
 
 
 2. License
@@ -39,33 +40,29 @@ paragraph, he had tested Expat version 2.0.1.
 
 Copyright (c) 2012, 2013 Marco Maggi <marco.maggi-ipsu@poste.it>
 
-This  program  is free  software:  you  can redistribute  it
-and/or modify it  under the terms of the  GNU General Public
-License as published by the Free Software Foundation, either
-version  3 of  the License,  or (at  your option)  any later
-version.
+This program is free software: you  can redistribute it and/or modify it
+under the  terms of the GNU  General Public License as  published by the
+Free Software Foundation,  either version 3 of the License,  or (at your
+option) any later version.
 
-This  program is  distributed in  the hope  that it  will be
-useful, but  WITHOUT ANY WARRANTY; without  even the implied
-warranty  of  MERCHANTABILITY or  FITNESS  FOR A  PARTICULAR
-PURPOSE.   See  the  GNU  General Public  License  for  more
-details.
+  This program  is distributed in the  hope that it will  be useful, but
+WITHOUT   ANY   WARRANTY;  without   even   the   implied  warranty   of
+MERCHANTABILITY  or  FITNESS FOR  A  PARTICULAR  PURPOSE.  See  the  GNU
+General Public License for more details.
 
-You should  have received a  copy of the GNU  General Public
-License   along   with    this   program.    If   not,   see
-<http://www.gnu.org/licenses/>.
+  You should  have received  a copy  of the  GNU General  Public License
+along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 
 3. Install
 ----------
 
-Vicare Scheme needs to be compiled with FFI support enabled,
-because  Expat  heavily  relies   on  C  callbacks.   Before
-installing  Vicare/Expat  make  sure  to  have  a  correctly
-installed Expat library.
+Vicare Scheme  needs to  be compiled with  FFI support  enabled, because
+Expat  heavily relies  on C  callbacks.  Before  installing Vicare/Expat
+make sure to have a correctly installed Expat library.
 
-  To install Vicare/Expat from  a proper release tarball, we
-must unpack the archive then do:
+  To install Vicare/Expat from a  proper release tarball, we must unpack
+the archive then do:
 
    $ cd vicare-expat-0.1.0
    $ mkdir build
@@ -75,39 +72,43 @@ must unpack the archive then do:
    $ make check
    $ make install
 
-notice  that the  "configure" script  is prepared  to enable
-shared libraries and disable static libraries: this must not
-be  changed, because  the package  is meant  to install  a C
-shared library to be dynamically loaded.
+notice  that  the  "configure"  script  is  prepared  to  enable  shared
+libraries  and  disable static  libraries:  this  must not  be  changed,
+because  the package  is  meant to  install  a C  shared  library to  be
+dynamically loaded.
 
   To test what a rule will do use the "-n" option; example:
 
     $ make install -n
 
-  The "Makefile" supports the "DESTDIR" environment variable
-to install the files under a temporary location; example:
+  The "Makefile" supports the  "DESTDIR" environment variable to install
+the files under a temporary location; example:
 
     $ make install DESTDIR=/tmp/vicare-expat
 
-  If,  instead, we  have  checked out  a  revision from  the
-repository, we  will have to first  build the infrastructure
-running a script from the top source directory:
+  If, instead,  we have checked out  a revision from the  repository, we
+will have  to first build the  infrastructure running a script  from the
+top source directory:
 
    $ cd vicare-expat
-   $ libtoolize
    $ sh autogen.sh
 
-after this the procedure is the same as the one for building
-from a proper release tarball.
+after this  the procedure  is the same  as the one  for building  from a
+proper release tarball, but we have to enable maintainer mode:
+
+    $ ../configure --enable-maintainer-mode [options]
+    $ make
+    $ make check
+    $ make install
 
   Libraries are installed under the directory:
 
 		  $(libdir)/vicare-scheme
 
-  After  installation, the  makefile  rule "vfasl-installed"
-will  precompile the  libraries installed  in  the hierarchy
-(vicare expat  ---); the make file  rule "installcheck" will
-run the test suite against the installed libraries..
+  After   installation,  the   makefile   rule  "vfasl-installed"   will
+precompile the libraries installed in the hierarchies (vicare expat ---)
+and (nausicaa xml expat ---); the make file rule "installcheck" will run
+the test suite against the installed libraries.
 
 
 4. Usage
@@ -119,25 +120,24 @@ Read the documentation.
 A. Credits
 ----------
 
-Vicare/Expat was  written by Marco Maggi.   Vicare Scheme is
-an R6RS compliant fork  of Ikarus Scheme; originally created
-by Abdulaziz Ghuloum, it is now maintained by Marco Maggi.
+Vicare/Expat  was written  by Marco  Maggi.   Vicare Scheme  is an  R6RS
+compliant  fork  of  Ikarus  Scheme;  originally  created  by  Abdulaziz
+Ghuloum, it is now maintained by Marco Maggi.
 
-  Expat is the creation of  James Clark, who's also given us
-groff (an nroff look-alike),  Jade (an implemention of ISO's
-DSSSL stylesheet  language for SGML), XP (a  Java XML parser
-package),  XT  (a Java  XSL  engine).   James  was also  the
-technical lead on the XML Working Group at W3C that produced
-the XML specification.
+  Expat is  the creation of James  Clark, who's also given  us groff (an
+nroff  look-alike),  Jade (an  implemention  of  ISO's DSSSL  stylesheet
+language  for SGML),  XP (a  Java XML  parser package),  XT (a  Java XSL
+engine).  James was also the technical  lead on the XML Working Group at
+W3C that produced the XML specification.
 
 
 B. Bugs
 -------
 
-Bug  reports  are   appreciated.   Register  issues  at  the
-Vicare/Expat issue tracker:
+Bug reports are appreciated.  Register  issues at the Vicare/Expat issue
+tracker:
 
-     <http://github.com/marcomaggi/vicare-expat/issues>
+	   <http://github.com/marcomaggi/vicare-expat/issues>
 
 
 C. Resources
@@ -145,49 +145,53 @@ C. Resources
 
 The documentation of Vicare/Expat is available online:
 
-   <http://marcomaggi.github.com/docs/vicare-expat.html>
+	 <http://marcomaggi.github.com/docs/vicare-expat.html>
 
 the latest version of this package can be downloaded from:
 
-  <http://code.google.com/p/vicare-scheme/downloads/list>
+	 <http://sourceforge.net/projects/vicare-expat/files/>
 
 development takes place at:
 
-	<http://github.com/marcomaggi/vicare-expat/>
+	      <http://github.com/marcomaggi/vicare-expat/>
+
+and as backup at:
+
+	    <http://sourceforge.net/projects/vicare-expat/>
 
 the home page of the Vicare project is at:
 
-	 <http://marcomaggi.github.com/vicare.html>
+	       <http://marcomaggi.github.com/vicare.html>
 
 the home page of the Nausicaa project is at:
 
-	<http://marcomaggi.github.com/nausicaa.html>
+	      <http://marcomaggi.github.com/nausicaa.html>
 
 Expat can be found here:
 
-	      <http://expat.sourceforge.net/>
+		    <http://expat.sourceforge.net/>
 
-notice that unofficial Expat documentation in Texinfo format
-is available in the Nimby-Doc project at:
+notice  that  unofficial  Expat   documentation  in  Texinfo  format  is
+available in the Nimby-Doc project at:
 
-	  <http://github.com/marcomaggi/nimby-doc>
+		<http://github.com/marcomaggi/nimby-doc>
 
 and also online:
 
-       <http://marcomaggi.github.com/docs/expat.html>
+	     <http://marcomaggi.github.com/docs/expat.html>
 
 the XML 1.0 specification is available from:
 
-	      <http://www.w3.org/TR/REC-xml/>
+		    <http://www.w3.org/TR/REC-xml/>
 
 the recommendation on Namespaces in XML 1.0 is available from:
 
-	      <http://www.w3.org/TR/xml-names/
+		   <http://www.w3.org/TR/xml-names/>
 
 ### end of file
 # Local Variables:
 # mode: text
 # coding: utf-8-unix
-# fill-column: 60
+# fill-column: 72
 # paragraph-start: "*"
 # End:

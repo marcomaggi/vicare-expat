@@ -1,53 +1,54 @@
-Subject: [announce] Vicare/Expat revision 2.0d0
+Subject: [announce] Vicare/Expat revision 2.1d0
 
 			      Vicare/Expat
 			      ============
 
 
-This  package is a  distribution of  C and  Scheme libraries  for Vicare
-Scheme, an R6RS compliant Scheme  implementation in the form of a native
+This package  is a  distribution of  C and  Scheme libraries  for Vicare
+Scheme, an R6RS compliant Scheme implementation  in the form of a native
 compiler for x86 architectures, officially supporting GNU+Linux systems;
-it provides  bindings for  the Expat C  language library, an  XML parser
-library.  If the package  Nausicaa/Scheme is installed: a Nausicaa front
+it provides  bindings for the  Expat C  language library, an  XML parser
+library.  If the package Nausicaa/Scheme  is installed: a Nausicaa front
 end  library  for  Vicare/Expat  is installed,  providing  higher  level
 constructs.
 
-  This package makes use of the GNU Autotools.
+  The latest version of this package can be downloaded from:
 
-  Vicare Scheme needs  to be compiled with FFI  support enabled, because
-Expat heavily relies on C callbacks.
-
-  The latest version of this package can be downloaded from Github:
-
-	<http://code.google.com/p/vicare-scheme/downloads/list>
-
-the home page of the Vicare project is at:
-
-               <http://marcomaggi.github.com/vicare.html>
+	 <http://sourceforge.net/projects/vicare-expat/files/>
 
 development takes place at:
 
 	      <http://github.com/marcomaggi/vicare-expat/>
 
-  The home page of Nausicaa is at:
+and as backup at:
+
+	    <http://sourceforge.net/projects/vicare-expat/>
+
+the home page of the Vicare project is at:
+
+	       <http://marcomaggi.github.com/vicare.html>
+
+the home page of the Nausicaa project is at:
 
 	      <http://marcomaggi.github.com/nausicaa.html>
 
-  The last  time the  author bothered to  update this paragraph,  he had
-tested Expat version 2.0.1; the Expat library is available at:
+  The documentation of Vicare/Expat is available online:
+
+	 <http://marcomaggi.github.com/docs/vicare-expat.html>
+
+  The Expat library is available at:
 
 		    <http://expat.sourceforge.net/>
 
-notice  that  unofficial  Expat   documentation  in  Texinfo  format  is
-available in the Nimby-Doc project at:
 
-		<http://github.com/marcomaggi/nimby-doc>
+Notes for revision 2.0d1
+------------------------
 
-and also online:
+* Updated to and dependent on Vicare Scheme 0.3d1.
 
-	     <http://marcomaggi.github.com/docs/expat.html>
-
-Expat must be compiled to handle UTF-8 strings.
+* If  we  have the  package  Nausicaa/OOPP  installed:  we can  use  the
+  configuration option  "--with-nausicaa", or let "configure"  detect it
+  automatically, to use the Nausicaa API.
 
 
 Notes for revision 2.0d0
