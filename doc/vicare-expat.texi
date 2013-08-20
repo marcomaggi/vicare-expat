@@ -12,11 +12,6 @@
 @include version.texi
 @include macros.texi
 
-@macro expatref{NODE, TITLE}
-@xref{\NODE\,\TITLE\,\TITLE\,expat}
-@end macro
-
-
 @c page
 @c ------------------------------------------------------------
 @c Values.
@@ -50,7 +45,7 @@
 @set FOREIGN_PACKAGE            Expat
 @set FOREIGN_VERSION            2.0.1
 @set FOREIGN_URL                @url{http://expat.sourceforge.net/}
-@set FOREIGN_SCHEME_LIB         @library{vicare category template}
+@set FOREIGN_SCHEME_LIB         @library{vicare xml expat}
 @set DOWNLOAD_URL               @url{http://sourceforge.net/projects/@value{PACKAGE_NICKNAME}/files/}
 @set GITHUB_URL                 @url{http://github.com/marcomaggi/@value{PACKAGE_NICKNAME}}
 @set SOURCEFORGE_URL            @url{http://sourceforge.net/projects/@value{PACKAGE_NICKNAME}}
@@ -60,6 +55,12 @@
 @set NAUSICAA_HOMEPAGE_URL      @url{http://marcomaggi.github.com/nausicaa.html}
 
 @set REQUIRED_VICARE_VERSION    0.3d1
+
+@c ------------------------------------------------------------
+
+@macro expatref{NODE, TITLE}
+@xref{\NODE\,\TITLE\,\TITLE\,expat}
+@end macro
 
 @c page
 @c ------------------------------------------------------------
@@ -152,10 +153,9 @@ entitled ``@gnu{} Free Documentation License''.
 @menu
 * overview::                    Overview of the package.
 * examples::                    Some usage examples.
-* parsers::                     Building and running parsers.
-* handlers::                    Building and registering callbacks.
-* version::                     Expat version informations.
-* nau::                         Nausicaa front end.
+* version::                     @value{FOREIGN_PACKAGE} version informations.
+* plain::                       Plain programming interface.
+* nau::                         Nausicaa front--end.
 
 Appendices
 
@@ -394,27 +394,91 @@ and here is the same example using the Nausicaa front end:
 @end example
 
 @c page
-@node parsers
-@chapter Building and running parsers
+@node version
+@chapter @value{FOREIGN_PACKAGE} version informations
+
+
+The installed C library follows version numbering as established by the
+@gnu{} Autotools.  For an explanation of interface numbers as managed by
+@gnu{} Libtool @xref{Libtool versioning, interface, Libtool's versioning
+system, libtool, Shared library support for @gnu{}}.
+
+The following bindings are exported by the library
+@value{FOREIGN_SCHEME_LIB}.
+
+
+@defun vicare-expat-version-interface-current
+@defunx vicare-expat-version-interface-revision
+@defunx vicare-expat-version-interface-age
+Return a fixnum representing a version number.
+@end defun
+
+
+@defun vicare-expat-version
+Return a Scheme string representing the version number.
+@end defun
+
+@c ------------------------------------------------------------
+
+@defun XML_ExpatVersion
+@expatref{api version, XML_ExpatVersion}.  Return a Scheme string
+representing the Expat version number.
+@end defun
+
+
+@defun XML_ExpatVersionInfo
+@expatref{api version, XML_ExpatVersionInfo}.  Return a Scheme vector
+holding exact integers representing the Expat version numbers: major,
+minor, micro.
+@end defun
+
+
+@defun XML_GetFeatureList
+@expatref{api version, XML_GetFeatureList}.  Return a vector of vectors
+representing the features of the running version of Expat.  Example:
+
+@example
+(XML_GetFeatureList)
+@result{} #(#(6 "sizeof(XML_Char)" 1)
+     #(7 "sizeof(XML_LChar)" 1)
+     #(3 "XML_DTD" #f)
+     #(4 "XML_CONTEXT_BYTES" 1024)
+     #(8 "XML_NS" #f))
+@end example
+@end defun
+
+@c page
+@node plain
+@chapter Plain programming interface
 
 
 @menu
-* parsers create::              Creating parsers.
-* parsers external::            Creating external entities parsers.
-* parsers parsing::             Parsing data.
-* parsers namespaces::          Using namespaces.
-* parsers stop::                Stopping and resuming.
-* parsers status::              Parsing status.
-* parsers report::              Reporting errors.
-* parsers misc::                Miscellaneous functions.
+* plain parsers::               Building and running parsers.
+* plain handlers::              Building and registering callbacks.
 @end menu
 
 @c page
-@node parsers create
-@section Creating parsers
+@node plain parsers
+@section Building and running parsers
 
 
-All the following bindings are exported by the @library{vicare expat}
+@menu
+* plain parsers create::        Creating parsers.
+* plain parsers external::      Creating external entities parsers.
+* plain parsers parsing::       Parsing data.
+* plain parsers namespaces::    Using namespaces.
+* plain parsers stop::          Stopping and resuming.
+* plain parsers status::        Parsing status.
+* plain parsers report::        Reporting errors.
+* plain parsers misc::          Miscellaneous functions.
+@end menu
+
+@c page
+@node plain parsers create
+@subsection Creating parsers
+
+
+All the following bindings are exported by the @value{FOREIGN_SCHEME_LIB}
 library.
 
 
@@ -459,11 +523,11 @@ fixnum representing a status code.
 @end defun
 
 @c page
-@node parsers external
-@section Creating external entities parsers
+@node plain parsers external
+@subsection Creating external entities parsers
 
 
-All the following bindings are exported by the @library{vicare expat}
+All the following bindings are exported by the @value{FOREIGN_SCHEME_LIB}
 library.
 
 
@@ -548,11 +612,11 @@ The following is a skeleton program showing how to parse an external
 @end smallexample
 
 @c page
-@node parsers parsing
-@section Parsing data
+@node plain parsers parsing
+@subsection Parsing data
 
 
-All the following bindings are exported by the @library{vicare expat}
+All the following bindings are exported by the @value{FOREIGN_SCHEME_LIB}
 library.  In all the descriptions: the @var{parser} argument must be a
 pointer object referencing the parser.
 
@@ -617,8 +681,8 @@ buffer:
 @end example
 
 @c page
-@node parsers namespaces
-@section Using namespaces
+@node plain parsers namespaces
+@subsection Using namespaces
 
 
 The use of namespaces in @axml{} 1.0 is defined in the recommendation
@@ -799,11 +863,11 @@ prints the output:
 @end example
 
 @c page
-@node parsers stop
-@section Stopping and resuming
+@node plain parsers stop
+@subsection Stopping and resuming
 
 
-All the following bindings are exported by the @library{vicare expat}
+All the following bindings are exported by the @value{FOREIGN_SCHEME_LIB}
 library.  In all the descriptions: the @var{parser} argument must be a
 pointer object referencing the parser.
 
@@ -895,11 +959,11 @@ and then resuming:
 @end smallexample
 
 @c page
-@node parsers status
-@section Parsing status
+@node plain parsers status
+@subsection Parsing status
 
 
-All the following bindings are exported by the @library{vicare expat}
+All the following bindings are exported by the @value{FOREIGN_SCHEME_LIB}
 library.  In all the descriptions: the @var{parser} argument must be a
 pointer object referencing the parser.
 
@@ -941,11 +1005,11 @@ of the parser and return an instance of @code{XML_ParsingStatus}.
 @end defun
 
 @c page
-@node parsers report
-@section Reporting errors
+@node plain parsers report
+@subsection Reporting errors
 
 
-All the following bindings are exported by the @library{vicare expat}
+All the following bindings are exported by the @value{FOREIGN_SCHEME_LIB}
 library.  In all the descriptions: the @var{parser} argument must be a
 pointer object referencing the parser.
 
@@ -972,11 +1036,11 @@ parsing position.
 @end defun
 
 @c page
-@node parsers misc
-@section Miscellaneous functions
+@node plain parsers misc
+@subsection Miscellaneous functions
 
 
-All the following bindings are exported by the @library{vicare expat}
+All the following bindings are exported by the @value{FOREIGN_SCHEME_LIB}
 library.  In all the descriptions: the @var{parser} argument must be a
 pointer object referencing the parser.
 
@@ -1027,8 +1091,8 @@ representing an error code, if successful @code{XML_ERROR_NONE}.
 @end defun
 
 @c page
-@node handlers
-@chapter Building and registering callbacks
+@node plain handlers
+@section Building and registering callbacks
 
 
 Expat offers a significant number of callbacks to process input from the
@@ -1047,29 +1111,29 @@ C pointers become pointer objects, C integers become Scheme exact
 intgers, and so on.
 
 @menu
-* handlers xml decl::           @axml{} declaration handler.
-* handlers standalone::         Non-standalone handler.
-* handlers dtd doctype::        @dtd{} document type declaration.
-* handlers dtd element::        @dtd{} element declaration.
-* handlers dtd attlist::        @dtd{} attribute lists declaration.
-* handlers dtd notation::       @dtd{} notation declaration.
-* handlers dtd entity::         @dtd{} entity declaration.
-* handlers element::            Element handlers.
-* handlers char data::          Character data handlers.
-* handlers comment::            Comment handlers.
-* handlers cdata::              Cdata handler.
-* handlers namespace::          Namespace handlers.
-* handlers default::            Default handler.
-* handlers entity::             Special entity handlers.
-* handlers procinst::           Processing instruction handlers.
+* plain handlers xml decl::     @axml{} declaration handler.
+* plain handlers standalone::   Non-standalone handler.
+* plain handlers dtd doctype::  @dtd{} document type declaration.
+* plain handlers dtd element::  @dtd{} element declaration.
+* plain handlers dtd attlist::  @dtd{} attribute lists declaration.
+* plain handlers dtd notation:: @dtd{} notation declaration.
+* plain handlers dtd entity::   @dtd{} entity declaration.
+* plain handlers element::      Element handlers.
+* plain handlers char data::    Character data handlers.
+* plain handlers comment::      Comment handlers.
+* plain handlers cdata::        Cdata handler.
+* plain handlers namespace::    Namespace handlers.
+* plain handlers default::      Default handler.
+* plain handlers entity::       Special entity handlers.
+* plain handlers procinst::     Processing instruction handlers.
 @end menu
 
 @c page
-@node handlers xml decl
-@section @axml{} declaration handler
+@node plain handlers xml decl
+@subsection @axml{} declaration handler
 
 
-All the following bindings are exported by the @library{vicare expat}
+All the following bindings are exported by the @value{FOREIGN_SCHEME_LIB}
 library.
 
 
@@ -1234,11 +1298,11 @@ prints:
 showing the @axml{} declaration handler called twice.
 
 @c page
-@node handlers standalone
-@section Non--standalone handler
+@node plain handlers standalone
+@subsection Non--standalone handler
 
 
-All the following bindings are exported by the @library{vicare expat}
+All the following bindings are exported by the @value{FOREIGN_SCHEME_LIB}
 library.
 
 
@@ -1382,11 +1446,11 @@ the following forms print symbolic expressions:
 @end example
 
 @c page
-@node handlers dtd doctype
-@section @dtd{} document type declaration
+@node plain handlers dtd doctype
+@subsection @dtd{} document type declaration
 
 
-All the following bindings are exported by the @library{vicare expat}
+All the following bindings are exported by the @value{FOREIGN_SCHEME_LIB}
 library.
 
 
@@ -1478,11 +1542,11 @@ the following forms print symbolic expressions:
 @end example
 
 @c page
-@node handlers dtd element
-@section @dtd{} element declaration
+@node plain handlers dtd element
+@subsection @dtd{} element declaration
 
 
-All the following bindings are exported by the @library{vicare expat}
+All the following bindings are exported by the @value{FOREIGN_SCHEME_LIB}
 library.
 
 
@@ -1728,11 +1792,11 @@ the following forms print symbolic expressions:
 @end example
 
 @c page
-@node handlers dtd attlist
-@section @dtd{} attribute lists declaration
+@node plain handlers dtd attlist
+@subsection @dtd{} attribute lists declaration
 
 
-All the following bindings are exported by the @library{vicare expat}
+All the following bindings are exported by the @value{FOREIGN_SCHEME_LIB}
 library.
 
 
@@ -1838,11 +1902,11 @@ the following forms print symbolic expressions:
 @end example
 
 @c page
-@node handlers dtd notation
-@section @dtd{} notation declaration
+@node plain handlers dtd notation
+@subsection @dtd{} notation declaration
 
 
-All the following bindings are exported by the @library{vicare expat}
+All the following bindings are exported by the @value{FOREIGN_SCHEME_LIB}
 library.
 
 
@@ -1925,11 +1989,11 @@ the following forms print symbolic expressions:
 @end example
 
 @c page
-@node handlers dtd entity
-@section @dtd{} entity declaration
+@node plain handlers dtd entity
+@subsection @dtd{} entity declaration
 
 
-All the following bindings are exported by the @library{vicare expat}
+All the following bindings are exported by the @value{FOREIGN_SCHEME_LIB}
 library.
 
 
@@ -2101,11 +2165,11 @@ the following forms print symbolic expressions:
 @end example
 
 @c page
-@node handlers element
-@section Element handlers
+@node plain handlers element
+@subsection Element handlers
 
 
-All the following bindings are exported by the @library{vicare expat}
+All the following bindings are exported by the @value{FOREIGN_SCHEME_LIB}
 library.
 
 
@@ -2194,11 +2258,11 @@ prints:
 @end example
 
 @c page
-@node handlers char data
-@section Character data handlers
+@node plain handlers char data
+@subsection Character data handlers
 
 
-All the following bindings are exported by the @library{vicare expat}
+All the following bindings are exported by the @value{FOREIGN_SCHEME_LIB}
 library.
 
 
@@ -2257,11 +2321,11 @@ prints:
 @end example
 
 @c page
-@node handlers comment
-@section Comment handlers
+@node plain handlers comment
+@subsection Comment handlers
 
 
-All the following bindings are exported by the @library{vicare expat}
+All the following bindings are exported by the @value{FOREIGN_SCHEME_LIB}
 library.
 
 
@@ -2316,11 +2380,11 @@ prints:
 @end example
 
 @c page
-@node handlers cdata
-@section Cdata handler
+@node plain handlers cdata
+@subsection Cdata handler
 
 
-All the following bindings are exported by the @library{vicare expat}
+All the following bindings are exported by the @value{FOREIGN_SCHEME_LIB}
 library.
 
 
@@ -2391,11 +2455,11 @@ prints:
 @end example
 
 @c page
-@node handlers namespace
-@section Namespace handlers
+@node plain handlers namespace
+@subsection Namespace handlers
 
 
-All the following bindings are exported by the @library{vicare expat}
+All the following bindings are exported by the @value{FOREIGN_SCHEME_LIB}
 library.
 
 
@@ -2528,11 +2592,11 @@ the following forms print symbolic expressions:
 @end example
 
 @c page
-@node handlers default
-@section Default handler
+@node plain handlers default
+@subsection Default handler
 
 
-All the following bindings are exported by the @library{vicare expat}
+All the following bindings are exported by the @value{FOREIGN_SCHEME_LIB}
 library.
 
 
@@ -2616,11 +2680,11 @@ call to the end--element handler for the standalone @code{<ball/>}
 element.
 
 @c page
-@node handlers entity
-@section Special entity handlers.
+@node plain handlers entity
+@subsection Special entity handlers.
 
 
-All the following bindings are exported by the @library{vicare expat}
+All the following bindings are exported by the @value{FOREIGN_SCHEME_LIB}
 library.
 
 
@@ -2669,11 +2733,11 @@ the following forms print symbolic expressions:
 @end example
 
 @c page
-@node handlers procinst
-@section Processing instruction handlers
+@node plain handlers procinst
+@subsection Processing instruction handlers
 
 
-All the following bindings are exported by the @library{vicare expat}
+All the following bindings are exported by the @value{FOREIGN_SCHEME_LIB}
 library.
 
 
@@ -2720,42 +2784,6 @@ the following forms print symbolic expressions:
        <thing><?scheme (display 123) ?></thing>")
 @print{} (processing-instruction "scheme" "(display 123) ")
 @end example
-
-@c page
-@node version
-@chapter Expat version informations
-
-
-The following bindings are exported by the @library{vicare expat}
-library.
-
-
-@defun XML_ExpatVersion
-@expatref{api version, XML_ExpatVersion}.  Return a Scheme string
-representing the Expat version number.
-@end defun
-
-
-@defun XML_ExpatVersionInfo
-@expatref{api version, XML_ExpatVersionInfo}.  Return a Scheme vector
-holding exact integers representing the Expat version numbers: major,
-minor, micro.
-@end defun
-
-
-@defun XML_GetFeatureList
-@expatref{api version, XML_GetFeatureList}.  Return a vector of vectors
-representing the features of the running version of Expat.  Example:
-
-@example
-(XML_GetFeatureList)
-@result{} #(#(6 "sizeof(XML_Char)" 1)
-     #(7 "sizeof(XML_LChar)" 1)
-     #(3 "XML_DTD" #f)
-     #(4 "XML_CONTEXT_BYTES" 1024)
-     #(8 "XML_NS" #f))
-@end example
-@end defun
 
 @c page
 @node nau
