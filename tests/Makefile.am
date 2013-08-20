@@ -1,15 +1,17 @@
 ## Process this file with automake to produce Makefile.in
 
-TESTS	= \
-	test-vicare-expat.sps
+VICARE_EXPAT_ALL_TESTS	= \
+	test-vicare-expat.sps		\
+	test-vicare-expat-core.sps
 
 if WANT_NAUSICAA
-TESTS	+= test-vicare-nausicaa.sps
+VICARE_EXPAT_ALL_TESTS	+= test-vicare-nausicaa.sps
 endif
 
+TESTS	= $(VICARE_EXPAT_ALL_TESTS)
+
 EXTRA_DIST = \
-	test-vicare-expat.sps		\
-	test-vicare-nausicaa.sps	\
+	$(VICARE_EXPAT_ALL_TESTS)	\
 	\
 	demo-for-documentation.sps	\
 	demo-for-nau-documentation.sps
