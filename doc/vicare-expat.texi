@@ -4,6 +4,11 @@
 @settitle Expat for Vicare
 @c %**end of header
 
+@c page
+@c ------------------------------------------------------------
+@c Macros.
+@c ------------------------------------------------------------
+
 @include version.texi
 @include macros.texi
 
@@ -38,8 +43,23 @@
 
 @c To be used as @value{COPYRIGHT_YEARS} whenever we need to include the
 @c list of copyright years.
-@set COPYRIGHT_YEARS            2012
+@set COPYRIGHT_YEARS            2012, 2013
 
+@c ------------------------------------------------------------
+
+@set FOREIGN_PACKAGE            Expat
+@set FOREIGN_VERSION            2.0.1
+@set FOREIGN_URL                @url{http://expat.sourceforge.net/}
+@set FOREIGN_SCHEME_LIB         @library{vicare category template}
+@set DOWNLOAD_URL               @url{http://sourceforge.net/projects/@value{PACKAGE_NICKNAME}/files/}
+@set GITHUB_URL                 @url{http://github.com/marcomaggi/@value{PACKAGE_NICKNAME}}
+@set SOURCEFORGE_URL            @url{http://sourceforge.net/projects/@value{PACKAGE_NICKNAME}}
+@set DOCUMENTATION_URL          @url{http://marcomaggi.github.com/docs/vicare-expat.html}
+
+@set VICARE_HOMEPAGE_URL        @url{http://marcomaggi.github.com/vicare.html}
+@set NAUSICAA_HOMEPAGE_URL      @url{http://marcomaggi.github.com/nausicaa.html}
+
+@set REQUIRED_VICARE_VERSION    0.3d1
 
 @c page
 @c ------------------------------------------------------------
@@ -55,17 +75,22 @@ language library, an @axml{} parser library.
 The package is distributed under the terms of the @gnu{} General Public
 License (@gpl{}) and can be downloaded from:
 
-@center @url{http://code.google.com/p/vicare-scheme/downloads/list}
+@center @value{DOWNLOAD_URL}
 
 @noindent
 development takes place at:
 
-@center @url{http://github.com/marcomaggi/@value{PACKAGE_NICKNAME}}
+@center @value{GITHUB_URL}
+
+@noindent
+and as backup at:
+
+@center @value{SOURCEFORGE_URL}
 
 @noindent
 Expat is available at:
 
-@center @url{http://expat.sourceforge.net/}
+@center @value{FOREIGN_URL}
 
 @noindent
 the @axml{} 1.0 specification is available from:
@@ -126,6 +151,7 @@ entitled ``@gnu{} Free Documentation License''.
 
 @menu
 * overview::                    Overview of the package.
+* examples::                    Some usage examples.
 * parsers::                     Building and running parsers.
 * handlers::                    Building and registering callbacks.
 * version::                     Expat version informations.
@@ -157,43 +183,28 @@ supporting @gnu{}+Linux systems.  @value{PACKAGE} is a distribution of C
 language and Scheme language libraries for Vicare Scheme; it provides
 bindings for the Expat C language library, an @axml{} parser library.
 
-Vicare Scheme needs to be compiled with @ffi{} support enabled, because
-Expat heavily relies on C callbacks.
-
-If the package Nausicaa/Scheme is installed: a Nausicaa front end
+If the package Nausicaa/Scheme is installed: a Nausicaa front--end
 library for @value{PACKAGE} is installed, providing higher level
 constructs.
 
-The last time the author bothered to update this paragraph, he had
-tested Expat version 2.0.1; the Expat library is available at:
-
-@center @url{http://expat.sourceforge.net/}
-
-@noindent
-notice that unofficial Expat documentation in Texinfo format is
-available in the Nimby-Doc project at:
-
-@center @url{http://github.com/marcomaggi/nimby-doc}
-
-@noindent
-and also online:
-
-@center @url{http://marcomaggi.github.com/docs/expat.html}
-
-@noindent
-the @axml{} 1.0 specification is available from:
-
-@center @url{http://www.w3.org/TR/REC-xml/}
-
-Expat must be compiled to handle @utf{}-8 strings.
+At least Vicare Scheme version @value{REQUIRED_VICARE_VERSION} is
+needed; Vicare Scheme needs to be compiled with @ffi{} support enabled,
+because Expat heavily relies on C callbacks.  The last time the author
+bothered to update this paragraph, he had tested Expat version
+@value{FOREIGN_VERSION}; Expat must be compiled to handle @utf{}-8
+strings.
 
 The package installs a C language library implementing wrapper C
-functions for the C language Expat library; on top of this, the Scheme
-library @library{vicare expat} exports one binding for each Expat public
-function, with the exception of:
+functions for the C language Expat library; on top of this, the
+following Scheme libraries are installed:
+
+@table @asis
+@item @library{vicare xml expat}
+Exports one binding for each Expat public function, with the exception
+of:
 
 @example
-XML_ParserCreateMM
+XML_ParserCreate_MM
 XML_MemMalloc
 XML_MemRealloc
 XML_MemFree
@@ -201,17 +212,54 @@ XML_SetUnknownEncodingHandler
 XML_SetExternalEntityRefHandlerArg
 @end example
 
-@noindent
-additionally the library @library{vicare expat constants} exports one
-binding for each constant value defined in the C language header
-@file{expat.h}.
+@item @library{vicare xml expat constants}
+Exports one binding for each constant value defined in the C language
+header @file{expat.h}.
 
-The Nausicaa front end installs the library @library{nausicaa xml
-expat}; such library may still need some bindings from @library{vicare
-expat}.
+@item @library{nausicaa xml expat}
+The Nausicaa front--end library.  It reexports all the bindings from
+@library{vicare xml expat constants}.  Users of this library may still
+need some bindings from @library{vicare xml expat}.
+@end table
 
 This document contains only a brief description of the functions: refer
 to the Expat's documentation for details.
+
+Scheme libraries are installed under the directory:
+
+@center @file{$(libdir)/vicare-scheme}
+
+After installation, under the directory:
+
+@center @file{$(libexecdir)/@value{PACKAGE_NICKNAME}}
+
+@noindent
+the scripts @file{compile-all.sps} and @file{compile-nausicaa.sps} can
+be executed to precompile the installed libraries; for example:
+
+@example
+$ sudo vicare \
+   --fasl-directory /var/cache/vicare-scheme \
+   --compile-dependencies \
+      /usr/local/libexec/vicare-expat/compile-all.sps
+@end example
+
+This document contains only a brief description of the functions: refer
+to the @value{FOREIGN_PACKAGE}'s documentation for details.
+
+@c page
+@node examples
+@chapter Some usage examples
+
+
+@menu
+* examples core::               Simple parsing of an @axml{} document.
+@end menu
+
+@c page
+@node examples core
+@section Simple parsing of an @axml{} document
+
 
 Here is an example program using the core interface:
 
@@ -302,33 +350,31 @@ and here is the same example using the Nausicaa front end:
 @example
 #!r6rs
 (import (nausicaa)
-  (nausicaa xml expat)
-  (prefix (vicare language-extensions)
-          ik.))
+  (prefix (nausicaa xml expat) expat.))
 
 (define (doit xml)
-  (let (((P <expat-parser>) (make <expat-parser>)))
-    (P.start-element-handler  start-callback)
-    (P.end-element-handler    end-callback)
-    (P.character-data-handler cdata-callback)
-    (P.comment-handler        comment-callback)
-    (P.parse (string->utf8 xml) #f #t)))
+  (let (((P expat.<parser>) (expat.<parser> ())))
+    (P start-element-handler  start-callback)
+    (P end-element-handler    end-callback)
+    (P character-data-handler cdata-callback)
+    (P comment-handler        comment-callback)
+    (P parse (string->utf8 xml) #f #t)))
 
 (define (start-callback data element attributes)
-  (let ((element    (ik.cstring->string element))
-        (attributes (ik.argv->strings attributes)))
+  (let ((element    (cstring->string element))
+        (attributes (argv->strings attributes)))
     (pretty-print (list 'start element attributes))))
 
 (define (end-callback data element)
-  (let ((element (ik.cstring->string element)))
+  (let ((element (cstring->string element)))
     (pretty-print (list 'end element))))
 
 (define (cdata-callback data buf.ptr buf.len)
-  (let ((text (ik.cstring->string buf.ptr buf.len)))
+  (let ((text (cstring->string buf.ptr buf.len)))
     (pretty-print (list 'cdata text))))
 
 (define (comment-callback data cstr)
-  (let ((text (ik.cstring->string cstr)))
+  (let ((text (cstring->string cstr)))
     (pretty-print (list 'comment text))))
 
 (doit
@@ -3173,32 +3219,37 @@ If @var{use-dtd?} is true: allow the application to provide an external
 
 The documentation of @value{PACKAGE} is available online:
 
-@center @url{http://marcomaggi.github.com/docs/vicare-expat.html}
+@center @value{DOCUMENTATION_URL}
 
 @noindent
 the latest version of this package can be downloaded from:
 
-@center @url{http://code.google.com/p/vicare-scheme/downloads/list}
+@center @value{DOWNLOAD_URL}
 
 @noindent
 development takes place at:
 
-@center @url{http://github.com/marcomaggi/vicare-expat/}
+@center @value{GITHUB_URL}
+
+@noindent
+and as backup at:
+
+@center @value{SOURCEFORGE_URL}
 
 @noindent
 the home page of the Vicare project is at:
 
-@center @url{http://marcomaggi.github.com/vicare.html}
+@center @value{VICARE_HOMEPAGE_URL}
 
 @noindent
 the home page of the Nausicaa project is at:
 
-@center @url{http://marcomaggi.github.com/nausicaa.html}
+@center @value{NAUSICAA_HOMEPAGE_URL}
 
 @noindent
 Expat can be found here:
 
-@center @url{http://expat.sourceforge.net/}
+@center @value{FOREIGN_URL}
 
 @noindent
 the @axml{} 1.0 specification is available from:
@@ -3208,7 +3259,6 @@ the @axml{} 1.0 specification is available from:
 the recommendation on Namespaces in @axml{} 1.0 is available from:
 
 @center @url{<http://www.w3.org/TR/xml-names/}
-
 
 @c page
 @node concept index
