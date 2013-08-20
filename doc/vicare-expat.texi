@@ -153,7 +153,6 @@ entitled ``@gnu{} Free Documentation License''.
 @menu
 * overview::                    Overview of the package.
 * examples::                    Some usage examples.
-* version::                     @value{FOREIGN_PACKAGE} version informations.
 * plain::                       Plain programming interface.
 * nau::                         Nausicaa front--end.
 
@@ -394,8 +393,19 @@ and here is the same example using the Nausicaa front end:
 @end example
 
 @c page
-@node version
-@chapter @value{FOREIGN_PACKAGE} version informations
+@node plain
+@chapter Plain programming interface
+
+
+@menu
+* plain version::               @value{FOREIGN_PACKAGE} version informations.
+* plain parsers::               Building and running parsers.
+* plain handlers::              Building and registering callbacks.
+@end menu
+
+@c page
+@node plain version
+@section @value{FOREIGN_PACKAGE} version informations
 
 
 The installed C library follows version numbering as established by the
@@ -421,23 +431,36 @@ Return a Scheme string representing the version number.
 @c ------------------------------------------------------------
 
 @defun XML_ExpatVersion
-@expatref{api version, XML_ExpatVersion}.  Return a Scheme string
-representing the Expat version number.
+Return a Scheme string representing the Expat version number.
+@expatref{api version, XML_ExpatVersion}.
+
+@example
+(import (vicare xml expat))
+(XML_ExpatVersion)
+@result{} "expat_2.0.1"
+@end example
 @end defun
 
 
 @defun XML_ExpatVersionInfo
-@expatref{api version, XML_ExpatVersionInfo}.  Return a Scheme vector
-holding exact integers representing the Expat version numbers: major,
-minor, micro.
+Return a Scheme vector holding exact integers representing the Expat
+version numbers: major, minor, micro.  @expatref{api version,
+XML_ExpatVersionInfo}.
+
+@example
+(import (vicare xml expat))
+(XML_ExpatVersionInfo)
+@result{} #(2 0 1)
+@end example
 @end defun
 
 
 @defun XML_GetFeatureList
-@expatref{api version, XML_GetFeatureList}.  Return a vector of vectors
-representing the features of the running version of Expat.  Example:
+Return a vector of vectors representing the features of the running
+version of Expat.  @expatref{api version, XML_GetFeatureList}.  Example:
 
 @example
+(import (vicare xml expat))
 (XML_GetFeatureList)
 @result{} #(#(6 "sizeof(XML_Char)" 1)
      #(7 "sizeof(XML_LChar)" 1)
@@ -446,16 +469,6 @@ representing the features of the running version of Expat.  Example:
      #(8 "XML_NS" #f))
 @end example
 @end defun
-
-@c page
-@node plain
-@chapter Plain programming interface
-
-
-@menu
-* plain parsers::               Building and running parsers.
-* plain handlers::              Building and registering callbacks.
-@end menu
 
 @c page
 @node plain parsers
