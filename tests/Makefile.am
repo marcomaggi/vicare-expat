@@ -1,7 +1,7 @@
 ## Process this file with automake to produce Makefile.in
 
 VICARE_EXPAT_ALL_TESTS	= \
-	test-vicare-expat.sps		\
+	test-vicare-expat-version.sps		\
 	test-vicare-expat-core.sps
 
 if WANT_NAUSICAA
