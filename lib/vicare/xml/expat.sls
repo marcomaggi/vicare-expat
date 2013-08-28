@@ -141,24 +141,24 @@
     XML_Content-name			XML_Content-numchildren
     XML_Content-children)
   (import (vicare)
-    (vicare xml expat constants)
-    (prefix (vicare xml expat unsafe-capi) capi.)
     (vicare arguments validation)
+    (vicare unsafe operations)
     (prefix (vicare ffi) ffi.)
-    (prefix (vicare platform words) words.))
+    (prefix (vicare platform words) words.)
+    (vicare xml expat constants)
+    (prefix (vicare xml expat unsafe-capi) capi.))
+
+
+;;;; helpers
+
+(define-constant EXPAT-SUPPORTED-ENCODING-SYMBOLS
+  '(UTF-8 UTF-16 ISO-8859-1 US-ASCII))
+
+(define (expat-supported-encoding-symbol? obj)
+  (memq obj EXPAT-SUPPORTED-ENCODING-SYMBOLS))
 
 
 ;;;; arguments validation
-
-(define-argument-validation (callback who obj)
-  (ffi.pointer? obj)
-  (assertion-violation who "expected callback as argument" obj))
-
-;;; --------------------------------------------------------------------
-
-(define-argument-validation (false/bytevector who obj)
-  (or (not obj) (bytevector? obj))
-  (assertion-violation who "expected false or bytevector as argument" obj))
 
 (define-argument-validation (pointer/bytevector who obj)
   (or (ffi.pointer? obj) (bytevector? obj))
@@ -169,16 +169,12 @@
   (assertion-violation who "expected false or positive signed int as argument" obj))
 
 (define-argument-validation (encoding-symbol who obj)
-  (memq obj '(UTF-8 UTF-16 ISO-8859-1 US-ASCII))
+  (expat-supported-encoding-symbol? obj)
   (assertion-violation who "expected Expat encoding symbol as argument" obj))
 
 (define-argument-validation (false/encoding-symbol who obj)
-  (or (not obj) (memq obj '(UTF-8 UTF-16 ISO-8859-1 US-ASCII)))
+  (or (not obj) (expat-supported-encoding-symbol? obj))
   (assertion-violation who "expected false or Expat encoding symbol as argument" obj))
-
-(define-argument-validation (ascii-char who obj)
-  (and (char? obj) (<= 0 (char->integer obj) 127))
-  (assertion-violation who "expected Scheme character in the ASCII range as argument" obj))
 
 ;;; --------------------------------------------------------------------
 
@@ -347,7 +343,7 @@
 			   (define who '?who)
 			   (with-arguments-validation (who)
 			       ((parser		parser)
-				(callback	callback))
+				(c-callback	callback))
 			     (foreign-call ?func parser callback)))))))
   (declare "ikrt_expat_xml_set_element_decl_handler"		XML_SetElementDeclHandler)
   (declare "ikrt_expat_xml_set_attlist_decl_handler"		XML_SetAttlistDeclHandler)
@@ -378,8 +374,8 @@
 			   (define who '?who)
 			   (with-arguments-validation (who)
 			       ((parser		parser)
-				(callback	start-callback)
-				(callback	end-callback))
+				(c-callback	start-callback)
+				(c-callback	end-callback))
 			     (foreign-call ?func parser start-callback end-callback)))))))
   (declare "ikrt_expat_xml_set_element_handler"			XML_SetElementHandler)
   (declare "ikrt_expat_xml_set_cdata_section_handler"		XML_SetCdataSectionHandler)
@@ -399,7 +395,7 @@
 ;;   (define who 'XML_SetUnknownEncodingHandler)
 ;;   (with-arguments-validation (who)
 ;;       ((parser		parser)
-;;        (callback	callback)
+;;        (c-callback		callback)
 ;;        (pointer		pointer))
 ;;     (foreign-call "ikrt_expat_xml_set_unknown_encoding_handler" parser callback pointer)))
 
@@ -596,7 +592,7 @@
   (define who 'XML_ParserCreateNS)
   (with-arguments-validation (who)
       ((false/encoding-symbol	encoding)
-       (ascii-char		namespace-separator))
+       (char-in-ascii-range	namespace-separator))
     (let ((rv (foreign-call "ikrt_expat_xml_parser_create_ns"
 			    (%document-encoding-symbol->fixnum who encoding)
 			    (char->integer namespace-separator))))
@@ -670,7 +666,7 @@
   (define who 'XML_SetBase)
   (with-arguments-validation (who)
       ((parser			parser)
-       (false/bytevector	base))
+       (bytevector/false	base))
     (foreign-call "ikrt_expat_xml_set_base" parser base)))
 
 (define (XML_GetBase parser)

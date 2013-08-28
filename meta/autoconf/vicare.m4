@@ -39,7 +39,7 @@ AC_DEFUN([VICARE_OPTION_NAUSICAA],
    then
      VICARE_CHECK_LIBRARY([NAUSICAA],[(nausicaa)],
        [vicare_have_nausicaa=yes],[vicare_have_nausicaa=no])
-     if test "$vicare_have_nausicaa" = yes || test "$vicare_cv_have_NAUSICAA" = yes
+     if test "$vicare_have_nausicaa" = yes || test "$vicare_cv_schemelib_NAUSICAA" = yes
      then
        # Nausicaa library was found: success!
        AC_MSG_NOTICE([Nausicaa support enabled])

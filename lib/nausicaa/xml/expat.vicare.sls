@@ -195,10 +195,10 @@
 (define %raise-expat-error
   (case-lambda
    ((who message irritants)
-    (raise (condition (&common (who message irritants))
+    (raise (condition (<common-conditions> (who message irritants))
 		      (&expat-error (XML_ERROR_NONE)))))
    ((_ who message irritants code)
-    (raise (condition (&common (who message irritants))
+    (raise (condition (<common-conditions> (who message irritants))
 		      (&expat-error (code)))))))
 
 
