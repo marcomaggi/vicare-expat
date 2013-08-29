@@ -145,6 +145,7 @@
     (vicare arguments validation)
     (vicare arguments general-c-buffers)
     (prefix (vicare ffi) ffi.)
+    (prefix (vicare ffi foreign-pointer-wrapper) ffi.)
     (prefix (vicare platform words) words.)
     (vicare xml expat constants)
     (prefix (vicare xml expat unsafe-capi) capi.))
@@ -157,6 +158,19 @@
 
 (define (expat-supported-encoding-symbol? obj)
   (memq obj EXPAT-SUPPORTED-ENCODING-SYMBOLS))
+
+(define (%document-encoding-symbol->fixnum who encoding)
+  (if encoding
+      (case encoding
+	((UTF-8)	1)
+	((UTF-16)	2)
+	((ISO-8859-1)	3)
+	((US-ASCII)	4)
+	(else
+	 (assertion-violation who
+	   "invalid symbol as Expat built-in encoding name" encoding)))
+    ;;Honour the encoding specified in the document.
+    0))
 
 
 ;;;; arguments validation
@@ -172,12 +186,6 @@
 (define-argument-validation (encoding-symbol-or-false who obj)
   (or (not obj) (expat-supported-encoding-symbol? obj))
   (assertion-violation who "expected false or Expat encoding symbol as argument" obj))
-
-;;; --------------------------------------------------------------------
-
-(define-argument-validation (parser who obj)
-  (ffi.pointer? obj)
-  (assertion-violation who "expected pointer to Expat parser as argument" obj))
 
 
 ;;;; version functions
@@ -195,89 +203,101 @@
   (ascii->string (capi.vicare-expat-version)))
 
 
-;;;; data structures
+;;;; data structures: XML_Parser
 
-(define %parser-guardian
-  (make-guardian))
+(ffi.define-foreign-pointer-wrapper XML_Parser
+  (ffi.foreign-destructor capi.XML_ParserFree)
+  (ffi.collector-struct-type #f))
 
-(define (%free-allocated-parser)
-  (do ((P (%parser-guardian) (%parser-guardian)))
-      ((not P))
-    (foreign-call "ikrt_expat_xml_parser_free" P)))
+(module ()
+  (define (%struct-XML_Parser-printer S port sub-printer)
+    (define-inline (%display thing)
+      (display thing port))
+    (%display "#[expat:XML_Parser")
+    (%display "]"))
 
-;;; --------------------------------------------------------------------
+  (set-rtd-printer! (type-descriptor XML_Parser)	%struct-XML_Parser-printer))
+
+
+;;;; data structures: XML_ParsingStatus
 
 (define-struct XML_ParsingStatus
   (parsing final-buffer?))
 
-(define (%struct-XML_ParsingStatus-printer S port sub-printer)
-  (define-inline (%display thing)
-    (display thing port))
-  (%display "#[expat:XML_ParsingStatus")
-  (%display " parsing=")	(%display (let ((status (XML_ParsingStatus-parsing S)))
-					    (cond ((= status XML_INITIALIZED)
-						   "XML_INITIALIZED")
-						  ((= status XML_PARSING)
-						   "XML_PARSING")
-						  ((= status XML_FINISHED)
-						   "XML_FINISHED")
-						  ((= status XML_SUSPENDED)
-						   "XML_SUSPENDED")
-						  (else status))))
-  (%display " final-buffer?=")	(%display (XML_ParsingStatus-final-buffer? S))
-  (%display "]"))
+(module ()
+  (define (%struct-XML_ParsingStatus-printer S port sub-printer)
+    (define-inline (%display thing)
+      (display thing port))
+    (%display "#[expat:XML_ParsingStatus")
+    (%display " parsing=")		(%display (let ((status (XML_ParsingStatus-parsing S)))
+						    (cond ((= status XML_INITIALIZED)
+							   "XML_INITIALIZED")
+							  ((= status XML_PARSING)
+							   "XML_PARSING")
+							  ((= status XML_FINISHED)
+							   "XML_FINISHED")
+							  ((= status XML_SUSPENDED)
+							   "XML_SUSPENDED")
+							  (else status))))
+    (%display " final-buffer?=")	(%display (XML_ParsingStatus-final-buffer? S))
+    (%display "]"))
 
-;;; --------------------------------------------------------------------
+  (set-rtd-printer! (type-descriptor XML_ParsingStatus) %struct-XML_ParsingStatus-printer))
+
+
+;;;; data structures: XML_Content
 
 (define-struct XML_Content
   (type quant name numchildren children))
 
-(define (%struct-XML_Content-printer S port sub-printer)
-  (define-inline (%display thing)
-    (display thing port))
-  (define-inline (%write thing)
-    (write thing port))
-  (%display "#[expat:XML_Content")
-  (%display " type=")	(%display (let ((fx (XML_Content-type S)))
-				    (cond ((fx=? fx XML_CTYPE_EMPTY)
-					   "XML_CTYPE_EMPTY")
-					  ((fx=? fx XML_CTYPE_ANY)
-					   "XML_CTYPE_ANY")
-					  ((fx=? fx XML_CTYPE_MIXED)
-					   "XML_CTYPE_MIXED")
-					  ((fx=? fx XML_CTYPE_NAME)
-					   "XML_CTYPE_NAME")
-					  ((fx=? fx XML_CTYPE_CHOICE)
-					   "XML_CTYPE_CHOICE")
-					  ((fx=? fx XML_CTYPE_SEQ)
-					   "XML_CTYPE_SEQ")
-					  (else
-					   "<unknown>"))))
-  (%display " quant=")	(%display (let ((fx (XML_Content-quant S)))
-				    (cond ((fx=? fx XML_CQUANT_NONE)
-					   "XML_CQUANT_NONE")
-					  ((fx=? fx XML_CQUANT_OPT)
-					   "XML_CQUANT_OPT")
-					  ((fx=? fx XML_CQUANT_REP)
-					   "XML_CQUANT_REP")
-					  ((fx=? fx XML_CQUANT_PLUS)
-					   "XML_CQUANT_PLUS")
-					  (else
-					   "<unknown>"))))
-  (%display " name=")		(%write (XML_Content-name S))
-  (%display " numchildren=")	(%display (XML_Content-numchildren S))
-  (%display " children=")	(%display (XML_Content-children S))
-  (%display "]"))
+(module ()
+  (define (%struct-XML_Content-printer S port sub-printer)
+    (define-inline (%display thing)
+      (display thing port))
+    (define-inline (%write thing)
+      (write thing port))
+    (%display "#[expat:XML_Content")
+    (%display " type=")		(%display (let ((fx (XML_Content-type S)))
+					    (cond ((fx=? fx XML_CTYPE_EMPTY)
+						   "XML_CTYPE_EMPTY")
+						  ((fx=? fx XML_CTYPE_ANY)
+						   "XML_CTYPE_ANY")
+						  ((fx=? fx XML_CTYPE_MIXED)
+						   "XML_CTYPE_MIXED")
+						  ((fx=? fx XML_CTYPE_NAME)
+						   "XML_CTYPE_NAME")
+						  ((fx=? fx XML_CTYPE_CHOICE)
+						   "XML_CTYPE_CHOICE")
+						  ((fx=? fx XML_CTYPE_SEQ)
+						   "XML_CTYPE_SEQ")
+						  (else
+						   "<unknown>"))))
+    (%display " quant=")	(%display (let ((fx (XML_Content-quant S)))
+					    (cond ((fx=? fx XML_CQUANT_NONE)
+						   "XML_CQUANT_NONE")
+						  ((fx=? fx XML_CQUANT_OPT)
+						   "XML_CQUANT_OPT")
+						  ((fx=? fx XML_CQUANT_REP)
+						   "XML_CQUANT_REP")
+						  ((fx=? fx XML_CQUANT_PLUS)
+						   "XML_CQUANT_PLUS")
+						  (else
+						   "<unknown>"))))
+    (%display " name=")		(%write (XML_Content-name S))
+    (%display " numchildren=")	(%display (XML_Content-numchildren S))
+    (%display " children=")	(%display (XML_Content-children S))
+    (%display "]"))
+  (set-rtd-printer! (type-descriptor XML_Content) %struct-XML_Content-printer))
 
 (define (pointer->XML_Content pointer)
   (define who 'pointer->XML_Content)
-  (let* ((type		(XML_Content.type pointer))
-	 (quant		(XML_Content.quant pointer))
-	 (name		(let ((name (XML_Content.name pointer)))
+  (let* ((type		(capi.XML_Content.type pointer))
+	 (quant		(capi.XML_Content.quant pointer))
+	 (name		(let ((name (capi.XML_Content.name pointer)))
 			  (if (ffi.pointer-null? name)
 			      #f
 			    (ffi.cstring->string name))))
-	 (numchildren	(XML_Content.numchildren pointer))
+	 (numchildren	(capi.XML_Content.numchildren pointer))
 	 (children	(cond ((bignum? numchildren)
 			       (assertion-violation who
 				 "number of child elements too big" numchildren))
@@ -290,7 +310,7 @@
 				      children)
 				   (vector-set! children i
 						(pointer->XML_Content
-						 (XML_Content.children pointer i)))))))))
+						 (capi.XML_Content.children pointer i)))))))))
     (make-XML_Content type quant name numchildren children)))
 
 (define (XML_Content->list S)
@@ -303,113 +323,97 @@
 	      (vector-map XML_Content->list vec)
 	    #f))))
 
-(define-inline (XML_Content.type pointer)
-  (foreign-call "ikrt_expat_xml_content_type_ref" pointer))
-
-(define-inline (XML_Content.quant pointer)
-  (foreign-call "ikrt_expat_xml_content_quant_ref" pointer))
-
-(define-inline (XML_Content.name pointer)
-  (foreign-call "ikrt_expat_xml_content_name_ref" pointer))
-
-(define-inline (XML_Content.numchildren pointer)
-  (foreign-call "ikrt_expat_xml_content_numchildren_ref" pointer))
-
-(define-inline (XML_Content.children pointer index)
-  (foreign-call "ikrt_expat_xml_content_children_ref" pointer index))
-
-
-;;;; helpers
-
-(define (%document-encoding-symbol->fixnum who encoding)
-  (case encoding
-    ((#f)		0) ;honour the encoding specified in the document
-    ((UTF-8)		1)
-    ((UTF-16)		2)
-    ((ISO-8859-1)	3)
-    ((US-ASCII)		4)
-    (else
-     (assertion-violation who "bad encoding selection" encoding))))
-
 
 ;;;; callback setters
 
-(let-syntax ((declare (syntax-rules ()
-			((_ ?func ?who)
-			 (define (?who parser callback)
-			   (define who '?who)
-			   (with-arguments-validation (who)
-			       ((parser		parser)
-				(c-callback	callback))
-			     (foreign-call ?func parser callback)))))))
-  (declare "ikrt_expat_xml_set_element_decl_handler"		XML_SetElementDeclHandler)
-  (declare "ikrt_expat_xml_set_attlist_decl_handler"		XML_SetAttlistDeclHandler)
-  (declare "ikrt_expat_xml_set_xml_decl_handler"		XML_SetXmlDeclHandler)
-  (declare "ikrt_expat_xml_set_entity_decl_handler"		XML_SetEntityDeclHandler)
-  (declare "ikrt_expat_xml_set_start_element_handler"		XML_SetStartElementHandler)
-  (declare "ikrt_expat_xml_set_end_element_handler"		XML_SetEndElementHandler)
-  (declare "ikrt_expat_xml_set_character_data_handler"		XML_SetCharacterDataHandler)
-  (declare "ikrt_expat_xml_set_processing_instruction_handler"	XML_SetProcessingInstructionHandler)
-  (declare "ikrt_expat_xml_set_comment_handler"			XML_SetCommentHandler)
-  (declare "ikrt_expat_xml_set_start_cdata_section_handler"	XML_SetStartCdataSectionHandler)
-  (declare "ikrt_expat_xml_set_end_cdata_section_handler"	XML_SetEndCdataSectionHandler)
-  (declare "ikrt_expat_xml_set_default_handler"			XML_SetDefaultHandler)
-  (declare "ikrt_expat_xml_set_default_handler_expand"		XML_SetDefaultHandlerExpand)
-  (declare "ikrt_expat_xml_set_start_doctype_decl_handler"	XML_SetStartDoctypeDeclHandler)
-  (declare "ikrt_expat_xml_set_end_doctype_decl_handler"	XML_SetEndDoctypeDeclHandler)
-  (declare "ikrt_expat_xml_set_unparsed_entity_decl_handler"	XML_SetUnparsedEntityDeclHandler)
-  (declare "ikrt_expat_xml_set_notation_decl_handler"		XML_SetNotationDeclHandler)
-  (declare "ikrt_expat_xml_set_start_namespace_decl_handler"	XML_SetStartNamespaceDeclHandler)
-  (declare "ikrt_expat_xml_set_end_namespace_decl_handler"	XML_SetEndNamespaceDeclHandler)
-  (declare "ikrt_expat_xml_set_not_standalone_handler"		XML_SetNotStandaloneHandler)
-  (declare "ikrt_expat_xml_set_external_entity_ref_handler"	XML_SetExternalEntityRefHandler)
-  (declare "ikrt_expat_xml_set_skipped_entity_handler"		XML_SetSkippedEntityHandler))
+(let-syntax ((declare (lambda (stx)
+			(define (identifier-prefix prefix id)
+			  (datum->syntax id (string-append prefix (symbol->string (syntax->datum id)))))
+			(syntax-case stx ()
+			  ((_ ?who)
+			   (with-syntax
+			       ((CAPI-FUNC (identifier-prefix "capi." #'?who)))
+			     #'(define (?who parser callback)
+				 (define who '?who)
+				 (with-arguments-validation (who)
+				     ((XML_Parser	parser)
+				      (c-callback	callback))
+				   (CAPI-FUNC parser callback)))))))))
+  (declare XML_SetElementDeclHandler)
+  (declare XML_SetAttlistDeclHandler)
+  (declare XML_SetXmlDeclHandler)
+  (declare XML_SetEntityDeclHandler)
+  (declare XML_SetStartElementHandler)
+  (declare XML_SetEndElementHandler)
+  (declare XML_SetCharacterDataHandler)
+  (declare XML_SetProcessingInstructionHandler)
+  (declare XML_SetCommentHandler)
+  (declare XML_SetStartCdataSectionHandler)
+  (declare XML_SetEndCdataSectionHandler)
+  (declare XML_SetDefaultHandler)
+  (declare XML_SetDefaultHandlerExpand)
+  (declare XML_SetStartDoctypeDeclHandler)
+  (declare XML_SetEndDoctypeDeclHandler)
+  (declare XML_SetUnparsedEntityDeclHandler)
+  (declare XML_SetNotationDeclHandler)
+  (declare XML_SetStartNamespaceDeclHandler)
+  (declare XML_SetEndNamespaceDeclHandler)
+  (declare XML_SetNotStandaloneHandler)
+  (declare XML_SetExternalEntityRefHandler)
+  (declare XML_SetSkippedEntityHandler))
 
-(let-syntax ((declare (syntax-rules ()
-			((_ ?func ?who)
-			 (define (?who parser start-callback end-callback)
-			   (define who '?who)
-			   (with-arguments-validation (who)
-			       ((parser		parser)
-				(c-callback	start-callback)
-				(c-callback	end-callback))
-			     (foreign-call ?func parser start-callback end-callback)))))))
-  (declare "ikrt_expat_xml_set_element_handler"			XML_SetElementHandler)
-  (declare "ikrt_expat_xml_set_cdata_section_handler"		XML_SetCdataSectionHandler)
-  (declare "ikrt_expat_xml_set_doctype_decl_handler"		XML_SetDoctypeDeclHandler)
-  (declare "ikrt_expat_xml_set_namespace_decl_handler"		XML_SetNamespaceDeclHandler))
+(let-syntax ((declare (lambda (stx)
+			(define (identifier-prefix prefix id)
+			  (datum->syntax id (string-append prefix (symbol->string (syntax->datum id)))))
+			(syntax-case stx ()
+			  ((_ ?who)
+			   (with-syntax
+			       ((CAPI-FUNC (identifier-prefix "capi." #'?who)))
+			     #'(define (?who parser start-callback end-callback)
+				 (define who '?who)
+				 (with-arguments-validation (who)
+				     ((XML_Parser	parser)
+				      (c-callback	start-callback)
+				      (c-callback	end-callback))
+				   (CAPI-FUNC parser start-callback end-callback)))))))))
+  (declare XML_SetElementHandler)
+  (declare XML_SetCdataSectionHandler)
+  (declare XML_SetDoctypeDeclHandler)
+  (declare XML_SetNamespaceDeclHandler))
 
 ;;; --------------------------------------------------------------------
 
 (define (XML_SetExternalEntityRefHandlerArg parser pointer)
   (define who 'XML_SetExternalEntityRefHandlerArg)
   (with-arguments-validation (who)
-      ((parser	parser)
-       (pointer	pointer))
-    (foreign-call "ikrt_expat_xml_set_external_entity_ref_handler_arg" parser pointer)))
+      ((XML_Parser	parser)
+       (pointer		pointer))
+    (capi.XML_SetExternalEntityRefHandlerArg parser pointer)))
 
+;;Not publicly interfaced.
+;;
 ;; (define (XML_SetUnknownEncodingHandler parser callback pointer)
 ;;   (define who 'XML_SetUnknownEncodingHandler)
 ;;   (with-arguments-validation (who)
-;;       ((parser		parser)
+;;       ((XML_Parser		parser)
 ;;        (c-callback		callback)
 ;;        (pointer		pointer))
-;;     (foreign-call "ikrt_expat_xml_set_unknown_encoding_handler" parser callback pointer)))
+;;     (capi.XML_SetUnknownEncodingHandler parser callback pointer)))
 
 ;;; --------------------------------------------------------------------
 
 (define (XML_FreeContentModel parser model)
   (define who 'XML_FreeContentModel)
   (with-arguments-validation (who)
-      ((parser		parser)
+      ((XML_Parser	parser)
        (pointer		model))
-    (foreign-call "ikrt_expat_xml_free_content_model" parser model)))
+    (capi.XML_FreeContentModel parser model)))
 
 (define (XML_UseParserAsHandlerArg parser)
   (define who 'XML_UseParserAsHandlerArg)
   (with-arguments-validation (who)
-      ((parser	parser))
-    (foreign-call "ikrt_expat_xml_use_parser_as_handler_arg" parser)))
+      ((XML_Parser	parser))
+    (capi.XML_UseParserAsHandlerArg parser)))
 
 
 ;;;; callback makers
@@ -418,7 +422,19 @@
 ;;                                                 const XML_Char *name,
 ;;                                                 XML_Content *model);
 (define XML_ElementDeclHandler
-  (ffi.make-c-callback-maker 'void '(pointer pointer pointer)))
+  ;;FIXME  This  callback needs  a  pointer  to  parser to  release  the
+  ;;XML_Content data structure.
+  (let ((maker (ffi.make-c-callback-maker 'void '(pointer pointer pointer))))
+    (lambda (user-scheme-callback)
+      (maker (lambda (custom-data element-name c-model)
+	       (guard (E (else
+			  #;(pretty-print E (current-error-port))
+			  (void)))
+		 (let ((parser (make-XML_Parser/not-owner custom-data))
+		       (model  (pointer->XML_Content c-model)))
+		   (XML_FreeContentModel parser c-model)
+		   (user-scheme-callback parser (cstring->string element-name) model)
+		   (void))))))))
 
 ;; typedef void (XMLCALL *XML_AttlistDeclHandler) (
 ;;                                     void            *userData,
@@ -579,10 +595,9 @@
     (define who 'XML_ParserCreate)
     (with-arguments-validation (who)
 	((encoding-symbol-or-false	encoding))
-      (let ((rv (foreign-call "ikrt_expat_xml_parser_create"
-			      (%document-encoding-symbol->fixnum who encoding))))
+      (let ((rv (capi.XML_ParserCreate (%document-encoding-symbol->fixnum who encoding))))
 	(if rv
-	    (%parser-guardian rv)
+	    (make-XML_Parser/owner rv)
 	  (error who "error allocating Expat parser" encoding)))))))
 
 (define (XML_ParserCreateNS encoding namespace-separator)
@@ -590,11 +605,10 @@
   (with-arguments-validation (who)
       ((encoding-symbol-or-false	encoding)
        (char-in-ascii-range		namespace-separator))
-    (let ((rv (foreign-call "ikrt_expat_xml_parser_create_ns"
-			    (%document-encoding-symbol->fixnum who encoding)
-			    (char->integer namespace-separator))))
+    (let ((rv (capi.XML_ParserCreateNS (%document-encoding-symbol->fixnum who encoding)
+				       (char->integer namespace-separator))))
       (if rv
-	  (%parser-guardian rv)
+	  (make-XML_Parser/owner rv)
 	(error who "error allocating Expat parser" encoding namespace-separator)))))
 
 (define XML_ParserReset
@@ -604,87 +618,87 @@
    ((parser encoding)
     (define who 'XML_ParserReset)
     (with-arguments-validation (who)
-	((encoding-symbol-or-false	encoding))
-      (foreign-call "ikrt_expat_xml_parser_reset" parser encoding)))))
+	((XML_Parser			parser)
+	 (encoding-symbol-or-false	encoding))
+      (capi.XML_ParserReset parser (%document-encoding-symbol->fixnum who encoding))))))
 
 (define (XML_ParserFree parser)
   (define who 'XML_ParserFree)
   (with-arguments-validation (who)
-      ((parser	parser))
-    (foreign-call "ikrt_expat_xml_parser_free" parser)))
+      ((XML_Parser	parser))
+    ($XML_Parser-finalise parser)))
 
 ;;; --------------------------------------------------------------------
 
 (define (XML_ExternalEntityParserCreate parser context encoding)
   (define who 'XML_ExternalEntityParserCreate)
   (with-arguments-validation (who)
-      ((parser		parser)
+      ((XML_Parser	parser)
        (pointer		context)
        (encoding-symbol	encoding))
-    (let ((rv (foreign-call "ikrt_expat_xml_external_entity_parser_create" parser context
-			    (%document-encoding-symbol->fixnum who encoding))))
+    (let ((rv (capi.XML_ExternalEntityParserCreate parser context
+						   (%document-encoding-symbol->fixnum who encoding))))
       (if rv
-	  (%parser-guardian rv)
+	  (make-XML_Parser/owner rv)
 	(error who "error allocating Expat entity parser" parser context encoding)))))
 
 (define (XML_SetParamEntityParsing parser parsing)
   (define who 'XML_SetParamEntityParsing)
   (with-arguments-validation (who)
-      ((parser	parser)
-       (fixnum	parsing))
-    (foreign-call "ikrt_expat_xml_set_param_entity_parsing" parser parsing)))
+      ((XML_Parser	parser)
+       (fixnum		parsing))
+    (capi.XML_SetParamEntityParsing parser parsing)))
 
 ;;; --------------------------------------------------------------------
 
 (define (XML_SetEncoding parser encoding)
   (define who 'XML_SetEncoding)
   (with-arguments-validation (who)
-      ((parser		parser)
-       (encoding-symbol	encoding))
-    (foreign-call "ikrt_expat_xml_set_encoding" parser
-		  (%document-encoding-symbol->fixnum who encoding))))
+      ((XML_Parser		parser)
+       (encoding-symbol		encoding))
+    (capi.XML_SetEncoding parser (%document-encoding-symbol->fixnum who encoding))))
 
 (define (XML_SetUserData parser pointer)
   (define who 'XML_SetUserData)
   (with-arguments-validation (who)
-      ((parser	parser)
-       (pointer	pointer))
-    (foreign-call "ikrt_expat_xml_set_user_data" parser pointer)))
+      ((XML_Parser	parser)
+       (pointer		pointer))
+    (capi.XML_SetUserData parser pointer)))
 
 (define (XML_GetUserData parser)
   (define who 'XML_GetUserData)
   (with-arguments-validation (who)
-      ((parser	parser))
-    (foreign-call "ikrt_expat_xml_get_user_data" parser)))
+      ((XML_Parser	parser))
+    (capi.XML_GetUserData parser)))
 
 ;;; --------------------------------------------------------------------
 
 (define (XML_SetBase parser base)
   (define who 'XML_SetBase)
   (with-arguments-validation (who)
-      ((parser			parser)
+      ((XML_Parser		parser)
        (bytevector/false	base))
-    (foreign-call "ikrt_expat_xml_set_base" parser base)))
+    (capi.XML_SetBase parser base)))
 
 (define (XML_GetBase parser)
   (define who 'XML_GetBase)
   (with-arguments-validation (who)
-      ((parser	parser))
-    (foreign-call "ikrt_expat_xml_get_base" parser)))
+      ((XML_Parser	parser))
+    (capi.XML_GetBase parser)))
 
 ;;; --------------------------------------------------------------------
 
 (define (XML_UseForeignDTD parser use-dtd?)
   (define who 'XML_UseForeignDTD)
   (with-arguments-validation (who)
-      ((parser	parser))
-    (foreign-call "ikrt_expat_xml_user_foreign_dtd" parser use-dtd?)))
+      ((XML_Parser	parser))
+    (capi.XML_UseForeignDTD parser use-dtd?)))
 
 (define (XML_SetReturnNSTriplet parser do-nst?)
   (define who 'XML_SetReturnNSTriplet)
   (with-arguments-validation (who)
-      ((parser	parser))
-    (foreign-call "ikrt_expat_xml_set_return_ns_triplet" parser do-nst?)))
+      ((XML_Parser	parser))
+    (capi.XML_SetReturnNSTriplet parser do-nst?)))
 
 ;;; --------------------------------------------------------------------
 
@@ -695,54 +709,54 @@
    ((parser buf.data buf.len final?)
     (define who 'XML_Parse)
     (with-arguments-validation (who)
-	((parser			parser)
-	 (general-c-string*		buf.data buf.len))
+	((XML_Parser		parser)
+	 (general-c-string*	buf.data buf.len))
       (with-general-c-strings ((buf.data^ buf.data))
-	(foreign-call "ikrt_expat_xml_parse" parser buf.data^ buf.len final?))))))
+	(capi.XML_Parse parser buf.data^ buf.len final?))))))
 
 (define (XML_GetBuffer parser buf.len)
   (define who 'XML_GetBuffer)
   (with-arguments-validation (who)
-      ((parser		parser)
+      ((XML_Parser	parser)
        (signed-int	buf.len))
-    (foreign-call "ikrt_expat_xml_get_buffer" parser buf.len)))
+    (capi.XML_GetBuffer parser buf.len)))
 
 (define (XML_ParseBuffer parser buf.len final?)
   (define who 'XML_ParseBuffer)
   (with-arguments-validation (who)
-      ((parser				parser)
+      ((XML_Parser			parser)
        (false/non-negative-signed-int	buf.len))
-    (foreign-call "ikrt_expat_xml_parse_buffer" parser buf.len final?)))
+    (capi.XML_ParseBuffer parser buf.len final?)))
 
 ;;; --------------------------------------------------------------------
 
 (define (XML_StopParser parser resumable?)
   (define who 'XML_StopParser)
   (with-arguments-validation (who)
-      ((parser	parser))
-    (foreign-call "ikrt_expat_xml_stop_parser" parser resumable?)))
+      ((XML_Parser	parser))
+    (capi.XML_StopParser parser resumable?)))
 
 (define (XML_ResumeParser parser)
   (define who 'XML_ResumeParser)
   (with-arguments-validation (who)
-      ((parser	parser))
-    (foreign-call "ikrt_expat_xml_resume_parser" parser)))
+      ((XML_Parser	parser))
+    (capi.XML_ResumeParser parser)))
 
 ;;; --------------------------------------------------------------------
 
 (define (XML_GetParsingStatus parser)
   (define who 'XML_GetParsingStatus)
   (with-arguments-validation (who)
-      ((parser	parser))
-    (let ((status (make-XML_ParsingStatus #f #f)))
-      (foreign-call "ikrt_expat_xml_get_parsing_status" parser status)
-      status)))
+      ((XML_Parser	parser))
+    (receive-and-return (status)
+	(make-XML_ParsingStatus #f #f)
+      (capi.XML_GetParsingStatus parser status))))
 
 (define (XML_GetInputContext parser)
   (define who 'XML_GetInputContext)
   (with-arguments-validation (who)
-      ((parser	parser))
-    (foreign-call "ikrt_expat_xml_get_input_context" parser)))
+      ((XML_Parser	parser))
+    (capi.XML_GetInputContext parser)))
 
 
 ;;;; elements
@@ -750,8 +764,8 @@
 (define (XML_DefaultCurrent parser)
   (define who 'XML_DefaultCurrent)
   (with-arguments-validation (who)
-      ((parser	parser))
-    (foreign-call "ikrt_expat_xml_default_current" parser)))
+      ((XML_Parser	parser))
+    (capi.XML_DefaultCurrent parser)))
 
 
 ;;;; attributes
@@ -759,14 +773,14 @@
 (define (XML_GetSpecifiedAttributeCount parser)
   (define who 'XML_GetSpecifiedAttributeCount)
   (with-arguments-validation (who)
-      ((parser	parser))
-    (foreign-call "ikrt_expat_xml_get_specified_attribute_count" parser)))
+      ((XML_Parser	parser))
+    (capi.XML_GetSpecifiedAttributeCount parser)))
 
 (define (XML_GetIdAttributeIndex parser)
   (define who 'XML_GetIdAttributeIndex)
   (with-arguments-validation (who)
-      ((parser	parser))
-    (foreign-call "ikrt_expat_xml_get_id_attribute_index" parser)))
+      ((XML_Parser	parser))
+    (capi.XML_GetIdAttributeIndex parser)))
 
 
 ;;;; error reporting
@@ -775,61 +789,55 @@
   (define who 'XML_ErrorString)
   (with-arguments-validation (who)
       ((signed-int	code))
-    (latin1->string (foreign-call "ikrt_expat_xml_error_string" code))))
+    (capi.XML_ErrorString code)))
 
 (define (XML_GetErrorCode parser)
   (define who 'XML_GetErrorCode)
   (with-arguments-validation (who)
-      ((parser	parser))
-    (foreign-call "ikrt_expat_xml_get_error_code" parser)))
+      ((XML_Parser	parser))
+    (capi.XML_GetErrorCode parser)))
 
 (define (XML_GetCurrentLineNumber parser)
   (define who 'XML_GetCurrentLineNumber)
   (with-arguments-validation (who)
-      ((parser	parser))
-    (foreign-call "ikrt_expat_xml_get_current_line_number" parser)))
+      ((XML_Parser	parser))
+    (capi.XML_GetCurrentLineNumber parser)))
 
 (define (XML_GetCurrentColumnNumber parser)
   (define who 'XML_GetCurrentColumnNumber)
   (with-arguments-validation (who)
-      ((parser	parser))
-    (foreign-call "ikrt_expat_xml_get_current_column_number" parser)))
+      ((XML_Parser	parser))
+    (capi.XML_GetCurrentColumnNumber parser)))
 
 (define (XML_GetCurrentByteIndex parser)
   (define who 'XML_GetCurrentByteIndex)
   (with-arguments-validation (who)
-      ((parser	parser))
-    (foreign-call "ikrt_expat_xml_get_current_byte_index" parser)))
+      ((XML_Parser	parser))
+    (capi.XML_GetCurrentByteIndex parser)))
 
 (define (XML_GetCurrentByteCount parser)
   (define who 'XML_GetCurrentByteCount)
   (with-arguments-validation (who)
-      ((parser	parser))
-    (foreign-call "ikrt_expat_xml_get_current_byte_count" parser)))
+      ((XML_Parser	parser))
+    (capi.XML_GetCurrentByteCount parser)))
 
 
 ;;;; miscellaneous functions
 
 (define (XML_ExpatVersion)
-  (latin1->string (foreign-call "ikrt_expat_xml_version")))
+  (latin1->string (capi.XML_ExpatVersion)))
 
 (define (XML_ExpatVersionInfo)
-  (foreign-call "ikrt_expat_xml_version_info"))
+  (capi.XML_ExpatVersionInfo))
 
 (define (XML_GetFeatureList)
   (vector-map (lambda (vec)
 		(vector-set! vec 1 (latin1->string (vector-ref vec 1)))
 		vec)
-    (foreign-call "ikrt_expat_xml_get_feature_list")))
+    (capi.XML_GetFeatureList)))
 
 
 ;;;; done
-
-(set-rtd-printer! (type-descriptor XML_ParsingStatus) %struct-XML_ParsingStatus-printer)
-(set-rtd-printer! (type-descriptor XML_Content)       %struct-XML_Content-printer)
-
-(post-gc-hooks (cons %free-allocated-parser
-		     (post-gc-hooks)))
 
 )
 

@@ -1570,7 +1570,7 @@ setter for the @dtd{} element declaration handlers.
 
 @defun XML_FreeContentModel @var{parser} @var{model}
 @expatref{api handlers dtd element, XML_FreeContentModel}.  Release the
-@var{model} arugment for the @code{XML_ElementDeclHandler}.
+@var{model} argument for the @code{XML_ElementDeclHandler}.
 @end defun
 
 
