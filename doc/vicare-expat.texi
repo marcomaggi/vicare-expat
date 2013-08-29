@@ -639,12 +639,10 @@ pointer object referencing the parser.
 @expatref{api parse, XML_Parse}.  Parse the next portion of the
 document; return a fixnum representing a status code.
 
-@var{buffer} must be a bytevector or a pointer object.  @var{buflen}
-must be @false{} or a non--negative exact integer in the range of the
-@code{int} C language type.  If @var{buffer} is a pointer: @var{buflen}
-must be an integer representing the number of bytes to consume from the
-buffer; if @var{buffer} is a bytevector: @var{buflen} is ignored and the
-whole bytevector is consumed.
+@var{buffer} and @var{buflen} must represent a general C string
+@vicareref{cbuffers strings, Introduction to generalised C strings}.
+When @var{buffer} is a string: it is converted to a bytevector with
+@func{string->ascii}.
 
 If @var{final?} is true: expect this buffer to contain the end of the
 document; @var{final?} defaults to @false{}.

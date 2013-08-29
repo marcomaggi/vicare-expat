@@ -141,8 +141,9 @@
     XML_Content-name			XML_Content-numchildren
     XML_Content-children)
   (import (vicare)
-    (vicare arguments validation)
     (vicare unsafe operations)
+    (vicare arguments validation)
+    (vicare arguments general-c-buffers)
     (prefix (vicare ffi) ffi.)
     (prefix (vicare platform words) words.)
     (vicare xml expat constants)
@@ -160,10 +161,6 @@
 
 ;;;; arguments validation
 
-(define-argument-validation (pointer/bytevector who obj)
-  (or (ffi.pointer? obj) (bytevector? obj))
-  (assertion-violation who "expected pointer or bytevector as argument" obj))
-
 (define-argument-validation (false/non-negative-signed-int who obj)
   (or (not obj) (and (words.signed-int? obj) (<= 0 obj)))
   (assertion-violation who "expected false or positive signed int as argument" obj))
@@ -172,7 +169,7 @@
   (expat-supported-encoding-symbol? obj)
   (assertion-violation who "expected Expat encoding symbol as argument" obj))
 
-(define-argument-validation (false/encoding-symbol who obj)
+(define-argument-validation (encoding-symbol-or-false who obj)
   (or (not obj) (expat-supported-encoding-symbol? obj))
   (assertion-violation who "expected false or Expat encoding symbol as argument" obj))
 
@@ -581,7 +578,7 @@
    ((encoding)
     (define who 'XML_ParserCreate)
     (with-arguments-validation (who)
-	((false/encoding-symbol	encoding))
+	((encoding-symbol-or-false	encoding))
       (let ((rv (foreign-call "ikrt_expat_xml_parser_create"
 			      (%document-encoding-symbol->fixnum who encoding))))
 	(if rv
@@ -591,8 +588,8 @@
 (define (XML_ParserCreateNS encoding namespace-separator)
   (define who 'XML_ParserCreateNS)
   (with-arguments-validation (who)
-      ((false/encoding-symbol	encoding)
-       (char-in-ascii-range	namespace-separator))
+      ((encoding-symbol-or-false	encoding)
+       (char-in-ascii-range		namespace-separator))
     (let ((rv (foreign-call "ikrt_expat_xml_parser_create_ns"
 			    (%document-encoding-symbol->fixnum who encoding)
 			    (char->integer namespace-separator))))
@@ -607,7 +604,7 @@
    ((parser encoding)
     (define who 'XML_ParserReset)
     (with-arguments-validation (who)
-	((false/encoding-symbol	encoding))
+	((encoding-symbol-or-false	encoding))
       (foreign-call "ikrt_expat_xml_parser_reset" parser encoding)))))
 
 (define (XML_ParserFree parser)
@@ -693,29 +690,29 @@
 
 (define XML_Parse
   (case-lambda
-   ((parser buffer buflen)
-    (XML_Parse parser buffer buflen #f))
-   ((parser buffer buflen final?)
+   ((parser buf.data buf.len)
+    (XML_Parse parser buf.data buf.len #f))
+   ((parser buf.data buf.len final?)
     (define who 'XML_Parse)
     (with-arguments-validation (who)
 	((parser			parser)
-	 (pointer/bytevector		buffer)
-	 (false/non-negative-signed-int	buflen))
-      (foreign-call "ikrt_expat_xml_parse" parser buffer buflen final?)))))
+	 (general-c-string*		buf.data buf.len))
+      (with-general-c-strings ((buf.data^ buf.data))
+	(foreign-call "ikrt_expat_xml_parse" parser buf.data^ buf.len final?))))))
 
-(define (XML_GetBuffer parser buflen)
+(define (XML_GetBuffer parser buf.len)
   (define who 'XML_GetBuffer)
   (with-arguments-validation (who)
       ((parser		parser)
-       (signed-int	buflen))
-    (foreign-call "ikrt_expat_xml_get_buffer" parser buflen)))
+       (signed-int	buf.len))
+    (foreign-call "ikrt_expat_xml_get_buffer" parser buf.len)))
 
-(define (XML_ParseBuffer parser buflen final?)
+(define (XML_ParseBuffer parser buf.len final?)
   (define who 'XML_ParseBuffer)
   (with-arguments-validation (who)
       ((parser				parser)
-       (false/non-negative-signed-int	buflen))
-    (foreign-call "ikrt_expat_xml_parse_buffer" parser buflen final?)))
+       (false/non-negative-signed-int	buf.len))
+    (foreign-call "ikrt_expat_xml_parse_buffer" parser buf.len final?)))
 
 ;;; --------------------------------------------------------------------
 
