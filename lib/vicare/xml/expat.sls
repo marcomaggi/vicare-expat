@@ -216,7 +216,7 @@
     (%display "#[expat:XML_Parser")
     (%display "]"))
 
-  (set-rtd-printer! (type-descriptor XML_Parser)	%struct-XML_Parser-printer))
+  (set-rtd-printer! (type-descriptor XML_Parser) %struct-XML_Parser-printer))
 
 
 ;;;; data structures: XML_ParsingStatus
