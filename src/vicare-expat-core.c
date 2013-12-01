@@ -159,10 +159,11 @@ ikrt_expat_xml_parser_reset (ikptr s_parser, ikptr s_encoding)
 ikptr
 ikrt_expat_xml_parser_free (ikptr s_parser)
 {
-  XML_Parser	parser = IK_EXPAT_PARSER(s_parser);
+  ikptr		s_pointer	= IK_EXPAT_PARSER_POINTER(s_parser);
+  XML_Parser	parser		= IK_POINTER_DATA_VOIDP(s_pointer);
   if (parser) {
     XML_ParserFree(parser);
-    IK_POINTER_SET_NULL(IK_EXPAT_PARSER_POINTER_OBJECT(s_parser));
+    IK_POINTER_SET_NULL(s_pointer);
   }
   return IK_VOID;
 }

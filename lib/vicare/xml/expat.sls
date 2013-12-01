@@ -214,6 +214,7 @@
     (define-inline (%display thing)
       (display thing port))
     (%display "#[expat:XML_Parser")
+    (%display " pointer=")	(%display ($XML_Parser-pointer S))
     (%display "]"))
 
   (set-rtd-printer! (type-descriptor XML_Parser) %struct-XML_Parser-printer))
@@ -327,8 +328,6 @@
 ;;;; callback setters
 
 (let-syntax ((declare (lambda (stx)
-			(define (identifier-prefix prefix id)
-			  (datum->syntax id (string-append prefix (symbol->string (syntax->datum id)))))
 			(syntax-case stx ()
 			  ((_ ?who)
 			   (with-syntax
@@ -363,8 +362,6 @@
   (declare XML_SetSkippedEntityHandler))
 
 (let-syntax ((declare (lambda (stx)
-			(define (identifier-prefix prefix id)
-			  (datum->syntax id (string-append prefix (symbol->string (syntax->datum id)))))
 			(syntax-case stx ()
 			  ((_ ?who)
 			   (with-syntax
