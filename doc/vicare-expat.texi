@@ -264,7 +264,7 @@ Here is an example program using the core interface:
   (vicare xml expat)
   (vicare xml expat constants)
   (prefix (only (vicare ffi)
-                free-c-callack)
+                free-c-callback)
           ffi.))
 
 (define xml-utf8
@@ -305,7 +305,7 @@ Here is an example program using the core interface:
   (XML_SetElementHandler       parser start end)
   (XML_SetCharacterDataHandler parser cdata)
   (XML_SetCommentHandler       parser comment)
-  (XML_Parse parser (string->utf8 xml) #f #t)
+  (XML_Parse parser (string->utf8 xml-utf8) #f #t)
   (ffi.free-c-callback start)
   (ffi.free-c-callback end)
   (ffi.free-c-callback cdata)
