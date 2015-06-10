@@ -43,6 +43,7 @@
 (define-constant LIBRARIES-SPECS
   '((()
      (vicare xml expat)
+     (vicare xml expat unsafe-capi)
      (vicare xml expat constants))
     ;; ((WANT_NAUSICAA)
     ;;  (nausicaa xml expat))

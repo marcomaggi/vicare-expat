@@ -8,6 +8,7 @@ EXTRA_DIST +=  \
 lib/vicare/xml/expat.fasl: \
 		lib/vicare/xml/expat.vicare.sls \
 		lib/vicare/xml/expat/constants.fasl \
+		lib/vicare/xml/expat/unsafe-capi.fasl \
 		$(FASL_PREREQUISITES)
 	$(VICARE_COMPILE_RUN) --output $@ --compile-library $<
 
@@ -32,6 +33,20 @@ if WANT_INSTALL_SOURCES
 dist_lib_vicare_xml_expat_constants_vicare_sls_DATA = lib/vicare/xml/expat/constants.vicare.sls
 endif
 CLEANFILES += lib/vicare/xml/expat/constants.fasl
+
+lib/vicare/xml/expat/unsafe-capi.fasl: \
+		lib/vicare/xml/expat/unsafe-capi.vicare.sls \
+		$(FASL_PREREQUISITES)
+	$(VICARE_COMPILE_RUN) --output $@ --compile-library $<
+
+lib_vicare_xml_expat_unsafe_capi_fasldir = $(bundledlibsdir)/vicare/xml/expat
+lib_vicare_xml_expat_unsafe_capi_vicare_slsdir  = $(bundledlibsdir)/vicare/xml/expat
+nodist_lib_vicare_xml_expat_unsafe_capi_fasl_DATA = lib/vicare/xml/expat/unsafe-capi.fasl
+if WANT_INSTALL_SOURCES
+dist_lib_vicare_xml_expat_unsafe_capi_vicare_sls_DATA = lib/vicare/xml/expat/unsafe-capi.vicare.sls
+endif
+EXTRA_DIST += lib/vicare/xml/expat/unsafe-capi.vicare.sls
+CLEANFILES += lib/vicare/xml/expat/unsafe-capi.fasl
 
 
 ### end of file

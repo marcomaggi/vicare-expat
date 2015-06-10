@@ -30,6 +30,13 @@
   (foreign-library "vicare-expat")
   (export
 
+    ;; version numbers and strings
+    vicare-expat-version-interface-current
+    vicare-expat-version-interface-revision
+    vicare-expat-version-interface-age
+    vicare-expat-version
+
+    ;;
     XML_ParserCreate
     XML_ParserCreateNS
 ;;;XML_ParserCreate_MM
@@ -136,7 +143,7 @@
 		      (0 4 2015 (>= 7))
 		      (0 4 (>= 2016))))
     (vicare xml expat constants)
-    (vicare language-extensions syntaxes)
+    (prefix (vicare xml expat unsafe-capi) capi.)
     (vicare arguments validation)
     (prefix (vicare ffi (or (0 4 2015 5 (>= 27))
 			    (0 4 2015 (>= 6))
@@ -146,6 +153,29 @@
 
 
 ;;;; arguments validation
+
+(define (expat-xml-parser? obj)
+  (ffi.pointer? obj))
+
+(define (expat-encoding-symbol? obj)
+  (case obj
+    ((UTF-8 UTF-16 ISO-8859-1 US-ASCII)		#t)
+    (else					#f)))
+
+(define (false-or-expat-encoding-symbol? obj)
+  (or (not obj)
+      (expat-encoding-symbol? obj)))
+
+(define (ascii-char? obj)
+  (and (char? obj)
+       (<= 0 (char->integer obj) 127)))
+
+(define (false-or-non-negative-signed-int? obj)
+  (or (not obj)
+      (and (words.signed-int? obj)
+	   (non-negative? obj))))
+
+;;; --------------------------------------------------------------------
 
 (define-argument-validation (callback who obj)
   (ffi.pointer? obj)
@@ -182,6 +212,21 @@
 (define-argument-validation (parser who obj)
   (ffi.pointer? obj)
   (assertion-violation who "expected pointer to Expat parser as argument" obj))
+
+
+;;;; version functions
+
+(define (vicare-expat-version-interface-current)
+  (capi.vicare-expat-version-interface-current))
+
+(define (vicare-expat-version-interface-revision)
+  (capi.vicare-expat-version-interface-revision))
+
+(define (vicare-expat-version-interface-age)
+  (capi.vicare-expat-version-interface-age))
+
+(define (vicare-expat-version)
+  (ascii->string (capi.vicare-expat-version)))
 
 
 ;;;; data structures
@@ -323,14 +368,12 @@
 
 ;;;; callback setters
 
-(let-syntax ((declare (syntax-rules ()
-			((_ ?func ?who)
-			 (define (?who parser callback)
-			   (define who '?who)
-			   (with-arguments-validation (who)
-			       ((parser		parser)
-				(callback	callback))
-			     (foreign-call ?func parser callback)))))))
+(let-syntax
+    ((declare (syntax-rules ()
+		((_ ?func ?who)
+		 (define* (?who {parser expat-xml-parser?} {callback ffi.c-callback?})
+		   (foreign-call ?func parser callback)))
+		)))
   (declare "ik_expat_set_element_decl_handler"		XML_SetElementDeclHandler)
   (declare "ik_expat_set_attlist_decl_handler"		XML_SetAttlistDeclHandler)
   (declare "ik_expat_set_xml_decl_handler"		XML_SetXmlDeclHandler)
@@ -354,15 +397,12 @@
   (declare "ik_expat_set_external_entity_ref_handler"	XML_SetExternalEntityRefHandler)
   (declare "ik_expat_set_skipped_entity_handler"	XML_SetSkippedEntityHandler))
 
-(let-syntax ((declare (syntax-rules ()
-			((_ ?func ?who)
-			 (define (?who parser start-callback end-callback)
-			   (define who '?who)
-			   (with-arguments-validation (who)
-			       ((parser		parser)
-				(callback	start-callback)
-				(callback	end-callback))
-			     (foreign-call ?func parser start-callback end-callback)))))))
+(let-syntax
+    ((declare (syntax-rules ()
+		((_ ?func ?who)
+		 (define* (?who {parser expat-xml-parser?} {start-callback ffi.c-callback?} {end-callback ffi.c-callback?})
+		   (foreign-call ?func parser start-callback end-callback)))
+		)))
   (declare "ik_expat_set_element_handler"		XML_SetElementHandler)
   (declare "ik_expat_set_cdata_section_handler"		XML_SetCdataSectionHandler)
   (declare "ik_expat_set_doctype_decl_handler"		XML_SetDoctypeDeclHandler)
@@ -370,35 +410,19 @@
 
 ;;; --------------------------------------------------------------------
 
-(define (XML_SetExternalEntityRefHandlerArg parser pointer)
-  (define who 'XML_SetExternalEntityRefHandlerArg)
-  (with-arguments-validation (who)
-      ((parser	parser)
-       (pointer	pointer))
-    (foreign-call "ik_expat_set_external_entity_ref_handler_arg" parser pointer)))
+(define* (XML_SetExternalEntityRefHandlerArg {parser expat-xml-parser?} {pointer pointer?})
+  (foreign-call "ik_expat_set_external_entity_ref_handler_arg" parser pointer))
 
-;; (define (XML_SetUnknownEncodingHandler parser callback pointer)
-;;   (define who 'XML_SetUnknownEncodingHandler)
-;;   (with-arguments-validation (who)
-;;       ((parser		parser)
-;;        (callback	callback)
-;;        (pointer		pointer))
-;;     (foreign-call "ik_expat_set_unknown_encoding_handler" parser callback pointer)))
+;; (define* (XML_SetUnknownEncodingHandler {parser expat-xml-parser?} {callback ffi.c-callback?} {pointer pointer?})
+;;   (foreign-call "ik_expat_set_unknown_encoding_handler" parser callback pointer))
 
 ;;; --------------------------------------------------------------------
 
-(define (XML_FreeContentModel parser model)
-  (define who 'XML_FreeContentModel)
-  (with-arguments-validation (who)
-      ((parser		parser)
-       (pointer		model))
-    (foreign-call "ik_expat_free_content_model" parser model)))
+(define* (XML_FreeContentModel {parser expat-xml-parser?} {model pointer?})
+  (foreign-call "ik_expat_free_content_model" parser model))
 
-(define (XML_UseParserAsHandlerArg parser)
-  (define who 'XML_UseParserAsHandlerArg)
-  (with-arguments-validation (who)
-      ((parser	parser))
-    (foreign-call "ik_expat_use_parser_as_handler_arg" parser)))
+(define* (XML_UseParserAsHandlerArg {parser expat-xml-parser?})
+  (foreign-call "ik_expat_use_parser_as_handler_arg" parser))
 
 
 ;;;; callback makers
@@ -560,241 +584,140 @@
 
 ;;;; parsers
 
-(define XML_ParserCreate
-  (case-lambda
-   (()
-    (XML_ParserCreate #f))
-   ((encoding)
-    (define who 'XML_ParserCreate)
-    (with-arguments-validation (who)
-	((false/encoding-symbol	encoding))
-      (let ((rv (foreign-call "ik_expat_parser_create"
-			      (%document-encoding-symbol->fixnum who encoding))))
-	(if rv
-	    (%parser-guardian rv)
-	  (error who "error allocating Expat parser" encoding)))))))
+(case-define* XML_ParserCreate
+  (()
+   (XML_ParserCreate #f))
+  (({encoding false-or-expat-encoding-symbol?})
+   (let ((rv (foreign-call "ik_expat_parser_create"
+			   (%document-encoding-symbol->fixnum __who__ encoding))))
+     (if rv
+	 (%parser-guardian rv)
+       (error __who__ "error allocating Expat parser" encoding)))))
 
-(define (XML_ParserCreateNS encoding namespace-separator)
-  (define who 'XML_ParserCreateNS)
-  (with-arguments-validation (who)
-      ((false/encoding-symbol	encoding)
-       (ascii-char		namespace-separator))
-    (let ((rv (foreign-call "ik_expat_parser_create_ns"
-			    (%document-encoding-symbol->fixnum who encoding)
-			    (char->integer namespace-separator))))
-      (if rv
-	  (%parser-guardian rv)
-	(error who "error allocating Expat parser" encoding namespace-separator)))))
+(define* (XML_ParserCreateNS {encoding false-or-expat-encoding-symbol?} {namespace-separator ascii-char?})
+  (let ((rv (foreign-call "ik_expat_parser_create_ns"
+			  (%document-encoding-symbol->fixnum __who__ encoding)
+			  (char->integer namespace-separator))))
+    (if rv
+	(%parser-guardian rv)
+      (error __who__ "error allocating Expat parser" encoding namespace-separator))))
 
-(define XML_ParserReset
-  (case-lambda
-   ((parser)
-    (XML_ParserReset parser #f))
-   ((parser encoding)
-    (define who 'XML_ParserReset)
-    (with-arguments-validation (who)
-	((false/encoding-symbol	encoding))
-      (foreign-call "ik_expat_parser_reset" parser encoding)))))
+(case-define* XML_ParserReset
+  ((parser)
+   (XML_ParserReset parser #f))
+  (({parser expat-xml-parser?} {encoding false-or-expat-encoding-symbol?})
+   (foreign-call "ik_expat_parser_reset" parser encoding)))
 
-(define (XML_ParserFree parser)
-  (define who 'XML_ParserFree)
-  (with-arguments-validation (who)
-      ((parser	parser))
-    (foreign-call "ik_expat_parser_free" parser)))
+(define* (XML_ParserFree {parser expat-xml-parser?})
+  (foreign-call "ik_expat_parser_free" parser))
 
 ;;; --------------------------------------------------------------------
 
-(define (XML_ExternalEntityParserCreate parser context encoding)
-  (define who 'XML_ExternalEntityParserCreate)
-  (with-arguments-validation (who)
-      ((parser		parser)
-       (pointer		context)
-       (encoding-symbol	encoding))
-    (let ((rv (foreign-call "ik_expat_external_entity_parser_create" parser context
-			    (%document-encoding-symbol->fixnum who encoding))))
-      (if rv
-	  (%parser-guardian rv)
-	(error who "error allocating Expat entity parser" parser context encoding)))))
+(define* (XML_ExternalEntityParserCreate {parser expat-xml-parser?} {context pointer?} {encoding false-or-expat-encoding-symbol?})
+  (let ((rv (foreign-call "ik_expat_external_entity_parser_create" parser context
+			  (%document-encoding-symbol->fixnum __who__ encoding))))
+    (if rv
+	(%parser-guardian rv)
+      (error __who__ "error allocating Expat entity parser" parser context encoding))))
 
-(define (XML_SetParamEntityParsing parser parsing)
-  (define who 'XML_SetParamEntityParsing)
-  (with-arguments-validation (who)
-      ((parser	parser)
-       (fixnum	parsing))
-    (foreign-call "ik_expat_set_param_entity_parsing" parser parsing)))
+(define* (XML_SetParamEntityParsing {parser expat-xml-parser?} {parsing fixnum?})
+  (foreign-call "ik_expat_set_param_entity_parsing" parser parsing))
 
 ;;; --------------------------------------------------------------------
 
-(define (XML_SetEncoding parser encoding)
-  (define who 'XML_SetEncoding)
-  (with-arguments-validation (who)
-      ((parser		parser)
-       (encoding-symbol	encoding))
-    (foreign-call "ik_expat_set_encoding" parser
-		  (%document-encoding-symbol->fixnum who encoding))))
+(define* (XML_SetEncoding {parser expat-xml-parser?} {encoding expat-encoding-symbol?})
+  (foreign-call "ik_expat_set_encoding" parser
+		(%document-encoding-symbol->fixnum __who__ encoding)))
 
-(define (XML_SetUserData parser pointer)
-  (define who 'XML_SetUserData)
-  (with-arguments-validation (who)
-      ((parser	parser)
-       (pointer	pointer))
-    (foreign-call "ik_expat_set_user_data" parser pointer)))
+(define* (XML_SetUserData {parser expat-xml-parser?} {pointer pointer?})
+  (foreign-call "ik_expat_set_user_data" parser pointer))
 
-(define (XML_GetUserData parser)
-  (define who 'XML_GetUserData)
-  (with-arguments-validation (who)
-      ((parser	parser))
-    (foreign-call "ik_expat_get_user_data" parser)))
+(define* (XML_GetUserData {parser expat-xml-parser?})
+  (foreign-call "ik_expat_get_user_data" parser))
 
 ;;; --------------------------------------------------------------------
 
-(define (XML_SetBase parser base)
-  (define who 'XML_SetBase)
-  (with-arguments-validation (who)
-      ((parser			parser)
-       (false/bytevector	base))
-    (foreign-call "ik_expat_set_base" parser base)))
+(define* (XML_SetBase {parser expat-xml-parser?} {base (or not bytevector?)})
+  (foreign-call "ik_expat_set_base" parser base))
 
-(define (XML_GetBase parser)
-  (define who 'XML_GetBase)
-  (with-arguments-validation (who)
-      ((parser	parser))
-    (foreign-call "ik_expat_get_base" parser)))
+(define* (XML_GetBase {parser expat-xml-parser?})
+  (foreign-call "ik_expat_get_base" parser))
 
 ;;; --------------------------------------------------------------------
 
-(define (XML_UseForeignDTD parser use-dtd?)
-  (define who 'XML_UseForeignDTD)
-  (with-arguments-validation (who)
-      ((parser	parser))
-    (foreign-call "ik_expat_user_foreign_dtd" parser use-dtd?)))
+(define* (XML_UseForeignDTD {parser expat-xml-parser?} use-dtd?)
+  (foreign-call "ik_expat_user_foreign_dtd" parser use-dtd?))
 
-(define (XML_SetReturnNSTriplet parser do-nst?)
-  (define who 'XML_SetReturnNSTriplet)
-  (with-arguments-validation (who)
-      ((parser	parser))
-    (foreign-call "ik_expat_set_return_ns_triplet" parser do-nst?)))
+(define* (XML_SetReturnNSTriplet {parser expat-xml-parser?} do-nst?)
+  (foreign-call "ik_expat_set_return_ns_triplet" parser do-nst?))
 
 ;;; --------------------------------------------------------------------
 
-(define XML_Parse
-  (case-lambda
-   ((parser buffer buflen)
-    (XML_Parse parser buffer buflen #f))
-   ((parser buffer buflen final?)
-    (define who 'XML_Parse)
-    (with-arguments-validation (who)
-	((parser			parser)
-	 (pointer/bytevector		buffer)
-	 (false/non-negative-signed-int	buflen))
-      (foreign-call "ik_expat_parse" parser buffer buflen final?)))))
+(case-define* XML_Parse
+  ((parser buffer buflen)
+   (XML_Parse parser buffer buflen #f))
+  (({parser expat-xml-parser?} {buffer (or pointer? bytevector?)} {buflen false-or-non-negative-signed-int?} final?)
+   (foreign-call "ik_expat_parse" parser buffer buflen final?)))
 
-(define (XML_GetBuffer parser buflen)
-  (define who 'XML_GetBuffer)
-  (with-arguments-validation (who)
-      ((parser		parser)
-       (signed-int	buflen))
-    (foreign-call "ik_expat_get_buffer" parser buflen)))
+(define* (XML_GetBuffer {parser expat-xml-parser?} {buflen words.signed-int?})
+  (foreign-call "ik_expat_get_buffer" parser buflen))
 
-(define (XML_ParseBuffer parser buflen final?)
-  (define who 'XML_ParseBuffer)
-  (with-arguments-validation (who)
-      ((parser				parser)
-       (false/non-negative-signed-int	buflen))
-    (foreign-call "ik_expat_parse_buffer" parser buflen final?)))
+(define* (XML_ParseBuffer {parser expat-xml-parser?} {buflen false-or-non-negative-signed-int?} final?)
+  (foreign-call "ik_expat_parse_buffer" parser buflen final?))
 
 ;;; --------------------------------------------------------------------
 
-(define (XML_StopParser parser resumable?)
-  (define who 'XML_StopParser)
-  (with-arguments-validation (who)
-      ((parser	parser))
-    (foreign-call "ik_expat_stop_parser" parser resumable?)))
+(define* (XML_StopParser {parser expat-xml-parser?} resumable?)
+  (foreign-call "ik_expat_stop_parser" parser resumable?))
 
-(define (XML_ResumeParser parser)
-  (define who 'XML_ResumeParser)
-  (with-arguments-validation (who)
-      ((parser	parser))
-    (foreign-call "ik_expat_resume_parser" parser)))
+(define* (XML_ResumeParser {parser expat-xml-parser?})
+  (foreign-call "ik_expat_resume_parser" parser))
 
 ;;; --------------------------------------------------------------------
 
-(define (XML_GetParsingStatus parser)
-  (define who 'XML_GetParsingStatus)
-  (with-arguments-validation (who)
-      ((parser	parser))
-    (let ((status (make-XML_ParsingStatus #f #f)))
-      (foreign-call "ik_expat_get_parsing_status" parser status)
-      status)))
+(define* (XML_GetParsingStatus {parser expat-xml-parser?})
+  (receive-and-return (status)
+      (make-XML_ParsingStatus #f #f)
+    (foreign-call "ik_expat_get_parsing_status" parser status)))
 
-(define (XML_GetInputContext parser)
-  (define who 'XML_GetInputContext)
-  (with-arguments-validation (who)
-      ((parser	parser))
-    (foreign-call "ik_expat_get_input_context" parser)))
+(define* (XML_GetInputContext {parser expat-xml-parser?})
+  (foreign-call "ik_expat_get_input_context" parser))
 
 
 ;;;; elements
 
-(define (XML_DefaultCurrent parser)
-  (define who 'XML_DefaultCurrent)
-  (with-arguments-validation (who)
-      ((parser	parser))
-    (foreign-call "ik_expat_default_current" parser)))
+(define* (XML_DefaultCurrent {parser expat-xml-parser?})
+  (foreign-call "ik_expat_default_current" parser))
 
 
 ;;;; attributes
 
-(define (XML_GetSpecifiedAttributeCount parser)
-  (define who 'XML_GetSpecifiedAttributeCount)
-  (with-arguments-validation (who)
-      ((parser	parser))
-    (foreign-call "ik_expat_get_specified_attribute_count" parser)))
+(define* (XML_GetSpecifiedAttributeCount {parser expat-xml-parser?})
+  (foreign-call "ik_expat_get_specified_attribute_count" parser))
 
-(define (XML_GetIdAttributeIndex parser)
-  (define who 'XML_GetIdAttributeIndex)
-  (with-arguments-validation (who)
-      ((parser	parser))
-    (foreign-call "ik_expat_get_id_attribute_index" parser)))
+(define* (XML_GetIdAttributeIndex {parser expat-xml-parser?})
+  (foreign-call "ik_expat_get_id_attribute_index" parser))
 
 
 ;;;; error reporting
 
-(define (XML_ErrorString code)
-  (define who 'XML_ErrorString)
-  (with-arguments-validation (who)
-      ((signed-int	code))
-    (latin1->string (foreign-call "ik_expat_error_string" code))))
+(define* (XML_ErrorString {code words.signed-int?})
+  (latin1->string (foreign-call "ik_expat_error_string" code)))
 
-(define (XML_GetErrorCode parser)
-  (define who 'XML_GetErrorCode)
-  (with-arguments-validation (who)
-      ((parser	parser))
-    (foreign-call "ik_expat_get_error_code" parser)))
+(define* (XML_GetErrorCode {parser expat-xml-parser?})
+  (foreign-call "ik_expat_get_error_code" parser))
 
-(define (XML_GetCurrentLineNumber parser)
-  (define who 'XML_GetCurrentLineNumber)
-  (with-arguments-validation (who)
-      ((parser	parser))
-    (foreign-call "ik_expat_get_current_line_number" parser)))
+(define* (XML_GetCurrentLineNumber {parser expat-xml-parser?})
+  (foreign-call "ik_expat_get_current_line_number" parser))
 
-(define (XML_GetCurrentColumnNumber parser)
-  (define who 'XML_GetCurrentColumnNumber)
-  (with-arguments-validation (who)
-      ((parser	parser))
-    (foreign-call "ik_expat_get_current_column_number" parser)))
+(define* (XML_GetCurrentColumnNumber {parser expat-xml-parser?})
+  (foreign-call "ik_expat_get_current_column_number" parser))
 
-(define (XML_GetCurrentByteIndex parser)
-  (define who 'XML_GetCurrentByteIndex)
-  (with-arguments-validation (who)
-      ((parser	parser))
-    (foreign-call "ik_expat_get_current_byte_index" parser)))
+(define* (XML_GetCurrentByteIndex {parser expat-xml-parser?})
+  (foreign-call "ik_expat_get_current_byte_index" parser))
 
-(define (XML_GetCurrentByteCount parser)
-  (define who 'XML_GetCurrentByteCount)
-  (with-arguments-validation (who)
-      ((parser	parser))
-    (foreign-call "ik_expat_get_current_byte_count" parser)))
+(define* (XML_GetCurrentByteCount {parser expat-xml-parser?})
+  (foreign-call "ik_expat_get_current_byte_count" parser))
 
 
 ;;;; miscellaneous functions
@@ -820,6 +743,6 @@
 (post-gc-hooks (cons %free-allocated-parser
 		     (post-gc-hooks)))
 
-)
+#| end of library |# )
 
 ;;; end of file

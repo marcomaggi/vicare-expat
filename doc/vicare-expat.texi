@@ -226,6 +226,33 @@ additionally the library @library{vicare xml expat constants} exports
 one binding for each constant value defined in the C language header
 @file{expat.h}.
 
+The following Scheme libraries are installed:
+
+@table @asis
+@item @library{vicare xml expat}
+@cindex Library @library{vicare xml expat}
+@cindex @library{vicare xml expat}, library
+It exports one binding for each @value{FOREIGN_PACKAGE} public function.
+All the Scheme function names are equal to the corresponding the C
+function names.
+
+@item @library{vicare xml expat unsafe-capi}
+@cindex Library @library{vicare xml expat unsafe-capi}
+@cindex @library{vicare xml expat unsafe-capi}, library
+It exports keyword syntactic bindings for @value{FOREIGN_PACKAGE} public
+functions wrapped for Vicare.
+
+These syntaxes expand to a direct call to the C language wrapper
+functions in the @value{PACKAGE} library; they are not meant to be
+called in normal usage of the package.
+
+@item @library{vicare xml expat constants}
+@cindex Library @library{vicare xml expat constants}
+@cindex @library{vicare xml expat constants}, library
+It exports one binding for each constant value defined in the C language
+header @file{expat.h}.
+@end table
+
 This document contains only a brief description of the functions: refer
 to the Expat's documentation for details.
 
