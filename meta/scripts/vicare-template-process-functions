@@ -1,0 +1,295 @@
+;;;!vicare
+;;
+;;Automatically generate templates for foreign  functions interfacing.  First write a
+;;line-oriented text  file "input.txt" with  title in the  first line and  C language
+;;function names in the following lines:
+;;
+;;   initialisation and finalisation
+;;   foreign_init
+;;   foreign_final
+;;
+;;then:
+;;
+;;   $ vicare --r6rs-script vicare-template-process-functions <input.txt >output.txt
+;;
+;;finally copy and paste sections from the file "output.txt".
+;;
+
+#!r6rs
+(import (vicare)
+  (only (srfi :13)
+	string-map
+	string-prefix?
+	string-tokenize
+	string-join))
+
+
+;;;; type definitions
+
+(define-record-type <fun>
+  (fields (immutable clang-name)
+	  (immutable declaration?))
+  (protocol
+   (lambda (maker)
+     (lambda (string-spec)
+       (receive (name declaration?)
+	   (if (string-prefix? "define " string-spec)
+	       (let ((ell (string-tokenize string-spec)))
+		 (values (cadr ell) #t))
+	     (values string-spec #f))
+	 (maker name declaration?))))))
+
+(define (<fun>-ikrt-name fun)
+  (clang-name->ikrt-name (<fun>-clang-name fun)))
+
+(define (<fun>-scheme-name fun)
+  (clang-name->scheme-name (<fun>-clang-name fun)))
+
+(define (<fun>-have-name fun)
+  (clang-name->have-name (<fun>-clang-name fun)
+			 (<fun>-declaration? fun)))
+
+;;; --------------------------------------------------------------------
+
+(define (clang-name->ikrt-name clang-name)
+  (format "ikrt_~a" (string-downcase clang-name)))
+
+(define (clang-name->scheme-name clang-name)
+  (string-map %underscore->dash
+    (string-downcase clang-name)))
+
+(define (clang-name->have-name clang-name declaration?)
+  (format "HAVE_~a~a"
+    (if declaration? "DECL_" "")
+    (string-upcase clang-name)))
+
+
+;;;; main functions
+
+(define (main)
+  (receive (header fun-list)
+      (read-input)
+    (print-check-funs header fun-list)
+    (print-features header fun-list)
+    (print-c-wrappers header fun-list)
+    (print-unsafe-capi header fun-list)
+    (print-scheme-wrappers header fun-list)
+    (print-scheme-cond-expand-clauses header fun-list)
+    (print-texinfo-defuns header fun-list)
+    (flush-output-port (current-output-port))
+    (exit 0)))
+
+(define (read-input)
+  (let ((header (read-line)))
+    (let loop ((line (read-line))
+	       (ell  '()))
+      (if (eof-object? line)
+	  (values header (reverse ell))
+	(loop (read-line) (cons (make-<fun> line) ell))))))
+
+
+;;;; Autoconf functions checking
+
+(define (print-check-funs header fun-list)
+  (receive (functions macros)
+      (split-functions-and-macros fun-list)
+    ;; (pretty-print functions (current-error-port))
+    ;; (pretty-print macros (current-error-port))
+    (unless (null? functions)
+      (printf "dnl ~a functions checking\nAC_CHECK_FUNCS([~a])\n\n"
+	      header (string-join (map <fun>-clang-name functions) " ")))
+    (unless (null? macros)
+      (printf "dnl ~a declarations checking\nAC_CHECK_DECLS([~a],,,[VICARE_INCLUDES])\n\n"
+	      header (string-join (map <fun>-clang-name macros) ", ")))))
+
+(define (split-functions-and-macros fun-list)
+  (let loop ((functions	'())
+	     (macros	'())
+	     (fun-list	fun-list))
+    (if (null? fun-list)
+	(values (reverse functions) (reverse macros))
+      (let ((fun (car fun-list)))
+	(if (<fun>-declaration? fun)
+	    (loop functions (cons fun macros) (cdr fun-list))
+	  (loop (cons fun functions) macros (cdr fun-list)))))))
+
+
+;;;; features
+
+(define (print-features header fun-list)
+  (printf "    ;; ~a features\\n\\\n" header)
+  (let loop ((fun-list fun-list))
+    (if (null? fun-list)
+	(printf "    \\n\\\n")
+      (let* ((fun		(car fun-list))
+	     (have-name		(<fun>-have-name fun)))
+	(printf "    ~a\\n\\\n" have-name)
+	(loop (cdr fun-list)))))
+  (newline)
+  (printf FEATURES-C-HEADER-TEMPLATE header)
+  (let loop ((fun-list fun-list))
+    (unless (null? fun-list)
+      (let* ((fun		(car fun-list))
+	     (have-name		(<fun>-have-name fun)))
+	(if (<fun>-declaration? fun)
+	    (printf MACRO-FEATURE-TEMPLATE have-name have-name have-name)
+	  (printf FUNCTION-FEATURE-TEMPLATE have-name have-name))
+	(loop (cdr fun-list)))))
+  (newline))
+
+(define-constant FEATURES-C-HEADER-TEMPLATE
+  "/** --------------------------------------------------------------------
+ ** ~a features.
+ ** ----------------------------------------------------------------- */\n\n")
+
+(define FUNCTION-FEATURE-TEMPLATE
+  "printf(\"(define-inline-constant ~a %s)\\n\",
+#ifdef ~a
+  \"#t\"
+#else
+  \"#f\"
+#endif
+  );\n\n")
+
+(define MACRO-FEATURE-TEMPLATE
+  "printf(\"(define-inline-constant ~a %s)\\n\",
+#if ((defined ~a) && ~a)
+  \"#t\"
+#else
+  \"#f\"
+#endif
+  );\n\n")
+
+
+;;;; unsafe C API
+
+(define (print-unsafe-capi header fun-list)
+  (printf "    ;; ~a unsafe C API\n" header)
+  (let loop ((fun-list fun-list))
+    (unless (null? fun-list)
+      (let* ((fun		(car fun-list))
+	     (scheme-name	(<fun>-scheme-name fun)))
+	(printf "    ~a\n" scheme-name))
+      (loop (cdr fun-list))))
+  (newline)
+  (printf ";;;; ~a unsafe C API\n\n" header)
+  (let loop ((fun-list fun-list))
+    (unless (null? fun-list)
+      (let* ((fun		(car fun-list))
+	     (ikrt-name		(<fun>-ikrt-name   fun))
+	     (scheme-name	(<fun>-scheme-name fun)))
+	(printf "(define-syntax-rule (~a)\n  (foreign-call \"~a\"))\n\n"
+		scheme-name ikrt-name))
+      (loop (cdr fun-list)))))
+
+
+;;;; C wrappers
+
+(define (print-c-wrappers header fun-list)
+  (printf C-HEADER-TEMPLATE header)
+  (let loop ((fun-list fun-list))
+    (unless (null? fun-list)
+      (let* ((fun		(car fun-list))
+	     (ikrt-name		(<fun>-ikrt-name  fun))
+	     (have-name		(<fun>-have-name  fun))
+	     (clang-name	(<fun>-clang-name fun)))
+	(if (<fun>-declaration? fun)
+	    (printf C-MACRO-WRAPPER-TEMPLATE ikrt-name have-name have-name clang-name)
+	  (printf C-FUNCTION-WRAPPER-TEMPLATE ikrt-name have-name clang-name)))
+      (loop (cdr fun-list))))
+  (newline))
+
+(define-constant C-HEADER-TEMPLATE
+  "/** --------------------------------------------------------------------
+ ** ~a C wrappers.
+ ** ----------------------------------------------------------------- */\n\n")
+
+(define-constant C-FUNCTION-WRAPPER-TEMPLATE "ikptr
+~a (ikpcb * pcb)
+{
+#ifdef ~a
+  /* rv = ~a(); */
+  return IK_VOID;
+#else
+  feature_failure(__func__);
+#endif
+}
+")
+
+(define-constant C-MACRO-WRAPPER-TEMPLATE "ikptr
+~a (ikpcb * pcb)
+{
+#if ((defined ~a) && ~a)
+  /* rv = ~a(); */
+  return IK_VOID;
+#else
+  feature_failure(__func__);
+#endif
+}
+")
+
+
+;;;; Scheme wrappers
+
+(define (print-scheme-wrappers header fun-list)
+  (printf "    ;; ~a\n" header)
+  (let loop ((fun-list fun-list))
+    (unless (null? fun-list)
+      (let ((fun (car fun-list)))
+	(printf "    ~a\n" (<fun>-scheme-name fun)))
+      (loop (cdr fun-list))))
+  (newline)
+  (printf ";;;; ~a\n\n" header)
+  (let loop ((fun-list fun-list))
+    (unless (null? fun-list)
+      (let* ((fun		(car fun-list))
+	     (scheme-name	(<fun>-scheme-name fun)))
+	(printf SCHEME-WRAPPER-TEMPLATE scheme-name scheme-name))
+      (loop (cdr fun-list)))))
+
+(define-constant SCHEME-WRAPPER-TEMPLATE
+  "\
+(define* (~a ctx)
+  (capi.~a))\n\n")
+
+
+;;;; cond-expand clauses
+
+(define (print-scheme-cond-expand-clauses header fun-list)
+  (printf "  ;; cond-expand clauses ~a\n" header)
+  (let loop ((fun-list fun-list))
+    (unless (null? fun-list)
+      (let ((fun (car fun-list)))
+	(printf "  (~a\t\t\t~a)\n" (<fun>-scheme-name fun) (<fun>-have-name fun)))
+      (loop (cdr fun-list))))
+  (newline))
+
+
+;;;; texinfo defuns
+
+(define (print-texinfo-defuns header fun-list)
+  (printf "@c ~a\n" header)
+  (let loop ((fun-list fun-list))
+    (unless (null? fun-list)
+      (let ((fun (car fun-list)))
+	(printf "@defun ~a\n@end defun\n\n\n" (<fun>-scheme-name fun)))
+      (loop (cdr fun-list))))
+  (newline))
+
+
+;;;; helpers
+
+(define (%underscore->dash ch)
+  (if (char=? ch #\_)
+      #\-
+    ch))
+
+
+;;;; let's go
+
+(main)
+
+;;; end of file
+;; Local Variables:
+;; mode: vicare
+;; End:

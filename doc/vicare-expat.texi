@@ -7,11 +7,6 @@
 @include version.texi
 @include macros.texi
 
-@macro expatref{NODE, TITLE}
-@xref{\NODE\,\TITLE\,\TITLE\,expat}
-@end macro
-
-
 @c page
 @c ------------------------------------------------------------
 @c Values.
@@ -38,8 +33,28 @@
 
 @c To be used as @value{COPYRIGHT_YEARS} whenever we need to include the
 @c list of copyright years.
-@set COPYRIGHT_YEARS            2012
+@set COPYRIGHT_YEARS            2012, 2013, 2015
 
+@c ------------------------------------------------------------
+
+@set FOREIGN_PACKAGE            Expat
+@set FOREIGN_VERSION            2.1.0
+@set FOREIGN_URL                @url{http:/@//@/expat.sourceforge.net/}
+@set FOREIGN_SCHEME_LIB         @library{vicare xml expat}
+@c @set NAUSICAA_SCHEME_LIB     @library{nausicaa xml expat}
+@set GITHUB_URL                 @url{http:/@//@/github.com/@/marcomaggi/@/@value{PACKAGE_NICKNAME}}
+@set BITBUCKET_URL              @url{https:/@//@/bitbucket.org/@/marcomaggi/@/@value{PACKAGE_NICKNAME}}
+@set DOWNLOAD_URL               @url{https:/@//@/bitbucket.org/@/marcomaggi/@/@value{PACKAGE_NICKNAME}/@/downloads}
+@set DOCUMENTATION_URL          @url{http:/@//@/marcomaggi.github.io/@/docs/@/@value{PACKAGE_NICKNAME}.html}
+@set VICARE_HOMEPAGE_URL        @url{http:/@//@/marcomaggi.github.io/@/vicare.html}
+
+@macro expatref{NODE, TITLE}
+@xref{\NODE\,\TITLE\,\TITLE\,expat}
+@end macro
+
+@macro expat{}
+Expat
+@end macro
 
 @c page
 @c ------------------------------------------------------------
@@ -55,17 +70,22 @@ language library, an @axml{} parser library.
 The package is distributed under the terms of the @gnu{} General Public
 License (@gpl{}) and can be downloaded from:
 
-@center @url{http://code.google.com/p/vicare-scheme/downloads/list}
+@center @value{DOWNLOAD_URL}
 
 @noindent
 development takes place at:
 
-@center @url{http://github.com/marcomaggi/@value{PACKAGE_NICKNAME}}
+@center @value{GITHUB_URL}
 
 @noindent
-Expat is available at:
+and as backup at:
 
-@center @url{http://expat.sourceforge.net/}
+@center @value{BITBUCKET_URL}
+
+@noindent
+@value{FOREIGN_PACKAGE} is available at:
+
+@center @value{FOREIGN_URL}
 
 @noindent
 the @axml{} 1.0 specification is available from:
@@ -129,7 +149,9 @@ entitled ``@gnu{} Free Documentation License''.
 * parsers::                     Building and running parsers.
 * handlers::                    Building and registering callbacks.
 * version::                     Expat version informations.
+@ignore
 * nau::                         Nausicaa front end.
+@end ignore
 
 Appendices
 
@@ -155,19 +177,17 @@ Vicare Scheme is an @rnrs{6} compliant Scheme language implementation in
 the form of a native compiler for x86 architectures, officially
 supporting @gnu{}+Linux systems.  @value{PACKAGE} is a distribution of C
 language and Scheme language libraries for Vicare Scheme; it provides
-bindings for the Expat C language library, an @axml{} parser library.
+bindings for the @value{FOREIGN_PACKAGE} C language library, an @axml{}
+parser library.
 
 Vicare Scheme needs to be compiled with @ffi{} support enabled, because
 Expat heavily relies on C callbacks.
 
-If the package Nausicaa/Scheme is installed: a Nausicaa front end
-library for @value{PACKAGE} is installed, providing higher level
-constructs.
-
 The last time the author bothered to update this paragraph, he had
-tested Expat version 2.0.1; the Expat library is available at:
+tested @value{FOREIGN_PACKAGE} version @value{FOREIGN_VERSION}; the
+@value{FOREIGN_PACKAGE} library is available at:
 
-@center @url{http://expat.sourceforge.net/}
+@center @value{FOREIGN_URL}
 
 @noindent
 notice that unofficial Expat documentation in Texinfo format is
@@ -178,7 +198,7 @@ available in the Nimby-Doc project at:
 @noindent
 and also online:
 
-@center @url{http://marcomaggi.github.com/docs/expat.html}
+@center @url{http://marcomaggi.github.io/docs/expat.html}
 
 @noindent
 the @axml{} 1.0 specification is available from:
@@ -189,8 +209,8 @@ Expat must be compiled to handle @utf{}-8 strings.
 
 The package installs a C language library implementing wrapper C
 functions for the C language Expat library; on top of this, the Scheme
-library @library{vicare expat} exports one binding for each Expat public
-function, with the exception of:
+library @value{FOREIGN_SCHEME_LIB} exports one binding for each Expat
+public function, with the exception of:
 
 @example
 XML_ParserCreateMM
@@ -202,13 +222,9 @@ XML_SetExternalEntityRefHandlerArg
 @end example
 
 @noindent
-additionally the library @library{vicare expat constants} exports one
-binding for each constant value defined in the C language header
+additionally the library @library{vicare xml expat constants} exports
+one binding for each constant value defined in the C language header
 @file{expat.h}.
-
-The Nausicaa front end installs the library @library{nausicaa xml
-expat}; such library may still need some bindings from @library{vicare
-expat}.
 
 This document contains only a brief description of the functions: refer
 to the Expat's documentation for details.
@@ -218,8 +234,8 @@ Here is an example program using the core interface:
 @example
 #!r6rs
 (import (vicare)
-  (vicare expat)
-  (vicare expat constants)
+  (vicare xml expat)
+  (vicare xml expat constants)
   (prefix (only (vicare ffi)
                 free-c-callack)
           ffi.))
@@ -296,6 +312,7 @@ which prints:
 (end "stuff")
 @end example
 
+@ignore
 @noindent
 and here is the same example using the Nausicaa front end:
 
@@ -346,6 +363,7 @@ and here is the same example using the Nausicaa front end:
 
 (flush-output-port (current-output-port))
 @end example
+@end ignore
 
 @c page
 @node parsers
@@ -368,7 +386,7 @@ and here is the same example using the Nausicaa front end:
 @section Creating parsers
 
 
-All the following bindings are exported by the @library{vicare expat}
+All the following bindings are exported by the @value{FOREIGN_SCHEME_LIB}
 library.
 
 
@@ -417,7 +435,7 @@ fixnum representing a status code.
 @section Creating external entities parsers
 
 
-All the following bindings are exported by the @library{vicare expat}
+All the following bindings are exported by the @value{FOREIGN_SCHEME_LIB}
 library.
 
 
@@ -460,8 +478,8 @@ The following is a skeleton program showing how to parse an external
 @smallexample
 #!r6rs
 (import (vicare)
-  (vicare expat)
-  (vicare expat constants)
+  (vicare xml expat)
+  (vicare xml expat constants)
   (prefix (vicare ffi) ffi.))
 
 (define dtd-utf8
@@ -506,7 +524,7 @@ The following is a skeleton program showing how to parse an external
 @section Parsing data
 
 
-All the following bindings are exported by the @library{vicare expat}
+All the following bindings are exported by the @value{FOREIGN_SCHEME_LIB}
 library.  In all the descriptions: the @var{parser} argument must be a
 pointer object referencing the parser.
 
@@ -554,8 +572,8 @@ buffer:
 @example
 #!r6rs
 (import (vicare)
-  (vicare expat)
-  (vicare expat constants)
+  (vicare xml expat)
+  (vicare xml expat constants)
   (prefix (vicare ffi) ffi.))
 
 (define xml
@@ -613,8 +631,8 @@ the following as program preamble:
 @example
 #!r6rs
 (import (vicare)
-  (vicare expat)
-  (vicare expat constants)
+  (vicare xml expat)
+  (vicare xml expat constants)
   (prefix (vicare ffi) ffi.))
 
 (define (doit xml-utf8)
@@ -757,7 +775,7 @@ prints the output:
 @section Stopping and resuming
 
 
-All the following bindings are exported by the @library{vicare expat}
+All the following bindings are exported by the @value{FOREIGN_SCHEME_LIB}
 library.  In all the descriptions: the @var{parser} argument must be a
 pointer object referencing the parser.
 
@@ -782,8 +800,8 @@ The following skeleton program shows the mechanics of aborting parsing:
 @example
 #!r6rs
 (import (vicare)
-  (vicare expat)
-  (vicare expat constants)
+  (vicare xml expat)
+  (vicare xml expat constants)
   (prefix (vicare ffi) ffi.))
 
 (define xml-utf8
@@ -817,8 +835,8 @@ and then resuming:
 @smallexample
 #!r6rs
 (import (vicare)
-  (vicare expat)
-  (vicare expat constants)
+  (vicare xml expat)
+  (vicare xml expat constants)
   (prefix (vicare ffi) ffi.))
 
 (define xml-utf8
@@ -853,7 +871,7 @@ and then resuming:
 @section Parsing status
 
 
-All the following bindings are exported by the @library{vicare expat}
+All the following bindings are exported by the @value{FOREIGN_SCHEME_LIB}
 library.  In all the descriptions: the @var{parser} argument must be a
 pointer object referencing the parser.
 
@@ -899,7 +917,7 @@ of the parser and return an instance of @code{XML_ParsingStatus}.
 @section Reporting errors
 
 
-All the following bindings are exported by the @library{vicare expat}
+All the following bindings are exported by the @value{FOREIGN_SCHEME_LIB}
 library.  In all the descriptions: the @var{parser} argument must be a
 pointer object referencing the parser.
 
@@ -930,7 +948,7 @@ parsing position.
 @section Miscellaneous functions
 
 
-All the following bindings are exported by the @library{vicare expat}
+All the following bindings are exported by the @value{FOREIGN_SCHEME_LIB}
 library.  In all the descriptions: the @var{parser} argument must be a
 pointer object referencing the parser.
 
@@ -1023,7 +1041,7 @@ intgers, and so on.
 @section @axml{} declaration handler
 
 
-All the following bindings are exported by the @library{vicare expat}
+All the following bindings are exported by the @value{FOREIGN_SCHEME_LIB}
 library.
 
 
@@ -1039,8 +1057,8 @@ Given the following program preamble:
 @example
 #!r6rs
 (import (vicare)
-  (vicare expat)
-  (vicare expat constants)
+  (vicare xml expat)
+  (vicare xml expat constants)
   (prefix (vicare ffi) ffi.))
 
 (define (%process-standalone standalone)
@@ -1104,8 +1122,8 @@ expected and defined:
 @example
 #!r6rs
 (import (vicare)
-  (vicare expat)
-  (vicare expat constants)
+  (vicare xml expat)
+  (vicare xml expat constants)
   (prefix (vicare ffi) ffi.))
 
 (define (%process-standalone standalone)
@@ -1192,7 +1210,7 @@ showing the @axml{} declaration handler called twice.
 @section Non--standalone handler
 
 
-All the following bindings are exported by the @library{vicare expat}
+All the following bindings are exported by the @value{FOREIGN_SCHEME_LIB}
 library.
 
 
@@ -1208,8 +1226,8 @@ Given the following program preamble:
 @example
 #!r6rs
 (import (vicare)
-  (vicare expat)
-  (vicare expat constants)
+  (vicare xml expat)
+  (vicare xml expat constants)
   (prefix (vicare ffi) ffi.))
 
 (define (%process-standalone standalone)
@@ -1340,7 +1358,7 @@ the following forms print symbolic expressions:
 @section @dtd{} document type declaration
 
 
-All the following bindings are exported by the @library{vicare expat}
+All the following bindings are exported by the @value{FOREIGN_SCHEME_LIB}
 library.
 
 
@@ -1370,8 +1388,8 @@ Given the following program preamble:
 @example
 #!r6rs
 (import (vicare)
-  (vicare expat)
-  (vicare expat constants)
+  (vicare xml expat)
+  (vicare xml expat constants)
   (prefix (vicare ffi) ffi.))
 
 (define (start-callback data doctype-name sysid pubid
@@ -1436,7 +1454,7 @@ the following forms print symbolic expressions:
 @section @dtd{} element declaration
 
 
-All the following bindings are exported by the @library{vicare expat}
+All the following bindings are exported by the @value{FOREIGN_SCHEME_LIB}
 library.
 
 
@@ -1515,8 +1533,8 @@ Given the following program preamble:
 @example
 #!r6rs
 (import (vicare)
-  (vicare expat)
-  (vicare expat constants)
+  (vicare xml expat)
+  (vicare xml expat constants)
   (prefix (vicare ffi) ffi.))
 
 (define (doit xml)
@@ -1686,7 +1704,7 @@ the following forms print symbolic expressions:
 @section @dtd{} attribute lists declaration
 
 
-All the following bindings are exported by the @library{vicare expat}
+All the following bindings are exported by the @value{FOREIGN_SCHEME_LIB}
 library.
 
 
@@ -1702,8 +1720,8 @@ Given the following program preamble:
 @smallexample
 #!r6rs
 (import (vicare)
-  (vicare expat)
-  (vicare expat constants)
+  (vicare xml expat)
+  (vicare xml expat constants)
   (prefix (vicare ffi) ffi.))
 
 (define (doit xml)
@@ -1796,7 +1814,7 @@ the following forms print symbolic expressions:
 @section @dtd{} notation declaration
 
 
-All the following bindings are exported by the @library{vicare expat}
+All the following bindings are exported by the @value{FOREIGN_SCHEME_LIB}
 library.
 
 
@@ -1812,8 +1830,8 @@ Given the following program preamble:
 @example
 #!r6rs
 (import (vicare)
-  (vicare expat)
-  (vicare expat constants)
+  (vicare xml expat)
+  (vicare xml expat constants)
   (prefix (vicare ffi) ffi.))
 
 (define (%false-or-string thing)
@@ -1883,7 +1901,7 @@ the following forms print symbolic expressions:
 @section @dtd{} entity declaration
 
 
-All the following bindings are exported by the @library{vicare expat}
+All the following bindings are exported by the @value{FOREIGN_SCHEME_LIB}
 library.
 
 
@@ -1907,8 +1925,8 @@ Given the following program preamble:
 @example
 #!r6rs
 (import (vicare)
-  (vicare expat)
-  (vicare expat constants)
+  (vicare xml expat)
+  (vicare xml expat constants)
   (prefix (vicare ffi) ffi.))
 
 (define (%false-or-string thing)
@@ -2059,7 +2077,7 @@ the following forms print symbolic expressions:
 @section Element handlers
 
 
-All the following bindings are exported by the @library{vicare expat}
+All the following bindings are exported by the @value{FOREIGN_SCHEME_LIB}
 library.
 
 
@@ -2088,8 +2106,8 @@ The following program:
 @example
 #!r6rs
 (import (vicare)
-  (vicare expat)
-  (vicare expat constants)
+  (vicare xml expat)
+  (vicare xml expat constants)
   (prefix (vicare ffi) ffi.))
 
 (define xml-utf8
@@ -2152,7 +2170,7 @@ prints:
 @section Character data handlers
 
 
-All the following bindings are exported by the @library{vicare expat}
+All the following bindings are exported by the @value{FOREIGN_SCHEME_LIB}
 library.
 
 
@@ -2169,8 +2187,8 @@ The following program:
 @example
 #!r6rs
 (import (vicare)
-  (vicare expat)
-  (vicare expat constants)
+  (vicare xml expat)
+  (vicare xml expat constants)
   (prefix (vicare ffi) ffi.))
 
 (define xml-utf8
@@ -2215,7 +2233,7 @@ prints:
 @section Comment handlers
 
 
-All the following bindings are exported by the @library{vicare expat}
+All the following bindings are exported by the @value{FOREIGN_SCHEME_LIB}
 library.
 
 
@@ -2231,8 +2249,8 @@ The following program:
 @example
 #!r6rs
 (import (vicare)
-  (vicare expat)
-  (vicare expat constants)
+  (vicare xml expat)
+  (vicare xml expat constants)
   (prefix (vicare ffi) ffi.))
 
 (define xml-utf8
@@ -2274,7 +2292,7 @@ prints:
 @section Cdata handler
 
 
-All the following bindings are exported by the @library{vicare expat}
+All the following bindings are exported by the @value{FOREIGN_SCHEME_LIB}
 library.
 
 
@@ -2303,8 +2321,8 @@ The following program:
 @example
 #!r6rs
 (import (vicare)
-  (vicare expat)
-  (vicare expat constants)
+  (vicare xml expat)
+  (vicare xml expat constants)
   (prefix (vicare ffi) ffi.))
 
 (define xml-utf8
@@ -2349,7 +2367,7 @@ prints:
 @section Namespace handlers
 
 
-All the following bindings are exported by the @library{vicare expat}
+All the following bindings are exported by the @value{FOREIGN_SCHEME_LIB}
 library.
 
 
@@ -2378,8 +2396,8 @@ Given the following program preamble:
 @example
 #!r6rs
 (import (vicare)
-  (vicare expat)
-  (vicare expat constants)
+  (vicare xml expat)
+  (vicare xml expat constants)
   (prefix (vicare ffi) ffi.))
 
 (define (start-element-callback data element attributes)
@@ -2486,7 +2504,7 @@ the following forms print symbolic expressions:
 @section Default handler
 
 
-All the following bindings are exported by the @library{vicare expat}
+All the following bindings are exported by the @value{FOREIGN_SCHEME_LIB}
 library.
 
 
@@ -2519,8 +2537,8 @@ Given the following program opening:
 @example
 #!r6rs
 (import (vicare)
-  (vicare expat)
-  (vicare expat constants)
+  (vicare xml expat)
+  (vicare xml expat constants)
   (prefix (vicare ffi) ffi.))
 
 (define (doit xml-utf8)
@@ -2574,7 +2592,7 @@ element.
 @section Special entity handlers.
 
 
-All the following bindings are exported by the @library{vicare expat}
+All the following bindings are exported by the @value{FOREIGN_SCHEME_LIB}
 library.
 
 
@@ -2590,8 +2608,8 @@ Given the following program preamble:
 @example
 #!r6rs
 (import (vicare)
-  (vicare expat)
-  (vicare expat constants)
+  (vicare xml expat)
+  (vicare xml expat constants)
   (prefix (vicare ffi) ffi.))
 
 (define (doit xml)
@@ -2627,7 +2645,7 @@ the following forms print symbolic expressions:
 @section Processing instruction handlers
 
 
-All the following bindings are exported by the @library{vicare expat}
+All the following bindings are exported by the @value{FOREIGN_SCHEME_LIB}
 library.
 
 
@@ -2643,8 +2661,8 @@ Given the following program preamble:
 @example
 #!r6rs
 (import (vicare)
-  (vicare expat)
-  (vicare expat constants)
+  (vicare xml expat)
+  (vicare xml expat constants)
   (prefix (vicare ffi) ffi.))
 
 (define (doit xml)
@@ -2680,7 +2698,7 @@ the following forms print symbolic expressions:
 @chapter Expat version informations
 
 
-The following bindings are exported by the @library{vicare expat}
+The following bindings are exported by the @value{FOREIGN_SCHEME_LIB}
 library.
 
 
@@ -2712,6 +2730,8 @@ representing the features of the running version of Expat.  Example:
 @end defun
 
 @c page
+@ignore
+
 @node nau
 @chapter Nausicaa front end
 
@@ -3158,6 +3178,8 @@ If @var{use-dtd?} is true: allow the application to provide an external
 @code{XML_ERROR_NONE}.  @expatref{api misc, XML_UseForeignDTD}.
 @end defmethod
 
+@end ignore
+
 @c page
 @c ------------------------------------------------------------
 @c Appendices.
@@ -3173,32 +3195,32 @@ If @var{use-dtd?} is true: allow the application to provide an external
 
 The documentation of @value{PACKAGE} is available online:
 
-@center @url{http://marcomaggi.github.com/docs/vicare-expat.html}
+@center @value{DOCUMENTATION_URL}
 
 @noindent
 the latest version of this package can be downloaded from:
 
-@center @url{http://code.google.com/p/vicare-scheme/downloads/list}
+@center @value{DOWNLOAD_URL}
 
 @noindent
 development takes place at:
 
-@center @url{http://github.com/marcomaggi/vicare-expat/}
+@center @value{GITHUB_URL}
+
+@noindent
+and as backup at:
+
+@center @value{BITBUCKET_URL}
 
 @noindent
 the home page of the Vicare project is at:
 
-@center @url{http://marcomaggi.github.com/vicare.html}
+@center @value{VICARE_HOMEPAGE_URL}
 
 @noindent
-the home page of the Nausicaa project is at:
+@value{FOREIGN_PACKAGE} can be found here:
 
-@center @url{http://marcomaggi.github.com/nausicaa.html}
-
-@noindent
-Expat can be found here:
-
-@center @url{http://expat.sourceforge.net/}
+@center @value{FOREIGN_URL}
 
 @noindent
 the @axml{} 1.0 specification is available from:
@@ -3208,7 +3230,6 @@ the @axml{} 1.0 specification is available from:
 the recommendation on Namespaces in @axml{} 1.0 is available from:
 
 @center @url{<http://www.w3.org/TR/xml-names/}
-
 
 @c page
 @node concept index
@@ -3235,4 +3256,3 @@ the recommendation on Namespaces in @axml{} 1.0 is available from:
 @bye
 
 @c end of file
-

@@ -8,7 +8,7 @@
 ;;;
 ;;;
 ;;;
-;;;Copyright (C) 2012, 2013 Marco Maggi <marco.maggi-ipsu@poste.it>
+;;;Copyright (C) 2012, 2013, 2015 Marco Maggi <marco.maggi-ipsu@poste.it>
 ;;;
 ;;;This program is free software:  you can redistribute it and/or modify
 ;;;it under the terms of the  GNU General Public License as published by
@@ -26,8 +26,8 @@
 
 
 #!vicare
-#!(load-shared-library "vicare-expat")
 (library (vicare xml expat)
+  (foreign-library "vicare-expat")
   (export
 
     XML_ParserCreate
@@ -132,12 +132,16 @@
     XML_Content-type			XML_Content-quant
     XML_Content-name			XML_Content-numchildren
     XML_Content-children)
-  (import (vicare)
+  (import (vicare (or (0 4 2015 6 (>= 9))
+		      (0 4 2015 (>= 7))
+		      (0 4 (>= 2016))))
     (vicare xml expat constants)
     (vicare language-extensions syntaxes)
     (vicare arguments validation)
-    #;(prefix (vicare xml expat unsafe-capi) capi.)
-    (prefix (vicare ffi) ffi.)
+    (prefix (vicare ffi (or (0 4 2015 5 (>= 27))
+			    (0 4 2015 (>= 6))
+			    (0 4 (>= 2016))))
+	    ffi.)
     (prefix (vicare platform words) words.))
 
 
