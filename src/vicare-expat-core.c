@@ -7,7 +7,7 @@
 
 
 
-  Copyright (C) 2012, 2013 Marco Maggi <marco.maggi-ipsu@poste.it>
+  Copyright (C) 2012, 2013, 2015 Marco Maggi <marco.maggi-ipsu@poste.it>
 
   This program is  free software: you can redistribute  it and/or modify
   it under the  terms of the GNU General Public  License as published by
@@ -28,21 +28,7 @@
  ** Headers.
  ** ----------------------------------------------------------------- */
 
-#ifdef HAVE_CONFIG_H
-#  include <config.h>
-#endif
-#include <vicare.h>
-#include <expat.h>
-
-#define EX_PARSER_POINTER_OBJECT(PARSER)	(PARSER)
-#define EX_PARSER(PARSER)			\
-  IK_POINTER_DATA_VOIDP(EX_PARSER_POINTER_OBJECT(PARSER))
-
-#define EX_CALLBACK(CALLBACK)	IK_POINTER_DATA_VOIDP(CALLBACK)
-
-#define EX_BOOLEAN(BOOL)	((IK_FALSE == (BOOL))? XML_FALSE : XML_TRUE)
-
-#define BOOLEAN_TO_INT(BOOL)	((IK_FALSE == (BOOL))? 0 : 1)
+#include "vicare-expat-internals.h"
 
 
 /** --------------------------------------------------------------------
