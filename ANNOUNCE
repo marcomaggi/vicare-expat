@@ -1,4 +1,4 @@
-Subject: [announce] Vicare/Expat revision 0.4d0
+Subject: [announce] Vicare/Expat revision 0.4d1
 
 			      Vicare/Expat
 			      ============
@@ -32,7 +32,7 @@ and as backup at:
 	    <https://bitbucket.org/marcomaggi/vicare-expat/>
 
   The last  time the author  bothered to  update this paragraph,  he had
-tested Expat version 2.1.0; the Expat library is available at:
+tested Expat version 2.2.0; the Expat library is available at:
 
 		    <http://expat.sourceforge.net/>
 
@@ -46,6 +46,12 @@ and also online:
 	     <http://marcomaggi.github.io/docs/expat.html>
 
 Expat must be compiled to handle UTF-8 strings.
+
+
+Notes for revision 0.4d1
+------------------------
+
+* Ensure compatibility with Vicare Scheme 0.4d1.
 
 
 Notes for revision 0.4d0

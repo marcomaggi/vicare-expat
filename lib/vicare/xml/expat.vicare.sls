@@ -8,7 +8,7 @@
 ;;;
 ;;;
 ;;;
-;;;Copyright (C) 2012, 2013, 2015 Marco Maggi <marco.maggi-ipsu@poste.it>
+;;;Copyright (C) 2012, 2013, 2015, 2017 Marco Maggi <marco.maggi-ipsu@poste.it>
 ;;;
 ;;;This program is free software:  you can redistribute it and/or modify
 ;;;it under the terms of the  GNU General Public License as published by
@@ -27,6 +27,7 @@
 
 #!vicare
 (library (vicare xml expat)
+  (options typed-language)
   (foreign-library "vicare-expat")
   (export
 
@@ -139,23 +140,22 @@
     XML_Content-type			XML_Content-quant
     XML_Content-name			XML_Content-numchildren
     XML_Content-children)
-  (import (vicare (or (0 4 2015 6 (>= 9))
-		      (0 4 2015 (>= 7))
-		      (0 4 (>= 2016))))
+  (import (vicare (0 4 2017 1 (>= 10)))
+    (prefix (vicare system structs) structs::)
     (vicare xml expat constants)
-    (prefix (vicare xml expat unsafe-capi) capi.)
+    (prefix (vicare xml expat unsafe-capi) capi::)
     (vicare arguments validation)
     (prefix (vicare ffi (or (0 4 2015 5 (>= 27))
 			    (0 4 2015 (>= 6))
 			    (0 4 (>= 2016))))
-	    ffi.)
-    (prefix (vicare platform words) words.))
+	    ffi::)
+    (prefix (vicare platform words) words::))
 
 
 ;;;; arguments validation
 
 (define (expat-xml-parser? obj)
-  (ffi.pointer? obj))
+  (ffi::pointer? obj))
 
 (define (expat-encoding-symbol? obj)
   (case obj
@@ -172,13 +172,13 @@
 
 (define (false-or-non-negative-signed-int? obj)
   (or (not obj)
-      (and (words.signed-int? obj)
+      (and (words::signed-int? obj)
 	   (non-negative? obj))))
 
 ;;; --------------------------------------------------------------------
 
 (define-argument-validation (callback who obj)
-  (ffi.pointer? obj)
+  (ffi::pointer? obj)
   (assertion-violation who "expected callback as argument" obj))
 
 ;;; --------------------------------------------------------------------
@@ -188,11 +188,11 @@
   (assertion-violation who "expected false or bytevector as argument" obj))
 
 (define-argument-validation (pointer/bytevector who obj)
-  (or (ffi.pointer? obj) (bytevector? obj))
+  (or (ffi::pointer? obj) (bytevector? obj))
   (assertion-violation who "expected pointer or bytevector as argument" obj))
 
 (define-argument-validation (false/non-negative-signed-int who obj)
-  (or (not obj) (and (words.signed-int? obj) (<= 0 obj)))
+  (or (not obj) (and (words::signed-int? obj) (<= 0 obj)))
   (assertion-violation who "expected false or positive signed int as argument" obj))
 
 (define-argument-validation (encoding-symbol who obj)
@@ -210,23 +210,23 @@
 ;;; --------------------------------------------------------------------
 
 (define-argument-validation (parser who obj)
-  (ffi.pointer? obj)
+  (ffi::pointer? obj)
   (assertion-violation who "expected pointer to Expat parser as argument" obj))
 
 
 ;;;; version functions
 
 (define (vicare-expat-version-interface-current)
-  (capi.vicare-expat-version-interface-current))
+  (capi::vicare-expat-version-interface-current))
 
 (define (vicare-expat-version-interface-revision)
-  (capi.vicare-expat-version-interface-revision))
+  (capi::vicare-expat-version-interface-revision))
 
 (define (vicare-expat-version-interface-age)
-  (capi.vicare-expat-version-interface-age))
+  (capi::vicare-expat-version-interface-age))
 
 (define (vicare-expat-version)
-  (ascii->string (capi.vicare-expat-version)))
+  (ascii->string (capi::vicare-expat-version)))
 
 
 ;;;; data structures
@@ -241,7 +241,7 @@
 
 ;;; --------------------------------------------------------------------
 
-(define-struct XML_ParsingStatus
+(structs::define-struct XML_ParsingStatus
   (parsing final-buffer?))
 
 (define (%struct-XML_ParsingStatus-printer S port sub-printer)
@@ -263,7 +263,7 @@
 
 ;;; --------------------------------------------------------------------
 
-(define-struct XML_Content
+(structs::define-struct XML_Content
   (type quant name numchildren children))
 
 (define (%struct-XML_Content-printer S port sub-printer)
@@ -308,9 +308,9 @@
   (let* ((type		(XML_Content.type pointer))
 	 (quant		(XML_Content.quant pointer))
 	 (name		(let ((name (XML_Content.name pointer)))
-			  (if (ffi.pointer-null? name)
+			  (if (ffi::pointer-null? name)
 			      #f
-			    (ffi.cstring->string name))))
+			    (ffi::cstring->string name))))
 	 (numchildren	(XML_Content.numchildren pointer))
 	 (children	(cond ((bignum? numchildren)
 			       (assertion-violation who
@@ -327,7 +327,7 @@
 						 (XML_Content.children pointer i)))))))))
     (make-XML_Content type quant name numchildren children)))
 
-(define (XML_Content->list S)
+(define ({XML_Content->list <list>} S)
   (list (XML_Content-type S)
 	(XML_Content-quant S)
 	(XML_Content-name S)
@@ -371,7 +371,7 @@
 (let-syntax
     ((declare (syntax-rules ()
 		((_ ?func ?who)
-		 (define* (?who {parser expat-xml-parser?} {callback ffi.c-callback?})
+		 (define* (?who {parser expat-xml-parser?} {callback ffi::c-callback?})
 		   (foreign-call ?func parser callback)))
 		)))
   (declare "ik_expat_set_element_decl_handler"		XML_SetElementDeclHandler)
@@ -400,7 +400,7 @@
 (let-syntax
     ((declare (syntax-rules ()
 		((_ ?func ?who)
-		 (define* (?who {parser expat-xml-parser?} {start-callback ffi.c-callback?} {end-callback ffi.c-callback?})
+		 (define* (?who {parser expat-xml-parser?} {start-callback ffi::c-callback?} {end-callback ffi::c-callback?})
 		   (foreign-call ?func parser start-callback end-callback)))
 		)))
   (declare "ik_expat_set_element_handler"		XML_SetElementHandler)
@@ -413,7 +413,7 @@
 (define* (XML_SetExternalEntityRefHandlerArg {parser expat-xml-parser?} {pointer pointer?})
   (foreign-call "ik_expat_set_external_entity_ref_handler_arg" parser pointer))
 
-;; (define* (XML_SetUnknownEncodingHandler {parser expat-xml-parser?} {callback ffi.c-callback?} {pointer pointer?})
+;; (define* (XML_SetUnknownEncodingHandler {parser expat-xml-parser?} {callback ffi::c-callback?} {pointer pointer?})
 ;;   (foreign-call "ik_expat_set_unknown_encoding_handler" parser callback pointer))
 
 ;;; --------------------------------------------------------------------
@@ -431,7 +431,7 @@
 ;;                                                 const XML_Char *name,
 ;;                                                 XML_Content *model);
 (define XML_ElementDeclHandler
-  (ffi.make-c-callback-maker 'void '(pointer pointer pointer)))
+  (ffi::make-c-callback-maker 'void '(pointer pointer pointer)))
 
 ;; typedef void (XMLCALL *XML_AttlistDeclHandler) (
 ;;                                     void            *userData,
@@ -441,56 +441,56 @@
 ;;                                     const XML_Char  *dflt,
 ;;                                     int              isrequired);
 (define XML_AttlistDeclHandler
-  (ffi.make-c-callback-maker 'void '(pointer pointer pointer pointer pointer signed-int)))
+  (ffi::make-c-callback-maker 'void '(pointer pointer pointer pointer pointer signed-int)))
 
 ;; typedef void (XMLCALL *XML_XmlDeclHandler) (void           *userData,
 ;;                                             const XML_Char *version,
 ;;                                             const XML_Char *encoding,
 ;;                                             int             standalone);
 (define XML_XmlDeclHandler
-  (ffi.make-c-callback-maker 'void '(pointer pointer pointer signed-int)))
+  (ffi::make-c-callback-maker 'void '(pointer pointer pointer signed-int)))
 
 ;; typedef void (XMLCALL *XML_StartElementHandler) (void *userData,
 ;;                                                  const XML_Char *name,
 ;;                                                  const XML_Char **atts);
 (define XML_StartElementHandler
-  (ffi.make-c-callback-maker 'void '(pointer pointer pointer)))
+  (ffi::make-c-callback-maker 'void '(pointer pointer pointer)))
 
 ;; typedef void (XMLCALL *XML_EndElementHandler) (void *userData,
 ;;                                                const XML_Char *name);
 (define XML_EndElementHandler
-  (ffi.make-c-callback-maker 'void '(pointer pointer)))
+  (ffi::make-c-callback-maker 'void '(pointer pointer)))
 
 ;; typedef void (XMLCALL *XML_CharacterDataHandler) (void *userData,
 ;;                                                   const XML_Char *s,
 ;;                                                   int len);
 (define XML_CharacterDataHandler
-  (ffi.make-c-callback-maker 'void '(pointer pointer signed-int)))
+  (ffi::make-c-callback-maker 'void '(pointer pointer signed-int)))
 
 ;; typedef void (XMLCALL *XML_ProcessingInstructionHandler) (void *userData,
 ;; 							       const XML_Char *target,
 ;; 							       const XML_Char *data) ;
 (define XML_ProcessingInstructionHandler
-  (ffi.make-c-callback-maker 'void '(pointer pointer pointer)))
+  (ffi::make-c-callback-maker 'void '(pointer pointer pointer)))
 
 ;; typedef void (XMLCALL *XML_CommentHandler) (void *userData,
 ;;                                             const XML_Char *data);
 (define XML_CommentHandler
-  (ffi.make-c-callback-maker 'void '(pointer pointer)))
+  (ffi::make-c-callback-maker 'void '(pointer pointer)))
 
 ;; typedef void (XMLCALL *XML_StartCdataSectionHandler) (void *userData);
 (define XML_StartCdataSectionHandler
-  (ffi.make-c-callback-maker 'void '(pointer)))
+  (ffi::make-c-callback-maker 'void '(pointer)))
 
 ;; typedef void (XMLCALL *XML_EndCdataSectionHandler) (void *userData);
 (define XML_EndCdataSectionHandler
-  (ffi.make-c-callback-maker 'void '(pointer)))
+  (ffi::make-c-callback-maker 'void '(pointer)))
 
 ;; typedef void (XMLCALL *XML_DefaultHandler) (void *userData,
 ;;                                             const XML_Char *s,
 ;;                                             int len);
 (define XML_DefaultHandler
-  (ffi.make-c-callback-maker 'void '(pointer pointer signed-int)))
+  (ffi::make-c-callback-maker 'void '(pointer pointer signed-int)))
 
 ;; typedef void (XMLCALL *XML_StartDoctypeDeclHandler) (
 ;;                                             void *userData,
@@ -499,11 +499,11 @@
 ;;                                             const XML_Char *pubid,
 ;;                                             int has_internal_subset);
 (define XML_StartDoctypeDeclHandler
-  (ffi.make-c-callback-maker 'void '(pointer pointer pointer pointer signed-int)))
+  (ffi::make-c-callback-maker 'void '(pointer pointer pointer pointer signed-int)))
 
 ;; typedef void (XMLCALL *XML_EndDoctypeDeclHandler)(void *userData);
 (define XML_EndDoctypeDeclHandler
-  (ffi.make-c-callback-maker 'void '(pointer)))
+  (ffi::make-c-callback-maker 'void '(pointer)))
 
 ;; typedef void (XMLCALL *XML_EntityDeclHandler) (
 ;;                               void *userData,
@@ -516,7 +516,7 @@
 ;;                               const XML_Char *publicId,
 ;;                               const XML_Char *notationName);
 (define XML_EntityDeclHandler
-  (ffi.make-c-callback-maker 'void '(pointer pointer signed-int pointer
+  (ffi::make-c-callback-maker 'void '(pointer pointer signed-int pointer
 					     signed-int pointer pointer
 					     pointer pointer)))
 
@@ -528,7 +528,7 @@
 ;;                                     const XML_Char *publicId,
 ;;                                     const XML_Char *notationName);
 (define XML_UnparsedEntityDeclHandler
-  (ffi.make-c-callback-maker 'void '(pointer pointer pointer pointer pointer pointer)))
+  (ffi::make-c-callback-maker 'void '(pointer pointer pointer pointer pointer pointer)))
 
 ;; typedef void (XMLCALL *XML_NotationDeclHandler) (
 ;;                                     void *userData,
@@ -537,24 +537,24 @@
 ;;                                     const XML_Char *systemId,
 ;;                                     const XML_Char *publicId);
 (define XML_NotationDeclHandler
-  (ffi.make-c-callback-maker 'void '(pointer pointer pointer pointer pointer)))
+  (ffi::make-c-callback-maker 'void '(pointer pointer pointer pointer pointer)))
 
 ;; typedef void (XMLCALL *XML_StartNamespaceDeclHandler) (
 ;;                                     void *userData,
 ;;                                     const XML_Char *prefix,
 ;;                                     const XML_Char *uri);
 (define XML_StartNamespaceDeclHandler
-  (ffi.make-c-callback-maker 'void '(pointer pointer pointer)))
+  (ffi::make-c-callback-maker 'void '(pointer pointer pointer)))
 
 ;; typedef void (XMLCALL *XML_EndNamespaceDeclHandler) (
 ;;                                     void *userData,
 ;;                                     const XML_Char *prefix);
 (define XML_EndNamespaceDeclHandler
-  (ffi.make-c-callback-maker 'void '(pointer pointer)))
+  (ffi::make-c-callback-maker 'void '(pointer pointer)))
 
 ;; typedef int (XMLCALL *XML_NotStandaloneHandler) (void *userData);
 (define XML_NotStandaloneHandler
-  (ffi.make-c-callback-maker 'signed-int '(pointer)))
+  (ffi::make-c-callback-maker 'signed-int '(pointer)))
 
 ;; typedef int (XMLCALL *XML_ExternalEntityRefHandler) (
 ;;                                     XML_Parser parser,
@@ -563,14 +563,14 @@
 ;;                                     const XML_Char *systemId,
 ;;                                     const XML_Char *publicId);
 (define XML_ExternalEntityRefHandler
-  (ffi.make-c-callback-maker 'signed-int '(pointer pointer pointer pointer pointer)))
+  (ffi::make-c-callback-maker 'signed-int '(pointer pointer pointer pointer pointer)))
 
 ;; typedef void (XMLCALL *XML_SkippedEntityHandler) (
 ;;                                     void *userData,
 ;;                                     const XML_Char *entityName,
 ;;                                     int is_parameter_entity);
 (define XML_SkippedEntityHandler
-  (ffi.make-c-callback-maker 'void '(pointer pointer signed-int)))
+  (ffi::make-c-callback-maker 'void '(pointer pointer signed-int)))
 
 ;;; interface not implemented
 ;;
@@ -579,7 +579,7 @@
 ;;                                     const XML_Char *name,
 ;;                                     XML_Encoding *info);
 ;; (define XML_UnknownEncodingHandler
-;;   (ffi.make-c-callback-maker 'signed-int '(pointer pointer pointer)))
+;;   (ffi::make-c-callback-maker 'signed-int '(pointer pointer pointer)))
 
 
 ;;;; parsers
@@ -659,7 +659,7 @@
   (({parser expat-xml-parser?} {buffer (or pointer? bytevector?)} {buflen false-or-non-negative-signed-int?} final?)
    (foreign-call "ik_expat_parse" parser buffer buflen final?)))
 
-(define* (XML_GetBuffer {parser expat-xml-parser?} {buflen words.signed-int?})
+(define* (XML_GetBuffer {parser expat-xml-parser?} {buflen words::signed-int?})
   (foreign-call "ik_expat_get_buffer" parser buflen))
 
 (define* (XML_ParseBuffer {parser expat-xml-parser?} {buflen false-or-non-negative-signed-int?} final?)
@@ -701,7 +701,7 @@
 
 ;;;; error reporting
 
-(define* (XML_ErrorString {code words.signed-int?})
+(define* (XML_ErrorString {code words::signed-int?})
   (latin1->string (foreign-call "ik_expat_error_string" code)))
 
 (define* (XML_GetErrorCode {parser expat-xml-parser?})
@@ -737,8 +737,8 @@
 
 ;;;; done
 
-(set-rtd-printer! (type-descriptor XML_ParsingStatus) %struct-XML_ParsingStatus-printer)
-(set-rtd-printer! (type-descriptor XML_Content)       %struct-XML_Content-printer)
+(structs::set-struct-type-printer! (type-descriptor XML_ParsingStatus) %struct-XML_ParsingStatus-printer)
+(structs::set-struct-type-printer! (type-descriptor XML_Content)       %struct-XML_Content-printer)
 
 (post-gc-hooks (cons %free-allocated-parser
 		     (post-gc-hooks)))

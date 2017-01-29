@@ -99,21 +99,12 @@ clean-fasl:
 VICARE_EXPAT_PLAIN_TESTS		= \
 	tests/test-vicare-expat.sps
 
-# VICARE_EXPAT_NAU_TESTS		= \
-# 	tests/test-nausicaa-expat.sps
-
 TESTS	= $(VICARE_EXPAT_PLAIN_TESTS)
-# if WANT_NAUSICAA
-# TESTS	+= $(VICARE_EXPAT_NAU_TESTS)
-# endif
 
 EXTRA_DIST += \
 	$(VICARE_EXPAT_PLAIN_TESTS)		\
 	\
 	tests/demo-for-plain-documentation.sps
-
-# $(VICARE_EXPAT_NAU_TESTS)
-# tests/demo-for-nausicaa-documentation.sps
 
 VICARE_SELECTED_TESTS		= $(testdir)/test-*$(file)*.sps
 VICARE_SELECTED_DEMOS		= $(testdir)/demo-*$(file)*.sps
